@@ -41,20 +41,21 @@ test('makale kartındaki <time>, ISO tarihi dateTime özniteliğinde taşır', a
 // Biçim testi yalnızca desenin doğruluğunu kanıtlar, "hangi gün" gösterildiğini kanıtlamaz.
 // formatDate'teki `timeZone: 'UTC'` kaldırılırsa negatif ofsetli bir makinede görünen gün
 // dateTime özniteliğinden bir gün geriye kayar; bu test string karşılaştırmasıyla (Date
-// nesnesi kullanmadan) tam olarak bu kaymayı yakalamak için var.
+// nesnesi kullanmadan) tam olarak bu kaymayı yakalamak için var. toContain değil toBe:
+// gün rakamı yıl basamaklarıyla rastlantısal eşleşip kaymayı gizleyebilirdi (ör. gün '20'
+// yıl '2026' içinde geçer), tam dize eşitliği bu riski taşımaz.
 test('makale kartındaki <time>, dateTime özniteliğiyle aynı günü gösterir', async ({ page }) => {
   await page.goto('/')
   const time = page.locator('#articles ul time').first()
   const isoDate = await time.getAttribute('datetime')
   expect(isoDate).toMatch(/^\d{4}-\d{2}-\d{2}$/)
-  const [, month, day] = isoDate!.split('-')
+  const [year, month, day] = isoDate!.split('-')
   const visibleText = await time.textContent()
   const months = [
     'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
     'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
   ]
-  expect(visibleText).toContain(day)
-  expect(visibleText).toContain(months[Number(month) - 1])
+  expect(visibleText).toBe(`${day} ${months[Number(month) - 1]} ${Number(year)}`)
 })
 
 test('çalışma alanı ve kadro kartları doğru rotalara bağlanır', async ({ page }) => {

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { PageHeading } from '@/components/PageHeading'
+import { SITE } from '@/content/site'
+import styles from './page.module.css'
 
 export const metadata: Metadata = { title: 'İletişim | Akıl Hukuk Bürosu' }
 
@@ -7,14 +9,14 @@ export const metadata: Metadata = { title: 'İletişim | Akıl Hukuk Bürosu' }
 export default function ContactPage() {
   return (
     <article style={{ maxWidth: 'var(--max)', margin: '0 auto', padding: 'var(--section) var(--pad)' }}>
-      <PageHeading eyebrow="BİZE ULAŞIN" title="İletişim" />
+      <PageHeading eyebrow="Bize Ulaşın" title="İletişim" />
       <p>İletişim formu Plan 3&apos;te eklenecek. O zamana kadar aşağıdaki bilgilerden bize ulaşabilirsiniz.</p>
-      <address style={{ fontStyle: 'normal', marginTop: '24px', lineHeight: 1.8 }}>
-        Örnek Mah. Örnek Cad. No: 1, Kadıköy / İstanbul
+      <address className={styles.address}>
+        {SITE.address}
         <br />
-        <a href="tel:+902160000000" className="textLink">+90 216 000 00 00</a>
+        <a href={SITE.phoneHref} className="textLink">{SITE.phone}</a>
         <br />
-        <a href="mailto:info@example.com" className="textLink">info@example.com</a>
+        <a href={SITE.emailHref} className="textLink">{SITE.email}</a>
       </address>
     </article>
   )

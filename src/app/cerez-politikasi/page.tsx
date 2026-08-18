@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'Çerez Politikası | Akıl Hukuk Bü
 export default function CookiePolicyPage() {
   return (
     <article style={{ maxWidth: 'var(--max)', margin: '0 auto', padding: 'var(--section) var(--pad)' }}>
-      <PageHeading eyebrow="YASAL" title="Çerez Politikası" />
+      <PageHeading eyebrow="Yasal" title="Çerez Politikası" />
       <p>Bu sayfadaki metin yer tutucudur; bu metin yayına alınmadan önce güncellenecektir.</p>
     </article>
   )

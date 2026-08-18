@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'KVKK Aydınlatma Metni | Akıl Hukuk
 export default function KvkkPage() {
   return (
     <article style={{ maxWidth: 'var(--max)', margin: '0 auto', padding: 'var(--section) var(--pad)' }}>
-      <PageHeading eyebrow="YASAL" title="KVKK Aydınlatma Metni" />
+      <PageHeading eyebrow="Yasal" title="KVKK Aydınlatma Metni" />
       <p>Bu sayfadaki metin yer tutucudur; bu metin yayına alınmadan önce güncellenecektir.</p>
     </article>
   )

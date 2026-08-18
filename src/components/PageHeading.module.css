@@ -10,3 +10,9 @@
   font-weight: 600;
   margin-bottom: 16px;
 }
+
+/* Blok krem yüzeyde kullanılırsa düz altın 1.91:1 verir (WCAG altı); krem zeminin
+   kendi odak-halkası tokenıyla aynı koyu altın karşılığına geçilir. */
+[data-surface="paper"] .eyebrow {
+  color: var(--gold-ink);
+}

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { NAV_LINKS } from '@/lib/navigation'
+import { SITE } from '@/content/site'
 import styles from './SiteFooter.module.css'
 
 // İçerik şimdilik sabit yer tutucu; Plan 2'de `settings` tablosundan gelecek.
@@ -10,11 +11,11 @@ export function SiteFooter() {
         <div>
           <p className={styles.brand}>Akıl Hukuk Bürosu</p>
           <address className={styles.address}>
-            Örnek Mah. Örnek Cad. No: 1, Kadıköy / İstanbul
+            {SITE.address}
             <br />
-            <a href="tel:+902160000000" className="textLink">+90 216 000 00 00</a>
+            <a href={SITE.phoneHref} className="textLink">{SITE.phone}</a>
             <br />
-            <a href="mailto:info@example.com" className="textLink">info@example.com</a>
+            <a href={SITE.emailHref} className="textLink">{SITE.email}</a>
           </address>
         </div>
 
