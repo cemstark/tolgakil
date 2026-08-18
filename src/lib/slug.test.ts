@@ -6,6 +6,11 @@ describe('slugify', () => {
     expect(slugify('İşe İade Davası')).toBe('ise-iade-davasi')
   })
 
+  it('düzeltme işaretli harfleri sadeleştirir', () => {
+    expect(slugify('Hukukî Görüş')).toBe('hukuki-gorus')
+    expect(slugify('Kâzım Bey')).toBe('kazim-bey')
+  })
+
   it('noktalama ve fazla boşluğu tek tireye çevirir', () => {
     expect(slugify('Şirketler Hukuku & Ortaklık')).toBe('sirketler-hukuku-ortaklik')
     expect(slugify('Çağrı   Merkezi')).toBe('cagri-merkezi')

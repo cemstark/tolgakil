@@ -7,7 +7,9 @@ const TR_MAP: Record<string, string> = {
 
 export function slugify(input: string): string {
   return input
-    .replace(/[çÇğĞıIİöÖşŞüÜ]/g, (ch) => TR_MAP[ch])
+    // Sınıf ile TR_MAP ayrı yerlerde durduğu için biri güncellenip diğeri unutulursa
+    // eşleme undefined döner; ?? ch harfi bozmadan geçirir.
+    .replace(/[çÇğĞıIİöÖşŞüÜ]/g, (ch) => TR_MAP[ch] ?? ch)
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')

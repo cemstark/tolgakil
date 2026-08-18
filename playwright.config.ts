@@ -8,9 +8,10 @@ export default defineConfig({
     { name: 'mobil', use: { ...devices['Pixel 7'] } },
   ],
   // Yerel geliştirmede sunucu zaten açık olabilir; yeniden başlatıp portu çakıştırmayalım.
+  // CI'da ise her koşu kendi sunucusunu kurmalı, yabancı bir sunucuya bağlanmamalı.
   webServer: {
     command: 'npm run dev',
     port: 3000,
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.CI,
   },
 })
