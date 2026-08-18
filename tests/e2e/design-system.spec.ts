@@ -34,8 +34,9 @@ test('kök token değerleri spec ile birebir aynı', async ({ page }) => {
     textPaper: '#161d27',
     textPaperMuted: '#4b535f',
     // Chromium kayıtsız (unregistered) custom property'yi yazıldığı gibi döndürür;
-    // rgba(...) ifadesinin #rrggbbaa'ya dönüşümünü Next'in derleme hattındaki
-    // lightningcss renk kısaltması yapar — dönüşüm tarayıcıda değil, build'de olur.
+    // rgba(...) ifadesinin #rrggbbaa'ya dönüşümünü Next'in CSS işleme hattı yapar
+    // (lightningcss). Bu test npm run dev ile çalışıyor, yani dönüşüm üretim
+    // derlemesine özgü değil — dev sunucusunda da devrede.
     lineInk: '#f3f1ea1f',
     linePaper: '#d5d1c4',
     radiusPill: '999px',

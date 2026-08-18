@@ -12,9 +12,9 @@ export function SiteFooter() {
           <address className={styles.address}>
             Örnek Mah. Örnek Cad. No: 1, Kadıköy / İstanbul
             <br />
-            <a href="tel:+902160000000">+90 216 000 00 00</a>
+            <a href="tel:+902160000000" className="textLink">+90 216 000 00 00</a>
             <br />
-            <a href="mailto:info@example.com">info@example.com</a>
+            <a href="mailto:info@example.com" className="textLink">info@example.com</a>
           </address>
         </div>
 

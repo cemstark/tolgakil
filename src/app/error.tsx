@@ -15,7 +15,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
       <h1>Bir hata oluştu</h1>
       <p>
         Sayfa yüklenemedi. Tekrar deneyebilir veya bize telefonla ulaşabilirsiniz:{' '}
-        <a href="tel:+902160000000">+90 216 000 00 00</a>.
+        <a href="tel:+902160000000" className="textLink">+90 216 000 00 00</a>.
       </p>
       <button type="button" onClick={reset}>
         Tekrar dene

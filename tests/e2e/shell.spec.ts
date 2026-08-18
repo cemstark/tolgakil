@@ -24,13 +24,17 @@ test('bilinmeyen adres 404 sayfasını verir', async ({ page }) => {
   const res = await page.goto('/olmayan-sayfa')
   expect(res?.status()).toBe(404)
   await expect(page.getByRole('heading', { name: /sayfa bulunamadı/i })).toBeVisible()
+  // Metin içi bağlantı yalnızca renkle değil, alt çizgiyle de ayrılmalı (WCAG 1.4.1).
+  const link = page.getByRole('link', { name: 'Ana sayfaya dön' })
+  await expect(link).toHaveCSS('text-decoration-line', 'underline')
 })
 
 test('mobilde menü düğmesi aria-expanded değerini günceller', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobil', 'yalnızca mobil projede')
   await page.goto('/')
-  // Düğme metni açık/kapalı durumuna göre değiştiği için sabit isim yerine esnek regex kullanılır.
-  const btn = page.getByRole('button', { name: /Menüyü/ })
+  // İsim yerine ilişkiye bağlanır: düğme metni açık/kapalıya göre değişir ve
+  // Görev 4-5'te ikinci bir düğme eklenirse isimle eşleşme strict-mode'u ihlal eder.
+  const btn = page.locator('[aria-controls="main-menu"]')
   await expect(btn).toHaveAttribute('aria-expanded', 'false')
   await btn.click()
   await expect(btn).toHaveAttribute('aria-expanded', 'true')
@@ -39,23 +43,49 @@ test('mobilde menü düğmesi aria-expanded değerini günceller', async ({ page
 test('mobilde menü açılınca bağlantılar görünür, kapanınca gizlenir', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobil', 'yalnızca mobil projede')
   await page.goto('/')
-  const nav = page.getByRole('navigation', { name: 'Ana gezinme' })
-  const link = nav.getByRole('link', { name: 'Makaleler' })
+  const toggle = page.locator('[aria-controls="main-menu"]')
+  const panel = page.locator('#main-menu')
+  // CSS locator kullanılır: panel hidden iken getByRole erişilebilirlik ağacından
+  // düşer ve sıfır eşleşme toBeHidden()'ı yanıltıcı biçimde geçirir (bkz. denetim K3).
+  const link = panel.locator('a', { hasText: 'Makaleler' })
+
+  await expect(panel).toHaveAttribute('data-open', 'false')
+  await expect(panel).toHaveCSS('display', 'none')
   await expect(link).toBeHidden()
-  await page.getByRole('button', { name: 'Menüyü aç' }).click()
+
+  await toggle.click()
+  await expect(panel).toHaveAttribute('data-open', 'true')
+  await expect(panel).not.toHaveCSS('display', 'none')
   await expect(link).toBeVisible()
-  await page.getByRole('button', { name: 'Menüyü kapat' }).click()
+
+  await toggle.click()
+  await expect(panel).toHaveAttribute('data-open', 'false')
+  await expect(panel).toHaveCSS('display', 'none')
   await expect(link).toBeHidden()
+})
+
+test('mobilde Escape paneli kapatır ve odağı menü düğmesine döndürür', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobil', 'yalnızca mobil projede')
+  await page.goto('/')
+  const toggle = page.locator('[aria-controls="main-menu"]')
+  await toggle.click()
+  await expect(page.locator('#main-menu')).toHaveAttribute('data-open', 'true')
+  await page.keyboard.press('Escape')
+  await expect(page.locator('#main-menu')).toHaveAttribute('data-open', 'false')
+  await expect(toggle).toBeFocused()
 })
 
 test('mobilde panel kapalıyken bağlantılar klavye ile odaklanamaz', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobil', 'yalnızca mobil projede')
   await page.goto('/')
-  const link = page.getByRole('link', { name: 'Makaleler' })
-  // display:none olan öğeler tarayıcı tarafından Tab sırasından otomatik çıkarılır;
-  // bu döngü panel kapalıyken bağlantının hiçbir Tab adımında odağı almadığını sabitler.
-  for (let i = 0; i < 4; i++) {
+  // Aktif öğenin panel içinde olup olmadığı document.activeElement üzerinden ölçülür;
+  // önceki sürüm belirli bir bağlantı locator'ına bakıyordu ve bu locator kapanık
+  // panelde sıfır eşleşmeye düşüp testi anlamsız biçimde yeşil tutuyordu (bkz. denetim Ö1).
+  // Tab sayısı, sayfadaki tüm odaklanabilir öğeleri (skip link, marka, düğme, footer
+  // bağlantıları) güvenle kapsayacak şekilde yükseltildi.
+  for (let i = 0; i < 12; i++) {
     await page.keyboard.press('Tab')
-    await expect(link).not.toBeFocused()
+    const insidePanel = await page.evaluate(() => !!document.activeElement?.closest('#main-menu'))
+    expect(insidePanel).toBe(false)
   }
 })

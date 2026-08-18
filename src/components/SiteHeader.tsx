@@ -1,21 +1,31 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState, type KeyboardEvent } from 'react'
 import Link from 'next/link'
 import { NAV_LINKS, CTA_LINK } from '@/lib/navigation'
 import styles from './SiteHeader.module.css'
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
+
+  // WAI-ARIA disclosure deseni: Escape paneli kapatır, odağı tetikleyen düğmeye döndürür.
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === 'Escape' && open) {
+      setOpen(false)
+      menuButtonRef.current?.focus()
+    }
+  }
 
   return (
     <header className={styles.header}>
-      <div className={styles.pill}>
+      <div className={styles.pill} onKeyDown={handleKeyDown}>
         <Link href="/" className={styles.brand}>
           AKIL <span aria-hidden="true">·</span> HUKUK
         </Link>
 
         <button
+          ref={menuButtonRef}
           type="button"
           className={styles.menuButton}
           aria-expanded={open}

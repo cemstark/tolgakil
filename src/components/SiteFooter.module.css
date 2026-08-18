@@ -23,10 +23,6 @@
   line-height: 1.8;
 }
 
-.address a {
-  color: var(--text-ink-muted);
-}
-
 .links {
   display: flex;
   flex-direction: column;

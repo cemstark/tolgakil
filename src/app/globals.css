@@ -100,5 +100,16 @@ a { color: inherit; text-decoration: none; }
 .skipLink:focus { left: 16px; top: 16px; }
 
 /* Atlama hedefi <main>; landmark'ın tamamını çevreleyen dev bir odak kutusu
-   anlamlı değil, programatik odak zaten ekran okuyucu okuma noktasını taşır. */
-main:focus { outline: none; }
+   anlamlı değil, programatik odak zaten ekran okuyucu okuma noktasını taşır.
+   :focus-visible hedeflenir ki global :focus-visible halkasını özgüllükle ezmesin. */
+main:focus-visible { outline: none; }
+
+/* Metin içi bağlantı düz metinden yalnızca renkle değil, alt çizgiyle de ayrılır
+   (WCAG 1.4.1); nav ve CTA bağlantıları kendi görsel biçimini taşıdığı için bunu
+   kullanmaz. */
+.textLink {
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+[data-surface="paper"] .textLink { color: var(--gold-ink); }
