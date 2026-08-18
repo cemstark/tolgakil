@@ -1,0 +1,27 @@
+# bağımlılıklar
+node_modules/
+
+# Next.js çıktıları
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# ortam değişkenleri — sırlar depoya girmez
+.env
+.env.*
+!.env.example
+
+# test çıktıları
+playwright-report/
+test-results/
+.playwright-mcp/
+
+# alt ajan sürüşü ve beyin fırtınası çalışma alanı (geçici)
+.superpowers/
+
+# işletim sistemi / araç artıkları
+*.stackdump
+Thumbs.db
+desktop.ini
+.DS_Store
