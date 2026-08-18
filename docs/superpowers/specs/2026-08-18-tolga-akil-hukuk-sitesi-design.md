@@ -132,7 +132,7 @@ kimlik, Cormorant Garamond).
 | `--paper` | `#efece3` | Araya giren krem bloklar |
 | `--paper-2` | `#f7f5ef` | Krem blok içi kart |
 | `--gold` | `#c9a86a` | Koyu zeminde aksan, CTA dolgusu |
-| `--gold-ink` | `#8a6a2c` | Krem zeminde aksan metni/çizgisi |
+| `--gold-ink` | `#7d5f26` | Krem zeminde aksan metni/çizgisi |
 | `--text-ink` | `#f3f1ea` | Koyu zeminde metin |
 | `--text-ink-muted` | `#aab1bc` | Koyu zeminde ikincil metin |
 | `--text-paper` | `#161d27` | Krem zeminde metin |
@@ -156,8 +156,10 @@ zemindedir.
 ## 8. Erişilebilirlik
 
 Baştan kuruludur, sonradan eklenmez: `<html lang="tr">`; semantik başlık hiyerarşisi;
-tüm renk çiftlerinde en az 4.5:1 kontrast (`--gold`/`--ink` ≈ 8:1, `--gold-ink`/`--paper`
-≈ 4.9:1); 2px `--gold` odak halkası; atlama bağlantısı; harita ve WhatsApp dahil her
+tüm renk çiftlerinde en az 4.5:1 kontrast (`--gold`/`--ink` = 7.5:1, `--gold-ink`/`--paper`
+= 5.0:1 — ilk yazılan `#8a6a2c` ölçümde 4.26:1 çıktığı için `#7d5f26` ile değiştirildi);
+odak halkası 2px ve zemine göre `--focus-ring` üzerinden değişir (koyu zeminde `--gold`,
+`[data-surface="paper"]` altında `--gold-ink`); atlama bağlantısı; harita ve WhatsApp dahil her
 etkileşim klavyeyle erişilebilir; tüm görsellerde `alt` (panelde alt metin alanı zorunlu);
 `prefers-reduced-motion` desteği.
 
