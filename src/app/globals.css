@@ -20,6 +20,22 @@
   --max: 1200px;
   --pad: clamp(1.25rem, 4vw, 2.5rem);
   --section: clamp(3.5rem, 8vw, 6rem);
+
+  /* Odak halkası zemine göre değişir: koyu zeminde altın, krem zeminde koyu altın —
+     düz altın krem üzerinde 1.91:1 ile WCAG 1.4.11'i geçmiyor. */
+  --focus-ring: var(--gold);
+
+  /* Site tek koyu temayla çalışır; tarayıcı kaydırma çubuğu ve form kontrolleri
+     açık işletim sistemi temasında bile koyu çizilsin. */
+  color-scheme: dark;
+}
+
+/* Krem yüzey sözleşmesi: zemin, metin ve odak halkası birlikte devreye girer.
+   Görev 3-5'teki krem bölümler bu özniteliği kullanır. */
+[data-surface="paper"] {
+  background: var(--paper);
+  color: var(--text-paper);
+  --focus-ring: var(--gold-ink);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -31,7 +47,14 @@ body {
   font-size: 17px;
   line-height: 1.8;
   -webkit-font-smoothing: antialiased;
+  /* İçerik kısa olduğunda footer sayfa ortasında asılı kalmasın diye yapışkan düzen. */
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
 }
+
+/* Görev 3'te eklenecek <main>, kalan alanı doldurup footer'ı sayfa altına iter. */
+main { flex: 1; }
 
 h1, h2, h3 {
   font-family: var(--font-display), Georgia, serif;
@@ -51,7 +74,7 @@ h2 { font-size: 30px; }
 a { color: inherit; text-decoration: none; }
 
 :focus-visible {
-  outline: 2px solid var(--gold);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
 }
 
