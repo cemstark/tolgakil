@@ -145,7 +145,8 @@ Gövde 17px/1.8; h1 56px/1.05 masaüstü, 36px mobil; h2 40px; eyebrow 11px, 3px
 büyük harf.
 
 **Geometri:** hap nav ve butonlar `999px`; büyük bloklar `26px`; kartlar `20px`.
-Bölüm ritmi 96px masaüstü / 56px mobil. Kap genişliği 1200px, yan boşluk 24px.
+Bölüm ritmi 96px masaüstü / 56px mobil. Kap genişliği 1200px; yan boşluk akışkan:
+`--pad: clamp(1.25rem, 4vw, 2.5rem)` (20–40px).
 
 **Bileşenler renk değeri yazmaz** — yalnızca token kullanır.
 
@@ -184,7 +185,19 @@ Sayfa başlıkları büro adı ve sayfa konusu ile sınırlıdır.
 Hiçbir hata yutulmaz. Form hataları alan bazında Türkçe gösterilir; sunucu hatasında
 kullanıcıya telefonla ulaşma alternatifi sunulur ve hata sunucuya loglanır. Veritabanı
 erişilemese bile statik üretilmiş sayfalar yayında kalır. 404 ve 500 sayfaları tasarımın
-parçasıdır. Panelde slug çakışması ve eşzamanlı düzenleme kullanıcıya açıkça bildirilir.
+parçasıdır.
+
+**Ölçülmüş kısıt (Next 16.3, üretim derlemesi — deney sonucu, varsayım değil):**
+Hata sınırlarının arayüzü sunucuda çizilmez, hydrate sonrası gelir.
+
+- **Kök layout hatası:** sunucu Next'in `__html id="__next_error__"__` kabuğunu döndürür —
+  Türkçe metin, telefon ve stil yoktur. `global-error.tsx` ancak JavaScript yüklenince görünür.
+- **Sayfa düzeyi hata:** layout sunucuda çizilir; başlık, alt bilgi ve **telefon numarası
+  JavaScript olmadan da HTML'de bulunur**. Yalnız `error.tsx` metni istemci tarafında gelir.
+
+**Bağlayıcı karar:** kök `layout.tsx` içinde **veri çekilmez**. `settings` sorgusu iç içe bir
+layout'a veya sayfaya konur; böylece hata `error.tsx` sınırına düşer ve kullanıcı her hâlükârda
+kabuğu ve telefon numarasını görür. Panelde slug çakışması ve eşzamanlı düzenleme kullanıcıya açıkça bildirilir.
 
 ## 12. Test
 
