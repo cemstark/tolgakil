@@ -1,0 +1,93 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: 16px var(--pad);
+}
+
+.pill {
+  position: relative;
+  max-width: var(--max);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 10px 10px 24px;
+  border-radius: var(--radius-pill);
+  /* Koyu zeminde yarı saydam cam yüzey; renk sabiti değil, --text-ink token'ından türetilir. */
+  background: color-mix(in srgb, var(--text-ink) 7%, transparent);
+  border: 1px solid var(--line-ink);
+  backdrop-filter: blur(12px);
+}
+
+.brand {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 18px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.menuButton {
+  border: 1px solid var(--line-ink);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.nav {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  padding: 16px;
+  border-radius: var(--radius-block);
+  background: var(--ink-2);
+  border: 1px solid var(--line-ink);
+}
+
+/* Panel kapalıyken display:none, klavye Tab sırasına hiç girmez (odak sızıntısı olmaz). */
+.nav[data-open='true'] {
+  display: flex;
+}
+
+.link,
+.cta {
+  padding: 10px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 15px;
+}
+
+.cta {
+  background: var(--gold);
+  color: var(--ink);
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .menuButton {
+    display: none;
+  }
+
+  .nav {
+    display: flex;
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: none;
+    background: none;
+  }
+
+  .cta {
+    padding: 10px 20px;
+  }
+}

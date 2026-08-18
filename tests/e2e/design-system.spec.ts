@@ -33,8 +33,9 @@ test('kök token değerleri spec ile birebir aynı', async ({ page }) => {
     textInkMuted: '#aab1bc',
     textPaper: '#161d27',
     textPaperMuted: '#4b535f',
-    // Chromium özel CSS özelliklerini (custom property) yazıldığı gibi değil,
-    // kendi kanonik renk serileştirmesiyle döner — rgba(...) burada #rrggbbaa olur.
+    // Chromium kayıtsız (unregistered) custom property'yi yazıldığı gibi döndürür;
+    // rgba(...) ifadesinin #rrggbbaa'ya dönüşümünü Next'in derleme hattındaki
+    // lightningcss renk kısaltması yapar — dönüşüm tarayıcıda değil, build'de olur.
     lineInk: '#f3f1ea1f',
     linePaper: '#d5d1c4',
     radiusPill: '999px',

@@ -1,0 +1,41 @@
+'use client'
+
+import { useState } from 'react'
+import Link from 'next/link'
+import { NAV_LINKS, CTA_LINK } from '@/lib/navigation'
+import styles from './SiteHeader.module.css'
+
+export function SiteHeader() {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <header className={styles.header}>
+      <div className={styles.pill}>
+        <Link href="/" className={styles.brand}>
+          AKIL <span aria-hidden="true">·</span> HUKUK
+        </Link>
+
+        <button
+          type="button"
+          className={styles.menuButton}
+          aria-expanded={open}
+          aria-controls="main-menu"
+          onClick={() => setOpen((v) => !v)}
+        >
+          {open ? 'Menüyü kapat' : 'Menüyü aç'}
+        </button>
+
+        <nav id="main-menu" aria-label="Ana gezinme" data-open={open} className={styles.nav}>
+          {NAV_LINKS.map((l) => (
+            <Link key={l.href} href={l.href} className={styles.link}>
+              {l.label}
+            </Link>
+          ))}
+          <Link href={CTA_LINK.href} className={styles.cta}>
+            {CTA_LINK.label}
+          </Link>
+        </nav>
+      </div>
+    </header>
+  )
+}

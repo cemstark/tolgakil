@@ -1,0 +1,40 @@
+.footer {
+  background: var(--ink-2);
+  color: var(--text-ink-muted);
+}
+
+.inner {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: var(--section) var(--pad);
+  display: grid;
+  gap: 32px;
+}
+
+.brand {
+  font-family: var(--font-display), Georgia, serif;
+  color: var(--text-ink);
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+
+.address {
+  font-style: normal;
+  line-height: 1.8;
+}
+
+.address a {
+  color: var(--text-ink-muted);
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (min-width: 768px) {
+  .inner {
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+}
