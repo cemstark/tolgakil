@@ -1,0 +1,66 @@
+.hero {
+  padding: var(--section) var(--pad);
+}
+
+.inner {
+  max-width: var(--max);
+  margin: 0 auto;
+  display: grid;
+  gap: var(--section);
+  align-items: center;
+}
+
+.eyebrow {
+  color: var(--gold);
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.title {
+  margin-bottom: 20px;
+}
+
+.lead {
+  color: var(--text-ink-muted);
+  max-width: 40ch;
+  margin-bottom: 32px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pillFilled,
+.pillOutline {
+  display: inline-flex;
+  align-items: center;
+  padding: 14px 28px;
+  border-radius: var(--radius-pill);
+  font-size: 15px;
+}
+
+.pillFilled {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.pillOutline {
+  border: 1px solid var(--line-ink);
+}
+
+.visual {
+  border-radius: var(--radius-block);
+  background: var(--ink-2);
+  aspect-ratio: 4 / 5;
+}
+
+@media (min-width: 768px) {
+  .inner {
+    grid-template-columns: 1.1fr 1fr;
+  }
+}

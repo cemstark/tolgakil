@@ -70,6 +70,12 @@ test('mobilde Escape paneli kapatır ve odağı menü düğmesine döndürür', 
   const toggle = page.locator('[aria-controls="main-menu"]')
   await toggle.click()
   await expect(page.locator('#main-menu')).toHaveAttribute('data-open', 'true')
+  // Odak panel içine taşınmadan Escape'e basılırsa test hiçbir şey kanıtlamaz: click()
+  // zaten düğmeyi odaklamış olur, toBeFocused() odağın hiç AYRILMADIĞINI da geçirir.
+  // Tab ile odağı gerçekten panele taşıyıp DÖNÜŞÜ kanıtlıyoruz.
+  await page.keyboard.press('Tab')
+  const insidePanel = await page.evaluate(() => !!document.activeElement?.closest('#main-menu'))
+  expect(insidePanel).toBe(true)
   await page.keyboard.press('Escape')
   await expect(page.locator('#main-menu')).toHaveAttribute('data-open', 'false')
   await expect(toggle).toBeFocused()

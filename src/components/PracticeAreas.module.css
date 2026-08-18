@@ -1,0 +1,39 @@
+.section {
+  padding: var(--section) var(--pad);
+}
+
+.inner {
+  max-width: var(--max);
+  margin: 0 auto;
+}
+
+.grid {
+  list-style: none;
+  display: grid;
+  gap: 20px;
+  margin-top: 32px;
+}
+
+.card {
+  display: block;
+  height: 100%;
+  padding: 28px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line-ink);
+  background: color-mix(in srgb, var(--text-ink) 5%, transparent);
+}
+
+.cardTitle {
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+
+.cardSummary {
+  color: var(--text-ink-muted);
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

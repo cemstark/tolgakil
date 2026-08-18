@@ -1,0 +1,10 @@
+.retry {
+  margin-top: 20px;
+  padding: 10px 24px;
+  border: 1px solid var(--line-ink);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
