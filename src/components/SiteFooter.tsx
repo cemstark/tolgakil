@@ -9,7 +9,7 @@ export function SiteFooter() {
     <footer className={styles.footer}>
       <div className={styles.inner}>
         <div>
-          <p className={styles.brand}>Akıl Hukuk Bürosu</p>
+          <p className={styles.brand}>{SITE.name}</p>
           <address className={styles.address}>
             {SITE.address}
             <br />

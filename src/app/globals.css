@@ -115,3 +115,12 @@ main:focus-visible { outline: none; }
   text-underline-offset: 3px;
 }
 [data-surface="paper"] .textLink { color: var(--gold-ink); }
+
+/* Ortak sayfa kabuğu: yedi iç sayfa + 404 + hata sayfası aynı sarmalayıcıyı kullanır.
+   Inline style tekrarını önler; medya sorgusu taşıyamayan inline style'ın aksine burada
+   gerekirse mobile-first bir kırılma noktası eklenebilir. */
+.pageShell {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: var(--section) var(--pad);
+}

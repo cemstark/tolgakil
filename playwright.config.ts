@@ -10,7 +10,9 @@ export default defineConfig({
   // Yerel geliştirmede sunucu zaten açık olabilir; yeniden başlatıp portu çakıştırmayalım.
   // CI'da ise her koşu kendi sunucusunu kurmalı, yabancı bir sunucuya bağlanmamalı.
   webServer: {
-    command: 'npm run dev',
+    // CI'da dev sunucusu değil üretim derlemesi çalışır — lightningcss gibi yalnızca
+    // build sırasında devreye giren dönüşümler de teste tabi olsun diye.
+    command: process.env.CI ? 'npm run build && npm run start' : 'npm run dev',
     port: 3000,
     reuseExistingServer: !process.env.CI,
   },

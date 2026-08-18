@@ -11,6 +11,14 @@ test('ana gezinme bağlantıları var', async ({ page }, testInfo) => {
   }
 })
 
+test('etkin sayfanın gezinme bağlantısı aria-current=page taşır', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'masaustu', 'mobilde panel kapalı başlar')
+  await page.goto('/kadro')
+  const nav = page.getByRole('navigation', { name: 'Ana gezinme' })
+  await expect(nav.getByRole('link', { name: 'Kadro' })).toHaveAttribute('aria-current', 'page')
+  await expect(nav.getByRole('link', { name: 'Hakkımızda' })).not.toHaveAttribute('aria-current', 'page')
+})
+
 test('atlama bağlantısı klavyeyle çalışır', async ({ page }) => {
   await page.goto('/')
   await page.keyboard.press('Tab')

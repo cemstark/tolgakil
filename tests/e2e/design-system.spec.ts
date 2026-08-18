@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import AxeBuilder from '@axe-core/playwright'
 
 test('kök token değerleri spec ile birebir aynı', async ({ page }) => {
   await page.goto('/')
@@ -35,8 +36,9 @@ test('kök token değerleri spec ile birebir aynı', async ({ page }) => {
     textPaperMuted: '#4b535f',
     // Chromium kayıtsız (unregistered) custom property'yi yazıldığı gibi döndürür;
     // rgba(...) ifadesinin #rrggbbaa'ya dönüşümünü Next'in CSS işleme hattı yapar
-    // (lightningcss). Bu test npm run dev ile çalışıyor, yani dönüşüm üretim
-    // derlemesine özgü değil — dev sunucusunda da devrede.
+    // (lightningcss). Dönüşüm dev sunucusuna özgü değil: playwright.config.ts artık
+    // CI'da üretim derlemesi üzerinden çalışıyor (`npm run build && npm run start`) ve
+    // bu test orada da aynı değeri doğruladı (CI=1 npm run test:e2e ile elle koşuldu).
     lineInk: '#f3f1ea1f',
     linePaper: '#d5d1c4',
     radiusPill: '999px',
@@ -62,4 +64,37 @@ test('gövde koyu zemin ve Outfit ile çizilir, sayfa dili Türkçe', async ({ p
   })
   expect(body.bg).toBe('rgb(22, 29, 39)')
   expect(body.font).toContain('Outfit')
+})
+
+// --font-display bağlanması bozulursa veya latin-ext eksik kalırsa başlıklar sessizce
+// Georgia'ya (yedek) düşer; hiçbir mevcut test bunu yakalamıyordu.
+test('h1 Cormorant Garamond ile çizilir', async ({ page }) => {
+  await page.goto('/')
+  const font = await page
+    .getByRole('heading', { level: 1 })
+    .evaluate((el) => getComputedStyle(el).fontFamily)
+  expect(font).toContain('Cormorant')
+})
+
+test('h2 masaüstünde 40px çizilir', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'masaustu', 'yalnızca masaüstü projede')
+  await page.goto('/')
+  await expect(page.getByRole('heading', { level: 2 }).first()).toHaveCSS('font-size', '40px')
+})
+
+test('h2 mobilde 30px çizilir', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobil', 'yalnızca mobil projede')
+  await page.goto('/')
+  await expect(page.getByRole('heading', { level: 2 }).first()).toHaveCSS('font-size', '30px')
+})
+
+// Mevcut axe taramalarının tamamı panel kapalıyken çalışıyordu; açık panelin DOM'a
+// eklediği düğme/bağlantılar ayrıca taranmamıştı.
+test('mobil menü açıkken erişilebilirlik ihlali yok', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobil', 'masaüstünde panel zaten her zaman açık')
+  await page.goto('/')
+  await page.locator('[aria-controls="main-menu"]').click()
+  await expect(page.locator('#main-menu')).toHaveAttribute('data-open', 'true')
+  const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
+  expect(result.violations).toEqual([])
 })

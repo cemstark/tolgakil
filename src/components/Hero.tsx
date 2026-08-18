@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { CTA_LINK } from '@/lib/navigation'
+import { SITE } from '@/content/site'
 import styles from './Hero.module.css'
 
 // Statik tanıtım metni; Plan 2'ye kadar `settings` tablosu yok, sabit içerik yeterli.
@@ -8,7 +9,7 @@ export function Hero() {
     <section className={styles.hero}>
       <div className={styles.inner}>
         <div className={styles.copy}>
-          <p className={styles.eyebrow}>Akıl Hukuk Bürosu</p>
+          <p className={styles.eyebrow}>{SITE.name}</p>
           <h1 className={styles.title}>
             Hukuki süreçlerde
             <br />

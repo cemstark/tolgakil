@@ -78,6 +78,6 @@ test('h1 mobilde 36px çizilir', async ({ page }, testInfo) => {
 
 test('erişilebilirlik ihlali yok', async ({ page }) => {
   await page.goto('/')
-  const sonuc = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
-  expect(sonuc.violations).toEqual([])
+  const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
+  expect(result.violations).toEqual([])
 })

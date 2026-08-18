@@ -1,30 +1,31 @@
-import type { Metadata } from "next";
-import { Cormorant_Garamond, Outfit } from "next/font/google";
-import { SiteHeader } from "@/components/SiteHeader";
-import { SiteFooter } from "@/components/SiteFooter";
-import "./globals.css";
+import type { Metadata } from 'next'
+import { Cormorant_Garamond, Outfit } from 'next/font/google'
+import { SiteHeader } from '@/components/SiteHeader'
+import { SiteFooter } from '@/components/SiteFooter'
+import { SITE } from '@/content/site'
+import './globals.css'
 
 // latin-ext olmadan ğ ş ı İ ç ö ü harfleri yedek yazı tipine düşer.
 const display = Cormorant_Garamond({
-  subsets: ["latin", "latin-ext"],
-  weight: ["300", "400"],
-  variable: "--font-display",
-  display: "swap",
-});
+  subsets: ['latin', 'latin-ext'],
+  weight: ['300', '400'],
+  variable: '--font-display',
+  display: 'swap',
+})
 
 const body = Outfit({
-  subsets: ["latin", "latin-ext"],
-  weight: ["300", "400", "500", "600"],
-  variable: "--font-body",
-  display: "swap",
-});
+  subsets: ['latin', 'latin-ext'],
+  weight: ['300', '400', '500', '600'],
+  variable: '--font-body',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: "Akıl Hukuk Bürosu",
-  description: "Aile, iş ve ticaret hukuku alanlarında dava takibi ve danışmanlık.",
-};
+  title: { default: SITE.name, template: `%s | ${SITE.name}` },
+  description: 'Aile, iş ve ticaret hukuku alanlarında dava takibi ve danışmanlık.',
+}
 
-type RootLayoutProps = { children: React.ReactNode };
+type RootLayoutProps = { children: React.ReactNode }
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
@@ -40,5 +41,5 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <SiteFooter />
       </body>
     </html>
-  );
+  )
 }
