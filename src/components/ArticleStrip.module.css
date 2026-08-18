@@ -1,6 +1,15 @@
+/* Dış kapsayıcı: kardeş bölümlerle aynı desen (padding: var(--section) var(--pad)),
+   arka planı/rengi yok — dikey ritim yalnızca bir kez sayılır. */
 .section {
+  padding: var(--section) var(--pad);
+}
+
+/* Krem blok: genişlik var(--max) ile sınırlanır ve ortalanır; kendi iç boşluğu ve
+   yuvarlağı burada — böylece kenar boşluğu dış .section'ın padding'iyle çakışıp
+   katlanmaz (denetim turu 1: üç kat var(--section) boşluğa yol açıyordu). */
+.inner {
   max-width: var(--max);
-  margin: var(--section) auto;
+  margin: 0 auto;
   padding: var(--section) var(--pad);
   border-radius: var(--radius-block);
 }
@@ -11,10 +20,6 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-}
-
-.viewAll {
-  font-size: 24px;
 }
 
 .list {

@@ -28,7 +28,7 @@ test('kök token değerleri spec ile birebir aynı', async ({ page }) => {
     paper: '#efece3',
     paper2: '#f7f5ef',
     gold: '#c9a86a',
-    goldInk: '#8a6a2c',
+    goldInk: '#7d5f26',
     textInk: '#f3f1ea',
     textInkMuted: '#aab1bc',
     textPaper: '#161d27',

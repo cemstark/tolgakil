@@ -4,8 +4,10 @@
   --paper: #efece3;
   --paper-2: #f7f5ef;
   --gold: #c9a86a;
-  /* Düz altın krem zeminde 4.5:1 kontrastı geçmiyor; açık zeminde bu koyu karşılığı kullanılır. */
-  --gold-ink: #8a6a2c;
+  /* Düz altın krem zeminde 4.5:1 kontrastı geçmiyor; açık zeminde bu koyu karşılığı kullanılır.
+     #8a6a2c --paper üzerinde yalnızca 4.25:1 veriyordu (AA'nın altında, denetim turu 1'de
+     bulundu); #7d5f26 aynı zeminde 5.0:1 veriyor. */
+  --gold-ink: #7d5f26;
   --text-ink: #f3f1ea;
   --text-ink-muted: #aab1bc;
   --text-paper: #161d27;

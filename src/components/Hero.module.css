@@ -10,6 +10,12 @@
   align-items: center;
 }
 
+/* Grid içindeki öğe kendi intrinsic minimum genişliğiyle taşabilir (özellikle uzun
+   başlık satırları); min-width: 0 sütunu grid hücresinin gerçek genişliğine sıkıştırır. */
+.copy {
+  min-width: 0;
+}
+
 .eyebrow {
   color: var(--gold);
   font-size: 11px;
