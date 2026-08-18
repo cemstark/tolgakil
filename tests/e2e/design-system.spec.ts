@@ -66,8 +66,10 @@ test('gövde koyu zemin ve Outfit ile çizilir, sayfa dili Türkçe', async ({ p
   expect(body.font).toContain('Outfit')
 })
 
-// --font-display bağlanması bozulursa veya latin-ext eksik kalırsa başlıklar sessizce
-// Georgia'ya (yedek) düşer; hiçbir mevcut test bunu yakalamıyordu.
+// Bildirilen font-family yığınında Cormorant'ın olduğunu doğrular — --font-display
+// değişkeninin h1'e bağlandığının kanıtı budur. Tarayıcının hangi glifi FİİLEN çizdiğini
+// (ör. latin-ext eksik kalıp bir harf yedek yazı tipine düşse bile) doğrulamaz; computed
+// fontFamily bildirilen yığını listeler, gerçek glif seçimini değil.
 test('h1 Cormorant Garamond ile çizilir', async ({ page }) => {
   await page.goto('/')
   const font = await page

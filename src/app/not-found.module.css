@@ -1,0 +1,6 @@
+/* * { margin: 0 } yüzünden paragrafla bağlantı arasında boşluk kalmaz; error.tsx'teki
+   .retry'nin margin-top'una karşılık gelen tek satırlık düzeltme. */
+.link {
+  display: inline-block;
+  margin-top: 20px;
+}
