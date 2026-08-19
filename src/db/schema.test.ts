@@ -1,13 +1,14 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { eq, sql } from 'drizzle-orm'
 import { db, closeDb } from '@/db/client'
-import { articles, categories, lawyers } from '@/db/schema'
+import { articles, categories, lawyers, messages } from '@/db/schema'
 
 // Testler tek bir gerçek şemayı paylaşıyor; her test kendi zeminini sıfırdan kurar.
 async function temizle() {
   await db.delete(articles)
   await db.delete(lawyers)
   await db.delete(categories)
+  await db.delete(messages)
 }
 
 beforeEach(temizle)
@@ -75,14 +76,28 @@ describe('şema', () => {
 
   it('bilinmeyen durum değeri kabul edilmez', async () => {
     const categoryId = await kategoriEkle('ticaret-hukuku')
-    await expect(
-      db.insert(articles).values({
-        slug: 'yanlis-durum', title: 'Yanlış', excerpt: 'özet', content: '<p>x</p>',
-        categoryId,
-        // sql_mode STRICT_TRANS_TABLES açık; ENUM dışı değer hata verir.
-        status: 'yayinda' as never,
-      }),
-    ).rejects.toThrow()
+    // sql_mode STRICT_TRANS_TABLES açık; ENUM dışı değer hata verir.
+    expect(
+      await hataKodu(
+        db.insert(articles).values({
+          slug: 'yanlis-durum', title: 'Yanlış', excerpt: 'özet', content: '<p>x</p>',
+          categoryId,
+          status: 'yayinda' as never,
+        }),
+        'ENUM dışı bir durum değeri yazmak',
+      ),
+    ).toBe('WARN_DATA_TRUNCATED')
+  })
+
+  it('zaman damgasını sunucu dilimine kaymadan saklar', async () => {
+    const oncesi = Date.now()
+    await db.insert(messages).values({
+      name: 'Deneme Kişi', email: 'deneme@ornek.test', subject: 'Konu', body: 'Gövde',
+    })
+    const [row] = await db.select().from(messages).where(eq(messages.email, 'deneme@ornek.test'))
+    // Havuz oturumu UTC'ye sabitlemezse sunucunun SYSTEM dilimi (+03:00) yüzünden fark
+    // 180 dakikaya fırlar; drizzle ham dizeyi koşulsuz UTC sayıyor.
+    expect(Math.abs(row.createdAt.getTime() - oncesi)).toBeLessThan(60_000)
   })
 
   it('FULLTEXT indeksi makale gövdesinde önek araması yapar', async () => {

@@ -14,7 +14,7 @@ CREATE TABLE `articles` (
 	`meta_description` varchar(400),
 	CONSTRAINT `articles_id` PRIMARY KEY(`id`),
 	CONSTRAINT `articles_slug_unique` UNIQUE(`slug`)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 --> statement-breakpoint
 CREATE TABLE `categories` (
 	`id` int AUTO_INCREMENT NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE `categories` (
 	`description` varchar(400),
 	CONSTRAINT `categories_id` PRIMARY KEY(`id`),
 	CONSTRAINT `categories_slug_unique` UNIQUE(`slug`)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 --> statement-breakpoint
 CREATE TABLE `lawyers` (
 	`id` int AUTO_INCREMENT NOT NULL,
@@ -43,7 +43,7 @@ CREATE TABLE `lawyers` (
 	`is_published` boolean NOT NULL DEFAULT false,
 	CONSTRAINT `lawyers_id` PRIMARY KEY(`id`),
 	CONSTRAINT `lawyers_slug_unique` UNIQUE(`slug`)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 --> statement-breakpoint
 CREATE TABLE `media` (
 	`id` int AUTO_INCREMENT NOT NULL,
@@ -57,7 +57,7 @@ CREATE TABLE `media` (
 	`created_at` timestamp NOT NULL DEFAULT (now()),
 	CONSTRAINT `media_id` PRIMARY KEY(`id`),
 	CONSTRAINT `media_path_unique` UNIQUE(`path`)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 --> statement-breakpoint
 CREATE TABLE `messages` (
 	`id` int AUTO_INCREMENT NOT NULL,
@@ -72,7 +72,7 @@ CREATE TABLE `messages` (
 	`is_read` boolean NOT NULL DEFAULT false,
 	`created_at` timestamp NOT NULL DEFAULT (now()),
 	CONSTRAINT `messages_id` PRIMARY KEY(`id`)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 --> statement-breakpoint
 CREATE TABLE `practice_areas` (
 	`id` int AUTO_INCREMENT NOT NULL,
@@ -84,7 +84,7 @@ CREATE TABLE `practice_areas` (
 	`is_published` boolean NOT NULL DEFAULT false,
 	CONSTRAINT `practice_areas_id` PRIMARY KEY(`id`),
 	CONSTRAINT `practice_areas_slug_unique` UNIQUE(`slug`)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 --> statement-breakpoint
 CREATE TABLE `settings` (
 	`id` int NOT NULL,
@@ -99,7 +99,7 @@ CREATE TABLE `settings` (
 	`social_links` varchar(500),
 	`footer_text` varchar(500),
 	CONSTRAINT `settings_id` PRIMARY KEY(`id`)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 --> statement-breakpoint
 CREATE TABLE `users` (
 	`id` int AUTO_INCREMENT NOT NULL,
@@ -112,7 +112,7 @@ CREATE TABLE `users` (
 	`last_login_at` timestamp,
 	CONSTRAINT `users_id` PRIMARY KEY(`id`),
 	CONSTRAINT `users_email_unique` UNIQUE(`email`)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 --> statement-breakpoint
 ALTER TABLE `articles` ADD CONSTRAINT `articles_cover_media_id_media_id_fk` FOREIGN KEY (`cover_media_id`) REFERENCES `media`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `articles` ADD CONSTRAINT `articles_author_id_lawyers_id_fk` FOREIGN KEY (`author_id`) REFERENCES `lawyers`(`id`) ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
