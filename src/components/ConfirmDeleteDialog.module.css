@@ -1,0 +1,82 @@
+.trigger {
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  padding: 8px 18px;
+}
+
+/* Ölçüm Görev 3'ten: #f0a6a0 --ink-2 (#1f2732) zemininde 7.4:1, metin için gereken
+   4.5:1'in üstünde. Kip pencere zemini de --surface-raised, yani aynı ölçüm geçerli. */
+.dialog {
+  --danger: #f0a6a0;
+
+  color: var(--text);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  max-width: 460px;
+  width: calc(100vw - 2 * var(--pad));
+}
+
+.dialog::backdrop {
+  background: rgb(0 0 0 / .6);
+}
+
+.heading {
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.body {
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.error {
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-card);
+  padding: 12px 16px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.cancel,
+.confirm {
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+  padding: 12px 24px;
+}
+
+.cancel {
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--line);
+}
+
+/* Yıkıcı eylem dolu zeminle ayrışıyor; metin koyu zemin üzerinde okunuyor. */
+.confirm {
+  color: var(--ink);
+  background: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.confirm:disabled {
+  background: var(--text-muted);
+  border-color: var(--text-muted);
+  cursor: not-allowed;
+}

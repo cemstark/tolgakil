@@ -37,21 +37,35 @@ test('editor panel gezinmesinde yalnız makale ve medya görür', async ({ page 
   }
 })
 
-// Bölüm sayfaları Görev 5-7'de geliyor; eşleşmeyen adres kök 404'üne düştüğü için (segment
-// içi not-found yalnız notFound() çağrılarını karşılar) o bağlantılara gidip aria-current
-// ölçülemiyor. Ölçülebilen tek etkin bölüm gösterge sayfası — sabit `true` mutasyonunu
-// yakalayan iddia ikinci satır. Önek eşleşmesi yükleminin kendisi navigation.test.ts'te.
-//
-// BİLİNEN KAPSAM BOŞLUĞU (Görev 5'te kapanacak): buradaki olumlu iddia marka bağlantısını
-// ölçüyor, o da PANEL_LINKS döngüsünden değil AYRI bir kod yolundan geliyor. Yani
-// PanelNav.tsx'teki `aria-current={isCurrent(l.href) ...}` bağlanışı silinse bu dosya yeşil
-// kalır. İlk gerçek panel bölümü (/panel/makaleler) gelir gelmez o bölüme gidip
-// `toHaveAttribute('aria-current', 'page')` iddiası buraya EKLENMELİ.
+// Gösterge sayfasındaki olumlu iddia marka bağlantısını ölçüyor, o da PANEL_LINKS
+// döngüsünden değil AYRI bir kod yolundan geliyor. Önek eşleşmesi yükleminin kendisi
+// navigation.test.ts'te; buradaki iş bağlanışın gerçekten kurulduğunu göstermek.
 test('bulunulan panel bölümü aria-current ile işaretlenir', async ({ page }) => {
   await girisYap(page, ADMIN)
   const nav = page.getByRole('navigation', { name: 'Panel gezinmesi' })
   await expect(nav.getByRole('link', { name: 'Panel' })).toHaveAttribute('aria-current', 'page')
   await expect(nav.getByRole('link', { name: 'Makaleler' })).not.toHaveAttribute('aria-current', 'page')
+})
+
+// Görev 4'ten devreden kapsam boşluğu burada kapanıyor: PANEL_LINKS döngüsündeki
+// `aria-current={isCurrent(l.href) ...}` bağlanışı artık gerçek bir bölümle ölçülüyor.
+// O bağlanış silinirse bu test kırılır, önceki test kırılmazdı.
+test('makaleler bölümünde yalnız Makaleler bağlantısı aria-current taşır', async ({ page }) => {
+  await girisYap(page, ADMIN)
+  await page.goto('/panel/makaleler')
+  const nav = page.getByRole('navigation', { name: 'Panel gezinmesi' })
+  await expect(nav.getByRole('link', { name: 'Makaleler' })).toHaveAttribute('aria-current', 'page')
+  await expect(nav.getByRole('link', { name: 'Medya' })).not.toHaveAttribute('aria-current', 'page')
+  // Marka bağlantısı tam eşleşme kullanıyor; /panel öneki her rotada etkin görünmemeli.
+  await expect(nav.getByRole('link', { name: 'Panel' })).not.toHaveAttribute('aria-current', 'page')
+})
+
+// Alt rota da üst bölümü işaretli tutar (isCurrentPath önek yüklemi).
+test('yeni makale sayfasında Makaleler bölümü işaretli kalır', async ({ page }) => {
+  await girisYap(page, ADMIN)
+  await page.goto('/panel/makaleler/yeni')
+  const nav = page.getByRole('navigation', { name: 'Panel gezinmesi' })
+  await expect(nav.getByRole('link', { name: 'Makaleler' })).toHaveAttribute('aria-current', 'page')
 })
 
 test('panel göstergesi sayı kartlarını gösterir', async ({ page }) => {

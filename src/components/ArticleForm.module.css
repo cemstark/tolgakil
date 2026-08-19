@@ -1,0 +1,124 @@
+/* Panel formlarının hata ve kenarlık renkleri. Ölçüm Görev 3'te yapıldı ve burada aynen
+   geçerli: #f0a6a0, --ink-2 (#1f2732) zemininde 7.4:1; #6b7688 kenarlık --ink zemininde
+   3.7:1 — WCAG 1.4.11'in kullanıcı arayüzü bileşenleri için istediği 3:1'in üstünde.
+   Değerler burada tanımlanıyor ki iç bileşenler (PublishChecklist) miras alsın. */
+.form {
+  --danger: #f0a6a0;
+  --field-border: #6b7688;
+
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 28px;
+  max-width: 760px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* Izgara hücresinde taşmayı engeller: select ve input kendi içerik genişliğini dayatmasın. */
+  min-width: 0;
+}
+
+.row {
+  display: grid;
+  gap: 24px;
+}
+
+@media (min-width: 720px) {
+  .row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.label {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.input,
+.textarea,
+.select {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-card);
+  padding: 12px 16px;
+  width: 100%;
+}
+
+.textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.input[aria-invalid='true'],
+.textarea[aria-invalid='true'],
+.select[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.fieldError {
+  color: var(--danger);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.notice {
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-card);
+  padding: 12px 16px;
+  line-height: 1.5;
+}
+
+.alert {
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-card);
+  padding: 12px 16px;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.primary,
+.secondary {
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+  padding: 14px 28px;
+}
+
+.primary {
+  background: var(--accent);
+  color: var(--ink);
+  border: 1px solid var(--accent);
+}
+
+.secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--field-border);
+}
+
+/* Devre dışı düğmede saydamlık yerine ayrı zemin: saydamlık metni okunmaz hâle getirirdi. */
+.primary:disabled,
+.secondary:disabled {
+  background: var(--text-muted);
+  color: var(--ink);
+  border-color: var(--text-muted);
+  cursor: not-allowed;
+}

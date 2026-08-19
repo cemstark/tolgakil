@@ -1,0 +1,68 @@
+.newLink {
+  display: inline-block;
+  font-weight: 500;
+  background: var(--accent);
+  color: var(--ink);
+  border-radius: var(--radius-pill);
+  padding: 12px 24px;
+}
+
+.empty {
+  color: var(--text-muted);
+}
+
+/* Beş sütunlu tablo dar ekrana sığmıyor; sarmalayıcı yatay kaydırılabilir ve klavyeyle
+   odaklanabilir (WCAG 2.1.1 — fare olmadan da kaydırılabilmeli). */
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+  /* Kaydırma gerekiyorsa sütunlar ezilmesin. */
+  min-width: 720px;
+}
+
+.caption {
+  text-align: left;
+  color: var(--text-muted);
+  font-size: 15px;
+  padding: 14px 18px;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 14px 18px;
+  border-top: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.table thead th {
+  border-top: 0;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+.titleCell {
+  font-weight: 500;
+}
+
+.titleLink {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Durum yalnız renkle taşınmıyor; metnin kendisi "Yayında"/"Taslak" yazıyor. */
+.published {
+  color: var(--accent);
+}
+
+.draft {
+  color: var(--text-muted);
+}
