@@ -15,6 +15,9 @@
   /* Panel tablo ve formları geniş; genel sitenin var(--max) ölçüsünden daha ferah. */
   max-width: 1100px;
   width: 100%;
+  /* max-width'i kalan alanda ortalar. Gezinmenin çizilmediği giriş sayfasında bu olmadan
+     kart geniş ekranda sola yapışıyordu. */
+  margin-inline: auto;
 }
 
 @media (min-width: 900px) {
@@ -23,8 +26,9 @@
   }
 
   /* Genişlik burada duruyor, PanelNav'da değil: yan sütun ölçüsü düzenin kararı.
-     Flex satırında sabit sütun; gezinme yokken (giriş sayfası) içerik tam genişlikte
-     kalır — grid şablonu kullanılsaydı boş bir 260px sütun bırakırdı. */
+     Flex satırında sabit sütun; gezinme yokken (giriş sayfası) içerik satırdaki tek öğe
+     olur ve .content'in margin-inline: auto'su onu ortalar — grid şablonu kullanılsaydı
+     o durumda bile boş bir 260px sütun ayrılırdı. */
   .layout > nav {
     flex: 0 0 260px;
   }

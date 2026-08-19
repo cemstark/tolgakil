@@ -13,7 +13,7 @@ export function TeamStrip({ lawyers }: TeamStripProps) {
         <ul className={styles.grid}>
           {lawyers.map((lawyer) => (
             <li key={lawyer.slug}>
-              <Link href={`/kadro/${lawyer.slug}`} className={styles.card}>
+              <Link href={`/kadro/${lawyer.slug}`} className={`card ${styles.cardLayout}`}>
                 <h3 className={styles.name}>{lawyer.name}</h3>
                 <p className={styles.title}>{lawyer.title}</p>
               </Link>

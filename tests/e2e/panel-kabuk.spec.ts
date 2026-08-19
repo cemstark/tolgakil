@@ -6,6 +6,8 @@ test('panelde genel site başlığı ve alt bilgisi görünmez', async ({ page }
   await girisYap(page, ADMIN)
   await expect(page.getByRole('navigation', { name: 'Ana gezinme' })).toHaveCount(0)
   await expect(page.getByRole('navigation', { name: 'Alt bilgi gezinmesi' })).toHaveCount(0)
+  // SiteFooter'ın tamamı: "Yasal" gezinmesi olmayan bir sızıntıyı da yakalar.
+  await expect(page.getByRole('contentinfo')).toHaveCount(0)
   await expect(page.getByRole('navigation', { name: 'Panel gezinmesi' })).toBeVisible()
 })
 
@@ -39,6 +41,12 @@ test('editor panel gezinmesinde yalnız makale ve medya görür', async ({ page 
 // içi not-found yalnız notFound() çağrılarını karşılar) o bağlantılara gidip aria-current
 // ölçülemiyor. Ölçülebilen tek etkin bölüm gösterge sayfası — sabit `true` mutasyonunu
 // yakalayan iddia ikinci satır. Önek eşleşmesi yükleminin kendisi navigation.test.ts'te.
+//
+// BİLİNEN KAPSAM BOŞLUĞU (Görev 5'te kapanacak): buradaki olumlu iddia marka bağlantısını
+// ölçüyor, o da PANEL_LINKS döngüsünden değil AYRI bir kod yolundan geliyor. Yani
+// PanelNav.tsx'teki `aria-current={isCurrent(l.href) ...}` bağlanışı silinse bu dosya yeşil
+// kalır. İlk gerçek panel bölümü (/panel/makaleler) gelir gelmez o bölüme gidip
+// `toHaveAttribute('aria-current', 'page')` iddiası buraya EKLENMELİ.
 test('bulunulan panel bölümü aria-current ile işaretlenir', async ({ page }) => {
   await girisYap(page, ADMIN)
   const nav = page.getByRole('navigation', { name: 'Panel gezinmesi' })

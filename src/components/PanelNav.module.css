@@ -69,6 +69,11 @@
     height: 100dvh;
     position: sticky;
     top: 0;
+    /* Yan sütun görünen alana sabitlendiği için taşan içerik sayfa kaydırmasıyla
+       ULAŞILAMAZ olurdu (WCAG 1.4.4: %200 yakınlaştırmada 1920×1080 → 960×540 etkin
+       alan, medya sorgusu hâlâ devrede ve sekiz bağlantı + hesap bloğu sığmıyor).
+       Kendi kaydırma bağlamı bunu çözüyor. */
+    overflow-y: auto;
     border-bottom: none;
     border-right: 1px solid var(--line);
   }

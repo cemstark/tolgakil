@@ -14,13 +14,11 @@
   margin-top: 32px;
 }
 
-.card {
+/* Yüzey, kenarlık, yuvarlak ve iç boşluk ortak `.card` sınıfından geliyor; burada yalnız
+   ızgara hücresini dolduran yerleşim kalıyor (PracticeAreas ile aynı desen). */
+.cardLayout {
   display: block;
   height: 100%;
-  padding: 28px;
-  border-radius: var(--radius-card);
-  border: 1px solid var(--line-ink);
-  background: color-mix(in srgb, var(--text-ink) 5%, transparent);
 }
 
 .name {
@@ -29,7 +27,7 @@
 }
 
 .title {
-  color: var(--text-ink-muted);
+  color: var(--text-muted);
 }
 
 @media (min-width: 768px) {

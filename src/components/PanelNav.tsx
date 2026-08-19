@@ -32,6 +32,8 @@ export function PanelNav({ role, userName }: PanelNavProps) {
 
   return (
     <nav aria-label="Panel gezinmesi" className={styles.nav}>
+      {/* Tam eşleşme, isCurrentPath değil: /panel her panel rotasının öneki, önek eşleşmesi
+          marka bağlantısını sayfaların hepsinde etkin gösterirdi. */}
       <Link href="/panel" className={styles.brand} aria-current={pathname === '/panel' ? 'page' : undefined}>
         Panel
       </Link>
