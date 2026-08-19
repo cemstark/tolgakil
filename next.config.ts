@@ -3,6 +3,8 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: { formats: ['image/avif', 'image/webp'] },
+  // argon2 ve sharp yerel (native) ikili taşır; sunucu paketine gömülemez.
+  serverExternalPackages: ['argon2', 'sharp'],
   async headers() {
     return [
       {

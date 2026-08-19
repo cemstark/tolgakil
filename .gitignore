@@ -17,6 +17,10 @@ playwright-report/
 test-results/
 .playwright-mcp/
 
+# panelden yüklenen görseller (yerel geliştirme); üretimde dağıtım kökünün DIŞINDA olur
+.uploads/
+.uploads-test/
+
 # alt ajan sürüşü ve beyin fırtınası çalışma alanı (geçici)
 .superpowers/
 
