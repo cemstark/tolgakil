@@ -1,0 +1,18 @@
+.shell {
+  max-width: 460px;
+  margin: 0 auto;
+  padding: var(--section) var(--pad);
+}
+
+.card {
+  background: var(--ink-2);
+  border: 1px solid var(--line-ink);
+  border-radius: var(--radius-block);
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+}
+
+.intro {
+  color: var(--text-ink-muted);
+  font-size: 16px;
+  margin-top: 12px;
+}

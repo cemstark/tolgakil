@@ -1,0 +1,11 @@
+.signOut {
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-ink);
+  border: 1px solid var(--text-ink-muted);
+  border-radius: var(--radius-pill);
+  padding: 10px 22px;
+  margin-top: 24px;
+}
