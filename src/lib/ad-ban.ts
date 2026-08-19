@@ -23,21 +23,29 @@ export function findBannedPhrases(text: string): BannedMatch[] {
   // toLocaleLowerCase('tr') Türk alfabesinde uzunluğu korur (İ→i, I→ı); düz toLowerCase
   // 'İ' harfini iki karaktere açar ve bulunan konumu özgün metinden kaydırır.
   const normalized = text.toLocaleLowerCase('tr')
-  const matches: BannedMatch[] = []
+  // Aynı konumda birden çok kalem eşleşebilir ("Ücretsiz" hem 'ücretsiz' hem 'ücret'
+  // kalemini tetikler); yazara aynı yeri iki kez göstermemek için konum başına en uzun
+  // ifade tutuluyor — kısa olan zaten uzununun içinde.
+  const bestAtIndex = new Map<number, BannedMatch>()
 
   for (const phrase of BANNED_PHRASES) {
     let from = 0
     for (;;) {
       const index = normalized.indexOf(phrase, from)
       if (index === -1) break
-      matches.push({ phrase, index, context: buildContext(text, index, phrase.length) })
+      const current = bestAtIndex.get(index)
+      if (!current || phrase.length > current.phrase.length) {
+        bestAtIndex.set(index, { phrase, index, context: buildContext(text, index, phrase.length) })
+      }
       from = index + phrase.length
     }
   }
 
-  return matches.sort((a, b) => a.index - b.index)
+  return [...bestAtIndex.values()].sort((a, b) => a.index - b.index)
 }
 
 export function formatBannedMatch(match: BannedMatch): string {
-  return `“${match.phrase}” (${match.index}. karakter): ${match.context}`
+  // index 0 tabanlı; kullanıcıya 1 tabanlı gösteriliyor ki metin düzenleyicideki konumla
+  // örtüşsün. BannedMatch.index ham hâliyle kalıyor — dilimleme onu kullanıyor.
+  return `“${match.phrase}” (${match.index + 1}. karakter): ${match.context}`
 }

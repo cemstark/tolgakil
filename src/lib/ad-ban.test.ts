@@ -29,17 +29,29 @@ describe('findBannedPhrases', () => {
     expect(bulgular.map((b) => b.index)).toEqual([...bulgular.map((b) => b.index)].sort((a, b) => a - b))
   })
 
+  // "Ücretsiz" hem 'ücretsiz' hem 'ücret' kalemini aynı konumda tetikliyor; yazara aynı yeri
+  // iki kez göstermek yerine daha uzun ifade tutulur.
+  it('aynı konumda örtüşen ifadelerden uzun olanı tutar', () => {
+    const bulgular = findBannedPhrases('Ücretsiz ön görüşme')
+    expect(bulgular.filter((b) => b.index === 0)).toHaveLength(1)
+    expect(bulgular[0].phrase).toBe('ücretsiz')
+  })
+
   it('temiz metinde boş dizi döner', () => {
     expect(findBannedPhrases('İşe iade davasında bir aylık süre koşulu.')).toEqual([])
   })
 })
 
 describe('formatBannedMatch', () => {
-  it('ifadeyi, konumu ve bağlamı tek satırda gösterir', () => {
+  // Konum kullanıcıya 1 tabanlı gösterilir: metin düzenleyiciler ilk karakteri 1 sayar,
+  // 0 tabanlı sayı yazarın yanlış yere bakmasına yol açardı. BannedMatch.index ham kalır.
+  it('ifadeyi, 1 tabanlı konumu ve bağlamı tek satırda gösterir', () => {
     const metin = 'Bu konuda uzman kadromuzla çalışıyoruz.'
-    const satir = formatBannedMatch(findBannedPhrases(metin)[0])
+    const [bulgu] = findBannedPhrases(metin)
+    expect(bulgu.index).toBe(10)
+    const satir = formatBannedMatch(bulgu)
     expect(satir).toContain('uzman')
-    expect(satir).toContain('10. karakter')
+    expect(satir).toContain('11. karakter')
     expect(satir).toContain('kadromuzla')
   })
 })

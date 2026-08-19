@@ -1,26 +1,53 @@
 import { z } from 'zod'
 import { slugify } from '@/lib/slug'
 
+// Özel mesaj verilmeyen kuralların (eksik alan, yanlış tip, bilinmeyen enum) varsayılan
+// metinleri İngilizce üretiliyordu ve doğrudan kullanıcıya gidiyordu; global kısıt hata
+// mesajlarının Türkçe olmasını şart koşuyor. Kendi verdiğimiz mesajlar bundan etkilenmez.
+z.config(z.locales.tr())
+
 export type FieldErrors = Record<string, string[]>
 export type FormState = { ok: boolean; errors: FieldErrors; message?: string; warnings?: string[] }
 export const EMPTY_FORM_STATE: FormState = { ok: false, errors: {} }
 
+// Yalnız alana bağlanabilen hataları döndürür. Server action'lar bunu DEĞİL, aşağıdaki
+// toFormState'i kullanır: path taşımayan hatalar burada görünmez.
 export function toFieldErrors(error: z.ZodError): FieldErrors {
   return z.flattenError(error).fieldErrors as FieldErrors
 }
 
+// z.flattenError, path'i olmayan hataları (ör. gövdenin tümü beklenen biçimde değilse)
+// formErrors'a koyar. Yalnız fieldErrors okunursa bu hatalar yutulur: kullanıcı "Kaydet"e
+// basar, hiçbir alanda uyarı çıkmaz ve hiçbir şey olmaz. Alansız hatalar mesaja taşınıyor.
+export function toFormState(error: z.ZodError): FormState {
+  const flat = z.flattenError(error)
+  const formErrors = flat.formErrors as string[]
+  return {
+    ok: false,
+    errors: flat.fieldErrors as FieldErrors,
+    message: formErrors.length > 0 ? formErrors.join(' ') : undefined,
+  }
+}
+
 // Formdan gelen ilişki alanları daima metin taşır: "" seçim yapılmadı demek, sütun NULL bekler.
+// Biçim, sayıya çevrilmeden ÖNCE denetleniyor: Number('3e2') sessizce 300, Number('-5')
+// negatif bir kimlik üretir ve ikisi de Number.isInteger'dan geçer. Kimlikler autoincrement,
+// yani yalnız pozitif tam sayı olabilir; aksi hâlde var olmayan satıra referans verilip
+// kullanıcıya 500 dönerdi.
 const optionalId = z
   .string()
   .trim()
+  .refine((v) => v === '' || /^[1-9]\d*$/.test(v), 'Geçersiz kayıt seçildi.')
   .transform((v) => (v === '' ? null : Number(v)))
-  .refine((v) => v === null || Number.isInteger(v), 'Geçersiz kayıt seçildi.')
 
 // İşaretlenmemiş onay kutusu FormData'ya hiç girmez; bu yüzden alan optional ve yokluğu false.
+// 'on' de kabul ediliyor: <input type="checkbox"> value yazılmazsa HTML varsayılanı olarak
+// 'on' gönderir; yalnız 'evet' aransaydı kullanıcı kutuyu işaretler, "Kaydedildi" görür,
+// kayıt yayına girmezdi — sessiz veri kaybı.
 const checkbox = z
   .string()
   .optional()
-  .transform((v) => v === 'evet')
+  .transform((v) => v === 'evet' || v === 'on')
 
 // Harita koordinatı boş bırakılabilir. Sütun varchar olduğu için (schema.ts) değer metin olarak
 // geri veriliyor; yalnızca sayıya çevrilebilirliği doğrulanıyor.
@@ -30,8 +57,6 @@ const coordinate = z
   .refine((v) => v === '' || Number.isFinite(Number(v)), 'Koordinat sayı olmalı.')
   .transform((v) => (v === '' ? null : v))
 
-const SLUG_EMPTY_MESSAGE = 'Başlıktan adres üretilemedi; slug alanını elle doldurun.'
-
 // Slug boşsa kaynak alandan üretilir; slugify her iki durumda da uygulanır ki elle girilen
 // "Kira Tespit Davası" da geçerli bir adrese dönüşsün.
 function resolveSlug(slug: string, source: string): string {
@@ -39,10 +64,15 @@ function resolveSlug(slug: string, source: string): string {
 }
 
 // slugify yalnızca noktalama içeren girdide boş string döner (Plan 1 borcu): boş slug rota
-// üretemez, kullanıcıya söylenmeden kaydedilemez.
-function requireSlug(slug: string, ctx: z.RefinementCtx): void {
+// üretemez, kullanıcıya söylenmeden kaydedilemez. Kaynak alanın adı çağıranca veriliyor;
+// avukat formunda "Başlıktan" demek kullanıcıyı var olmayan bir alana yönlendirirdi.
+function requireSlug(slug: string, sourcePhrase: string, ctx: z.RefinementCtx): void {
   if (slug === '') {
-    ctx.addIssue({ code: 'custom', path: ['slug'], message: SLUG_EMPTY_MESSAGE })
+    ctx.addIssue({
+      code: 'custom',
+      path: ['slug'],
+      message: `${sourcePhrase} adres üretilemedi; slug alanını elle doldurun.`,
+    })
   }
 }
 
@@ -63,7 +93,7 @@ export const articleSchema = z
   })
   .transform((v) => ({ ...v, slug: resolveSlug(v.slug, v.title) }))
   .superRefine((v, ctx) => {
-    requireSlug(v.slug, ctx)
+    requireSlug(v.slug, 'Başlıktan', ctx)
     // Yayımlanan makale kategori sayfasından erişilebilir olmalı; taslakta bu zorunluluk yok.
     if (v.status === 'published' && v.categoryId === null) {
       ctx.addIssue({ code: 'custom', path: ['categoryId'], message: 'Yayımlamak için kategori seçin.' })
@@ -78,7 +108,7 @@ export const lawyerSchema = z
     isPublished: checkbox,
   })
   .transform((v) => ({ ...v, slug: resolveSlug(v.slug, v.fullName) }))
-  .superRefine((v, ctx) => requireSlug(v.slug, ctx))
+  .superRefine((v, ctx) => requireSlug(v.slug, 'Ad soyad alanından', ctx))
 
 export const practiceAreaSchema = z
   .object({
@@ -88,7 +118,7 @@ export const practiceAreaSchema = z
     isPublished: checkbox,
   })
   .transform((v) => ({ ...v, slug: resolveSlug(v.slug, v.name) }))
-  .superRefine((v, ctx) => requireSlug(v.slug, ctx))
+  .superRefine((v, ctx) => requireSlug(v.slug, 'Alan adından', ctx))
 
 export const categorySchema = z
   .object({
@@ -96,7 +126,7 @@ export const categorySchema = z
     name: z.string().trim().min(2, 'Kategori adı en az 2 karakter olmalı.').max(160, 'Kategori adı en fazla 160 karakter olabilir.'),
   })
   .transform((v) => ({ ...v, slug: resolveSlug(v.slug, v.name) }))
-  .superRefine((v, ctx) => requireSlug(v.slug, ctx))
+  .superRefine((v, ctx) => requireSlug(v.slug, 'Kategori adından', ctx))
 
 export const settingsSchema = z.object({
   officeName: z.string().trim().min(2, 'Büro adı en az 2 karakter olmalı.').max(160, 'Büro adı en fazla 160 karakter olabilir.'),
