@@ -1,0 +1,88 @@
+/* Mobile-first: gezinme içeriğin üstünde tek sütun akar. Genişlik yettiğinde (900px)
+   panel layout'u onu yan sütuna alır, burada yalnız yapışkanlık ve dikey ritim değişir. */
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px var(--pad);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 20px;
+  letter-spacing: 1px;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.link {
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 15px;
+  border: 1px solid transparent;
+}
+
+/* Etkin bölüm yalnız renkle değil kenarlıkla da ayrılır: renk körlüğünde ve yüksek
+   kontrast kipinde tek başına renk ayırt edici değil (WCAG 1.4.1). */
+.link[aria-current='page'] {
+  background: var(--surface);
+  border-color: var(--accent);
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
+.userName {
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+.signOut {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text);
+  /* Düz --line (0.12 saydamlık) düğme kenarlığı için 3:1'i geçmiyor; --text-muted
+     (#aab1bc) --ink-2 üzerinde 7.2:1 ile WCAG 1.4.11'i rahatça karşılıyor. */
+  border: 1px solid var(--text-muted);
+  border-radius: var(--radius-pill);
+  padding: 8px 18px;
+}
+
+@media (min-width: 900px) {
+  .nav {
+    height: 100dvh;
+    position: sticky;
+    top: 0;
+    border-bottom: none;
+    border-right: 1px solid var(--line);
+  }
+
+  .links {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 2px;
+  }
+
+  /* Hesap bloğu sütunun dibine oturur; aradaki boşluğu bağlantı listesi doldurur. */
+  .account {
+    margin-top: auto;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

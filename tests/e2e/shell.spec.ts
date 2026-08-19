@@ -19,6 +19,17 @@ test('etkin sayfanın gezinme bağlantısı aria-current=page taşır', async ({
   await expect(nav.getByRole('link', { name: 'Hakkımızda' })).not.toHaveAttribute('aria-current', 'page')
 })
 
+// Tam eşleşme üst bölümü alt sayfalarda işaretsiz bırakıyordu (Plan 1'den devreden borç).
+// Adres şu an 404 veriyor — Plan 3 /kadro/[slug] rotasını getirecek — ama 404 sınırı da
+// kabuğun altında çizildiği için gezinme yine var ve önek eşleşmesi burada ölçülebiliyor.
+test('alt sayfada üst bölümün bağlantısı aria-current taşır', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'masaustu', 'mobilde panel kapalı başlar')
+  await page.goto('/kadro/olmayan-avukat')
+  const nav = page.getByRole('navigation', { name: 'Ana gezinme' })
+  await expect(nav.getByRole('link', { name: 'Kadro' })).toHaveAttribute('aria-current', 'page')
+  await expect(nav.getByRole('link', { name: 'Makaleler' })).not.toHaveAttribute('aria-current', 'page')
+})
+
 test('atlama bağlantısı klavyeyle çalışır', async ({ page }) => {
   await page.goto('/')
   await page.keyboard.press('Tab')

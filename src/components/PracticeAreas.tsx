@@ -12,7 +12,7 @@ export function PracticeAreas({ areas }: PracticeAreasProps) {
         <ul className={styles.grid}>
           {areas.map((area) => (
             <li key={area.slug}>
-              <Link href={`/calisma-alanlari/${area.slug}`} className={styles.card}>
+              <Link href={`/calisma-alanlari/${area.slug}`} className={`card ${styles.cardLayout}`}>
                 <h3 className={styles.cardTitle}>{area.name}</h3>
                 <p className={styles.cardSummary}>{area.summary}</p>
               </Link>

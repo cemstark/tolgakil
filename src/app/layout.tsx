@@ -1,7 +1,5 @@
 import type { Metadata } from 'next'
 import { Cormorant_Garamond, Outfit } from 'next/font/google'
-import { SiteHeader } from '@/components/SiteHeader'
-import { SiteFooter } from '@/components/SiteFooter'
 import { SITE } from '@/content/site'
 import './globals.css'
 
@@ -27,19 +25,14 @@ export const metadata: Metadata = {
 
 type RootLayoutProps = { children: React.ReactNode }
 
+// Yalnız <html>/<body>, yazı tipleri ve metadata. Kabuk (atlama bağlantısı, başlık, <main>,
+// alt bilgi) buradan çıktı: genel site onu (site)/layout.tsx'ten, panel kendi layout'undan alır.
+// Burada VERİ ÇEKİLMEZ (spec §11): kök layout hatasında sunucu <html id="__next_error__">
+// kabuğunu döndürüyor, Türkçe metin ve telefon numarası kayboluyor (Plan 1'de ölçüldü).
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="tr" className={`${display.variable} ${body.variable}`}>
-      <body>
-        <a href="#content" className="skipLink">
-          İçeriğe atla
-        </a>
-        <SiteHeader />
-        <main id="content" tabIndex={-1}>
-          {children}
-        </main>
-        <SiteFooter />
-      </body>
+      <body>{children}</body>
     </html>
   )
 }

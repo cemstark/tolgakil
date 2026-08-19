@@ -28,7 +28,7 @@
 }
 
 .item {
-  border-top: 1px solid var(--line-paper);
+  border-top: 1px solid var(--line);
 }
 
 .itemLink {
@@ -38,7 +38,7 @@
 }
 
 .category {
-  color: var(--text-paper-muted);
+  color: var(--text-muted);
   font-size: 13px;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -49,7 +49,7 @@
 }
 
 .date {
-  color: var(--text-paper-muted);
+  color: var(--text-muted);
   font-size: 14px;
 }
 

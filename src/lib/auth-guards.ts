@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { notFound, redirect } from 'next/navigation'
 import { eq } from 'drizzle-orm'
 import { auth } from '@/auth'
@@ -11,7 +12,12 @@ export type PanelUser = { id: number; email: string; name: string; role: UserRol
 // pasifleştirmeyi getirecek; pasifleştirilen kişinin 8 saat daha panelde çalışmaya devam
 // etmesi o özelliği işlevsiz kılardı. Bu yüzden satır her panel isteğinde okunuyor —
 // panel hacmi düşük, tek satırlık birincil anahtar sorgusunun maliyeti önemsiz.
-export async function getPanelUser(): Promise<PanelUser | null> {
+//
+// cache() İSTEK BAŞINA tekilleştirir, istekler arasında değil: Görev 4'ten beri panel
+// layout'u gezinmeyi çizmek için, sayfa da requireUser() için aynı satırı istiyordu ve
+// her panel isteği iki özdeş sorgu atıyordu. Tazelik sözleşmesi bozulmuyor — sonraki
+// istek yeniden okuyor, pasifleştirme hâlâ anında etkili.
+export const getPanelUser = cache(async function getPanelUser(): Promise<PanelUser | null> {
   const session = await auth()
   if (!session?.user) return null
 
@@ -32,7 +38,7 @@ export async function getPanelUser(): Promise<PanelUser | null> {
   if (!row || !row.isActive) return null
 
   return { id: row.id, email: row.email, name: row.name, role: row.role }
-}
+})
 
 // Giriş sayfası da aynı yüklemi kullanmak zorunda: "oturum var" ile "panele girebilir"
 // ayrışırsa, pasifleştirilmiş kullanıcı /panel ile /panel/giris arasında sonsuz döngüye girer.

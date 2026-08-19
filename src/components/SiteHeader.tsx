@@ -3,13 +3,15 @@
 import { useRef, useState, type KeyboardEvent } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { NAV_LINKS, CTA_LINK } from '@/lib/navigation'
+import { NAV_LINKS, CTA_LINK, isCurrentPath } from '@/lib/navigation'
 import styles from './SiteHeader.module.css'
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const pathname = usePathname()
+
+  const isCurrent = (href: string) => isCurrentPath(pathname, href)
 
   // WAI-ARIA disclosure deseni: Escape paneli kapatır, odağı tetikleyen düğmeye döndürür.
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -43,7 +45,7 @@ export function SiteHeader() {
               key={l.href}
               href={l.href}
               className={styles.link}
-              aria-current={pathname === l.href ? 'page' : undefined}
+              aria-current={isCurrent(l.href) ? 'page' : undefined}
             >
               {l.label}
             </Link>
@@ -51,7 +53,7 @@ export function SiteHeader() {
           <Link
             href={CTA_LINK.href}
             className={styles.cta}
-            aria-current={pathname === CTA_LINK.href ? 'page' : undefined}
+            aria-current={isCurrent(CTA_LINK.href) ? 'page' : undefined}
           >
             {CTA_LINK.label}
           </Link>

@@ -5,14 +5,14 @@
 }
 
 .card {
-  background: var(--ink-2);
-  border: 1px solid var(--line-ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
   border-radius: var(--radius-block);
   padding: clamp(1.5rem, 5vw, 2.5rem);
 }
 
 .intro {
-  color: var(--text-ink-muted);
+  color: var(--text-muted);
   font-size: 16px;
   margin-top: 12px;
 }

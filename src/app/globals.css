@@ -27,6 +27,16 @@
      düz altın krem üzerinde 1.91:1 ile WCAG 1.4.11'i geçmiyor. */
   --focus-ring: var(--gold);
 
+  /* Zemin-bağımsız yüzey sözleşmesi: bileşenler artık --ink/--paper ikilisini değil
+     bunları okur, böylece aynı bileşen iki zeminde de doğru çizilir. Yukarıdaki ham
+     token'ların adı ve değeri değişmedi; bunlar onların üzerine konan takma adlar. */
+  --surface: var(--ink);
+  --surface-raised: var(--ink-2);
+  --text: var(--text-ink);
+  --text-muted: var(--text-ink-muted);
+  --line: var(--line-ink);
+  --accent: var(--gold);
+
   /* Site tek koyu temayla çalışır; tarayıcı kaydırma çubuğu ve form kontrolleri
      açık işletim sistemi temasında bile koyu çizilsin. */
   color-scheme: dark;
@@ -35,9 +45,16 @@
 /* Krem yüzey sözleşmesi: zemin, metin ve odak halkası birlikte devreye girer.
    Görev 3-5'teki krem bölümler bu özniteliği kullanır. */
 [data-surface="paper"] {
-  background: var(--paper);
-  color: var(--text-paper);
+  --surface: var(--paper);
+  --surface-raised: var(--paper-2);
+  --text: var(--text-paper);
+  --text-muted: var(--text-paper-muted);
+  --line: var(--line-paper);
+  --accent: var(--gold-ink);
   --focus-ring: var(--gold-ink);
+
+  background: var(--surface);
+  color: var(--text);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -108,13 +125,23 @@ main:focus-visible { outline: none; }
 
 /* Metin içi bağlantı düz metinden yalnızca renkle değil, alt çizgiyle de ayrılır
    (WCAG 1.4.1); nav ve CTA bağlantıları kendi görsel biçimini taşıdığı için bunu
-   kullanmaz. */
+   kullanmaz. Zemine göre ayrı bir kural gerekmiyor: --accent yüzey sözleşmesiyle döner. */
 .textLink {
-  color: var(--gold);
+  color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-[data-surface="paper"] .textLink { color: var(--gold-ink); }
+
+/* Kart yüzeyi: yüzey sözleşmesinden okur, bu yüzden koyu zeminde --ink-2, krem zeminde
+   --paper-2 çizilir — ölü bekleyen --paper-2 token'ı ilk kez burada tüketiliyor.
+   Geometrisi bileşene özgü olan kartlar (giriş kartı gibi) bunu kendi modül sınıfıyla
+   birleştirmez; ortak sınıf tek bir kart ölçüsü tanımlar. */
+.card {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
 
 /* Ortak sayfa kabuğu: yedi iç sayfa + 404 + hata sayfası aynı sarmalayıcıyı kullanır.
    Inline style tekrarını önler; medya sorgusu taşıyamayan inline style'ın aksine burada

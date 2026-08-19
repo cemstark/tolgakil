@@ -1,13 +1,12 @@
-import Link from 'next/link'
-import { PageHeading } from '@/components/PageHeading'
-import styles from './not-found.module.css'
+import { SiteShell } from '@/components/SiteShell'
+import { NotFoundContent } from '@/components/NotFoundContent'
 
+// Hiçbir rotayla eşleşmeyen adresler kök layout'u kullanır, (site) grubunun layout'unu
+// almaz; kabuk bu yüzden burada elle sarılıyor.
 export default function NotFoundPage() {
   return (
-    <section className="pageShell">
-      <PageHeading eyebrow="Bulunamadı" title="Sayfa bulunamadı" />
-      <p>Aradığınız sayfa taşınmış veya kaldırılmış olabilir.</p>
-      <Link href="/" className={`textLink ${styles.link}`}>Ana sayfaya dön</Link>
-    </section>
+    <SiteShell>
+      <NotFoundContent />
+    </SiteShell>
   )
 }

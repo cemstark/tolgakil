@@ -1,0 +1,23 @@
+/* Panelin 404 ve hata sınırları aynı sade düzeni paylaşıyor. */
+.link {
+  display: inline-block;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.retry {
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text);
+  /* Kenarlık --text-muted: düz --line (0.12 saydamlık) düğme için 3:1'i geçmiyor. */
+  border: 1px solid var(--text-muted);
+  border-radius: var(--radius-pill);
+  padding: 10px 22px;
+}
