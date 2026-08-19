@@ -1,6 +1,13 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
-import { girisYap, ADMIN, EDITOR } from './helpers/auth'
+import { girisYap, ADMIN } from './helpers/auth'
+import { geciciKullaniciOlustur } from './helpers/test-user'
+
+// Hız sınırı sayacı sunucu SÜRECİNDE yaşıyor, e-posta başına sayıyor ve playwright.config.ts
+// yerelde reuseExistingServer kullanıyor: ayrı bir `npm run dev` açıkken süit art arda
+// koşturulursa sayaçlar koşumlar arasında taşınır. Bu yüzden başarısız deneme üreten her test
+// kendi geçici kullanıcısını kuruyor. Tohum kullanıcıları yalnız BAŞARILI girişlerde
+// kullanılıyor; başarılı girişler sayaca işlemediği için bütçe biriktirmiyorlar.
 
 test('oturumsuz kullanıcı panele giremez, giriş sayfasına yönlenir', async ({ page }) => {
   await page.goto('/panel')
@@ -9,14 +16,20 @@ test('oturumsuz kullanıcı panele giremez, giriş sayfasına yönlenir', async 
 })
 
 test('yanlış parola alan bazında Türkçe hata gösterir ve oturum açmaz', async ({ page }) => {
-  await page.goto('/panel/giris')
-  await page.getByLabel('E-posta').fill(ADMIN.email)
-  await page.getByLabel('Parola').fill('kesinlikle-yanlis-parola')
-  await page.getByRole('button', { name: 'Giriş yap' }).click()
-  // Lokatör forma daraltıldı: Next kendi rota duyurucusunu (#__next-route-announcer__) da
-  // role="alert" ile basıyor, sayfa genelinde arayınca iki eşleşme çıkıyor (ölçüldü).
-  await expect(page.locator('form').getByRole('alert')).toHaveText('E-posta veya parola hatalı.')
-  await expect(page).toHaveURL(/\/panel\/giris/)
+  // Var olan bir hesap gerekiyor: sınanan şey "kayıtlı kullanıcı yanlış parolayla giremez".
+  const kullanici = await geciciKullaniciOlustur('yanlis-parola')
+  try {
+    await page.goto('/panel/giris')
+    await page.getByLabel('E-posta').fill(kullanici.email)
+    await page.getByLabel('Parola').fill('kesinlikle-yanlis-parola')
+    await page.getByRole('button', { name: 'Giriş yap' }).click()
+    // Lokatör forma daraltıldı: Next kendi rota duyurucusunu (#__next-route-announcer__) da
+    // role="alert" ile basıyor, sayfa genelinde arayınca iki eşleşme çıkıyor (ölçüldü).
+    await expect(page.locator('form').getByRole('alert')).toHaveText('E-posta veya parola hatalı.')
+    await expect(page).toHaveURL(/\/panel\/giris/)
+  } finally {
+    await kullanici.temizle()
+  }
 })
 
 // Alan hatası yalnız aria-describedby ile bağlansaydı, formu gönderip odağı düğmede bırakan
@@ -87,30 +100,37 @@ test('kimlik doğrulama ucuna doğrudan POST da hız sınırına takılır', asy
     'HTTP düzeyinde kanıt, tarayıcıdan bağımsız. İki projede koşarsa aynı e-posta kovasını paylaşıp birbirinin ilk adımını bozar.',
   )
 
-  const { csrfToken } = await (await request.get('/api/auth/csrf')).json()
+  // Bu test bir hesabı bilerek kilitliyor; tohum kullanıcısı kullanılsaydı aynı 15 dakika
+  // içinde ikinci kez koşan süitte diğer testler yanlış kırmızı verirdi.
+  const { email, password, temizle } = await geciciKullaniciOlustur('kilit-kaniti')
 
-  // Her istek FARKLI bir x-forwarded-for taşıyor. Anahtar IP olsaydı her deneme yeni kova
-  // alır ve sınır hiç devreye girmezdi; kilitlenmesi anahtarın e-posta olduğunun kanıtı.
-  async function dogrudanGiris(password: string, sahteIpSonEki: number) {
-    return request.post('/api/auth/callback/credentials', {
-      headers: { 'x-forwarded-for': `203.0.113.${sahteIpSonEki}` },
-      form: { csrfToken, email: EDITOR.email, password, callbackUrl: '/panel' },
-      maxRedirects: 0,
-    })
+  try {
+    const { csrfToken } = await (await request.get('/api/auth/csrf')).json()
+
+    // Her istek FARKLI bir x-forwarded-for taşıyor. Anahtar IP olsaydı her deneme yeni kova
+    // alır ve sınır hiç devreye girmezdi; kilitlenmesi anahtarın e-posta olduğunun kanıtı.
+    const dogrudanGiris = (deneneParola: string, sahteIpSonEki: number) =>
+      request.post('/api/auth/callback/credentials', {
+        headers: { 'x-forwarded-for': `203.0.113.${sahteIpSonEki}` },
+        form: { csrfToken, email, password: deneneParola, callbackUrl: '/panel' },
+        maxRedirects: 0,
+      })
+
+    // 1) Doğru parola: uç gerçekten açık ve form olmadan oturum açılabiliyor.
+    const ilk = await dogrudanGiris(password, 1)
+    expect(ilk.headers()['location']).not.toContain('error=')
+
+    // 2) Beş başarısız deneme kovayı doldurur.
+    for (let sira = 0; sira < 5; sira += 1) {
+      await dogrudanGiris('kesinlikle-yanlis-parola', 10 + sira)
+    }
+
+    // 3) Aynı doğru parola artık reddediliyor: sınır bu yolda da devrede.
+    const son = await dogrudanGiris(password, 100)
+    expect(son.headers()['location']).toContain('error=')
+  } finally {
+    await temizle()
   }
-
-  // 1) Doğru parola: uç gerçekten açık ve form olmadan oturum açılabiliyor.
-  const ilk = await dogrudanGiris(EDITOR.password, 1)
-  expect(ilk.headers()['location']).not.toContain('error=')
-
-  // 2) Beş başarısız deneme kovayı doldurur.
-  for (let sira = 0; sira < 5; sira += 1) {
-    await dogrudanGiris('kesinlikle-yanlis-parola', 10 + sira)
-  }
-
-  // 3) Aynı doğru parola artık reddediliyor: sınır bu yolda da devrede.
-  const son = await dogrudanGiris(EDITOR.password, 100)
-  expect(son.headers()['location']).toContain('error=')
 })
 
 test('giriş sayfasında erişilebilirlik ihlali yok', async ({ page }) => {

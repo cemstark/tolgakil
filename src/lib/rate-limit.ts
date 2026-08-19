@@ -31,6 +31,14 @@ export function createRateLimiter(options: { limit: number; windowMs: number }) 
   }
 
   return {
+    // Yalnızca yukarıdaki bellek güvencesini ölçülebilir kılmak için var. Süpürmenin süresi
+    // dolmuş girdileri gerçekten sildiği başka türlü gözlemlenemiyor: peek de record da
+    // silinmiş bir anahtarla hiç var olmamış anahtarı aynı yanıtla karşılıyor, yani süpürme
+    // tümüyle kaldırılsa bile davranış testleri yeşil kalırdı.
+    size(): number {
+      return windows.size
+    },
+
     // Sayaca dokunmadan yalnızca durumu okur. Giriş formu bunu kullanıyor: gerçek sayımı
     // authorize yapıyor, form yalnız Türkçe mesajı üretebilmek için soruyor. Form da sayarsa
     // tek deneme iki hak yerdi.

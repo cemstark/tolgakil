@@ -53,13 +53,25 @@ describe('createRateLimiter', () => {
     expect(limiter.peek('1.2.3.4', 60_001).allowed).toBe(true)
   })
 
-  // Süpürme yalnız süresi dolmuş pencereleri siler; hâlâ geçerli bir pencereyi silseydi
-  // saldırgan bol anahtar üretip kurbanın sayacını sıfırlatabilirdi.
-  it('süpürme yürürlükteki pencereyi silmez', () => {
+  // Süpürme süresi dolmuş pencereleri siler ama yürürlüktekine dokunmaz; dokunsaydı saldırgan
+  // bol anahtar üretip kurbanın sayacını sıfırlatabilirdi.
+  //
+  // Zamanlama önemli: ilk record süpürmeyi koşturup lastSweptAt'i 0'a çekiyor, sonraki
+  // süpürme ancak t >= 60_000'de koşabiliyor. Kurbanın penceresi o ana kadar yaşasın diye
+  // 59_000'de açılıyor — süpürme koştuğunda daha 1 saniyelik.
+  it('süpürme süresi dolmuş pencereleri siler, yürürlüktekini silmez', () => {
     const limiter = createRateLimiter({ limit: 1, windowMs: 60_000 })
-    limiter.record('kurban', 0)
-    // Araya giren yeni anahtarlar ve bir pencere sonrası süpürme tetiklenir.
-    for (let i = 0; i < 50; i += 1) limiter.record(`gurultu-${i}`, 30_000)
-    expect(limiter.peek('kurban', 59_000).allowed).toBe(false)
+
+    for (let i = 0; i < 20; i += 1) limiter.record(`eski-${i}`, 0)
+    limiter.record('kurban', 59_000)
+    expect(limiter.size()).toBe(21)
+
+    // t = 60_000: son süpürmeden bu yana tam bir pencere geçti, süpürme burada koşuyor.
+    limiter.record('tetikleyici', 60_000)
+
+    // Yirmi eski girdi silindi; geriye kurban ile tetikleyici kaldı.
+    expect(limiter.size()).toBe(2)
+    // Ve kurbanın sayacı duruyor: hâlâ sınırda.
+    expect(limiter.peek('kurban', 100_000).allowed).toBe(false)
   })
 })
