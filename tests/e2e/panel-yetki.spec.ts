@@ -34,30 +34,86 @@ for (const yol of ADMIN_YOLLARI) {
   })
 }
 
-// Gezinmeyi gizlemek koruma değil ve rota korumasının kendisi de tek hat değil: server
-// function bulunduğu rotaya POST olarak gider. proxy.ts matcher'ı değişirse ilk hat sessizce
-// kalkar; ikinci hat her action'ın içindeki requireAccess'tir.
-test('editor doğrudan gönderdiği kadro formuyla da kayıt oluşturamaz', async ({ page }) => {
-  const ad = `Sızma Denemesi ${Date.now()}`
+/**
+ * Gezinmeyi gizlemek koruma değil ve rota koruması da tek hat değil: server function
+ * bulunduğu rotaya POST olarak gider. `proxy.ts` matcher'ı değişirse ilk hat sessizce
+ * kalkar; ikinci hat her action'ın içindeki `requireAccess`'tir.
+ *
+ * Bu test o ikinci hattı GERÇEKTEN çalıştırıyor. Elle kurulmuş bir form POST'u yetmez:
+ * Next bir server function'ı yalnız `Next-Action` başlığıyla (ya da gövdedeki geçerli
+ * `$ACTION_ID_<id>` alanıyla) dispatch ediyor; başlıksız bir POST action'a hiç ulaşmadan
+ * sayfa katmanında reddedilir ve `requireAccess` silinse bile test yeşil kalırdı.
+ *
+ * Bu yüzden istek YÖNETİCİ oturumunda yakalanıyor (gerçek dispatch, gerçek gövde), oluşan
+ * kayıt siliniyor — slug serbest kalsın ki koruma kaldırıldığında ekleme gerçekten
+ * yapılabilsin, yoksa testi `isSlugTaken` yeşil tutardı — ve aynı istek EDİTÖR çerezleriyle
+ * yeniden gönderiliyor.
+ */
+test('editor, yöneticiden yakalanan gerçek kadro action isteğini tekrar oynatamaz', async ({ page }) => {
+  const ad = `Sızma Denemesi ${Date.now()}${Math.floor(Math.random() * 1000)}`
   const temizlik = await temizlikciAc()
-  try {
-    await girisYap(page, EDITOR)
-    const yanit = await page.request.post('/panel/kadro/yeni', {
-      form: { fullName: ad, title: 'Avukat', slug: '' },
-    })
-    expect(yanit.status()).toBeGreaterThanOrEqual(400)
 
-    // Ekranda görünmemesi yetmez; veritabanında da olmamalı. Arayüz kaydı gizleseydi
-    // (ör. yalnız yayımlananları listeleseydi) HTML iddiası yanlış güvence verirdi.
+  type YakalananIstek = { url: string; headers: Record<string, string>; body: Buffer }
+  let yakalanan: YakalananIstek | null = null
+
+  // Değişken bir geri çağrımda dolduğu için doğrudan okunmuyor: TypeScript o atamayı
+  // göremiyor ve null denetiminden sonra tipi `never`'a daraltıyor.
+  function hazirIstek(): YakalananIstek {
+    if (yakalanan === null) throw new Error('Kadro action isteği yakalanamadı; dispatch biçimi değişmiş olabilir.')
+    return yakalanan
+  }
+
+  try {
+    await girisYap(page, ADMIN)
+    await page.goto('/panel/kadro/yeni')
+
+    page.on('request', (istek) => {
+      if (istek.method() !== 'POST' || !istek.url().includes('/panel/kadro/yeni')) return
+      const govde = istek.postDataBuffer()
+      if (govde === null) return
+      yakalanan = { url: istek.url(), headers: istek.headers(), body: govde }
+    })
+
+    await page.getByLabel('Ad soyad').fill(ad)
+    await page.getByLabel('Unvan').fill('Avukat')
+    await page.getByRole('button', { name: 'Kaydet' }).click()
+    await expect(page.getByRole('status')).toHaveText('Avukat kaydedildi.')
+
+    const istek = hazirIstek()
+    // Yakalanan şeyin gerçekten bir server function dispatch'i olduğunun kanıtı.
+    expect(istek.headers['next-action'], 'Next-Action başlığı yok; bu bir action isteği değil').toBeTruthy()
+
+    // Yöneticinin oluşturduğu kayıt siliniyor: slug serbest kalmalı.
+    await temizlik.sil('DELETE FROM lawyers WHERE full_name = ?', [ad])
+
+    await cikisYap(page)
+    await girisYap(page, EDITOR)
+
+    // cookie ÇIKARILIYOR: page.request tarayıcı bağlamının çerezlerini kullanıyor, yani
+    // istek artık editörün oturumuyla gidiyor. content-length ve host'u Playwright kendisi
+    // yeniden hesaplıyor.
+    const ATILAN_BASLIKLAR = ['cookie', 'content-length', 'host']
+    const basliklar: Record<string, string> = {}
+    for (const [anahtar, deger] of Object.entries(istek.headers)) {
+      if (!ATILAN_BASLIKLAR.includes(anahtar)) basliklar[anahtar] = deger
+    }
+    const yanit = await page.request.post(istek.url, { headers: basliklar, data: istek.body })
+
+    // Asıl güvence: action koşsa bile kayıt OLUŞMAMALI. `requireAccess('lawyers')` satırı
+    // silinirse burada bir satır belirir ve test kırılır.
     const satirlar = await temizlik.sorgu<{ id: number }>('SELECT id FROM lawyers WHERE full_name = ?', [ad])
-    expect(satirlar).toHaveLength(0)
+    expect(satirlar, `Editör kaydı oluşturabildi (yanıt ${yanit.status()})`).toHaveLength(0)
+
+    // Yanıt da başarıyı bildirmemeli.
+    expect(yanit.status()).not.toBe(303)
+    expect(await yanit.text()).not.toContain('Avukat kaydedildi.')
 
     await cikisYap(page)
     await girisYap(page, ADMIN)
     await page.goto('/panel/kadro')
     await expect(page.getByText(ad)).toHaveCount(0)
   } finally {
-    // Kayıt oluşmamış OLMALI; oluştuysa test zaten kırmızı, ama artığı bırakmıyoruz.
+    // Yönetici kaydı yukarıda silindi; buradaki iş yarıda kalan koşumun artığını toplamak.
     await temizlik.silmeyeCalis('DELETE FROM lawyers WHERE full_name = ?', [ad])
     await temizlik.kapat()
   }

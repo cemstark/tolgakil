@@ -43,6 +43,10 @@ test('admin kategori ekler ve boş kategoriyi siler', async ({ page }) => {
   await expect(satir).toContainText('0')
 
   await satir.getByRole('button', { name: 'Sil' }).click()
+  // Erişilebilir ad doğrulanıyor: paylaşılan kip pencere her bölümde kendi başlığını
+  // duyurmalı (bkz. panel-kadro.spec.ts'teki aynı iddianın gerekçesi).
+  await expect(page.getByRole('dialog', { name: 'Kategoriyi sil' })).toBeVisible()
+
   await page.getByRole('button', { name: 'Evet, sil' }).click()
   await expect(page.getByRole('row', { name: new RegExp(ad) })).toHaveCount(0)
   await expect(page.getByRole('status')).toHaveText('Kategori silindi.')

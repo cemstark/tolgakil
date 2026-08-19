@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useRef } from 'react'
+import { useActionState, useId, useRef } from 'react'
 import type { FormState } from '@/lib/validation'
 import styles from './ConfirmDeleteDialog.module.css'
 
@@ -34,7 +34,13 @@ export function ConfirmDeleteDialog({
   const [state, formAction, isPending] = useActionState(action, INITIAL_STATE)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
-  const titleId = `delete-dialog-${heading}-${recordId}`
+  // useId(): kimlik İÇERİKTEN türetilmiyor. Başlıktan üretilen bir kimlik ("Kadro kaydını
+  // sil") BOŞLUK taşıyordu; `aria-labelledby` boşlukla ayrılmış bir IDREF LİSTESİ olduğu
+  // için tarayıcı onu üç ayrı kimliğe bölüyor, hiçbiri eşleşmiyor ve kip pencere ADSIZ
+  // duyuruluyordu — kullanıcı neyi sildiğini duymadan onaylıyordu. ASCII boşluk HTML
+  // `id` içinde zaten geçersiz. Kayıt kimliği de yetmez: aynı satırda ileride ikinci bir
+  // pencere açılırsa çakışırdı.
+  const titleId = useId()
 
   // Başarı yolunda buraya hiç dönülmez: action listeye yönlendiriyor ve bildirim orada,
   // odaklanan bir role="status" bölgesinde veriliyor (bkz. DeleteNotice). Bu bileşene

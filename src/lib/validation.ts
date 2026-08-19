@@ -57,9 +57,12 @@ const checkbox = z
 
 // Harita koordinatı boş bırakılabilir. Sütun varchar olduğu için (schema.ts) değer metin olarak
 // geri veriliyor; yalnızca sayıya çevrilebilirliği doğrulanıyor.
+// `nullish`: FormData.get() gönderilmeyen alan için null döndürüyor (bkz. checkbox).
 const coordinate = z
   .string()
   .trim()
+  .nullish()
+  .transform((v) => v ?? '')
   .refine((v) => v === '' || Number.isFinite(Number(v)), 'Koordinat sayı olmalı.')
   .transform((v) => (v === '' ? null : v))
 
@@ -270,5 +273,11 @@ export const userUpdateSchema = z.object({
   role: z.enum(['admin', 'editor']),
   isActive: checkbox,
   // Boş bırakılırsa parola değişmez; doldurulursa aynı asgari uzunluk kuralı geçerli.
-  password: z.string().refine((v) => v === '' || v.length >= 12, 'Parola en az 12 karakter olmalı.'),
+  // `nullish` + boş dizeye indirgeme: FormData.get() gönderilmeyen alan için null
+  // döndürüyor ve çıktı tipi `string` kalmalı — çağıran `=== ''` ile karşılaştırıyor.
+  password: z
+    .string()
+    .nullish()
+    .transform((v) => v ?? '')
+    .refine((v) => v === '' || v.length >= 12, 'Parola en az 12 karakter olmalı.'),
 })

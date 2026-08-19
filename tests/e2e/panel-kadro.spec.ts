@@ -9,10 +9,19 @@ import { temizlikciAc, type Temizlikci } from './helpers/db-cleanup'
 let temizlik: Temizlikci | null = null
 const damgalar: string[] = []
 
-function yeniAd(onEk: string): string {
+function yeniDamga(): string {
   const damga = `${Date.now()}${Math.floor(Math.random() * 1000)}`
   damgalar.push(damga)
-  return `${onEk} ${damga}`
+  return damga
+}
+
+function yeniAd(onEk: string): string {
+  return `${onEk} ${yeniDamga()}`
+}
+
+function hazirTemizlik(): Temizlikci {
+  if (temizlik === null) throw new Error('Temizlik bağlantısı kurulmadı; beforeAll düşmüş olmalı.')
+  return temizlik
 }
 
 test.beforeAll(async () => {
@@ -53,6 +62,13 @@ test('admin avukat ekler, yayına alır ve siler', async ({ page }) => {
   await expect(satir.getByText('Yayında')).toBeVisible()
 
   await satir.getByRole('button', { name: 'Sil' }).click()
+
+  // Kip pencerenin ERİŞİLEBİLİR ADI doğrulanıyor, yalnız varlığı değil. `getByRole('dialog')`
+  // adsız pencereyle de eşleşiyor; ad bağı koptuğunda (ör. aria-labelledby boşluk taşıyan
+  // bir kimliğe işaret ederse) kullanıcı neyi sildiğini duymadan onaylar. axe de yakalamaz:
+  // kapalı <dialog> erişilebilirlik ağacında değil.
+  await expect(page.getByRole('dialog', { name: 'Kadro kaydını sil' })).toBeVisible()
+
   await page.getByRole('button', { name: 'Evet, sil' }).click()
   await expect(page.getByRole('row', { name: new RegExp(ad) })).toHaveCount(0)
 
@@ -127,10 +143,33 @@ test('kadro formunda yasaklı ifade önce uyarı üretir, onaylanınca kaydeder'
   await expect(page.getByRole('row', { name: new RegExp(ad) })).toHaveCount(0)
 })
 
-test('kadro listesinde ve formunda erişilebilirlik ihlali yok', async ({ page }) => {
+// Görev 7'nin getirdiği yönetim ekranlarının tamamı taranıyor. Kullanıcılar ve çalışma
+// alanları listeleri kapsamda: satır içi eylem yapısı (Düzenle bağlantısı, adı taşıyan
+// silme düğmesi) en karmaşık olanlar bunlar. Mesajlar listesi kendi dosyasında taranıyor,
+// çünkü anlamlı bir tarama için listede gerçek bir mesaj satırı bulunmak zorunda.
+const ERISIM_ADRESLERI = [
+  '/panel/kadro',
+  '/panel/kadro/yeni',
+  '/panel/calisma-alanlari',
+  '/panel/calisma-alanlari/yeni',
+  '/panel/kategoriler',
+  '/panel/ayarlar',
+  '/panel/kullanicilar',
+  '/panel/kullanicilar/yeni',
+]
+
+test('yönetim ekranlarında erişilebilirlik ihlali yok', async ({ page }) => {
+  // Kadro listesi BOŞ olabilir ve boş bir tabloyu taramak satır içi eylemler hakkında
+  // hiçbir şey söylemez; tarama öncesi bir satır ekleniyor (afterAll temizliyor).
+  const damga = yeniDamga()
+  await hazirTemizlik().calistir(
+    'INSERT INTO lawyers (slug, full_name, title, sort_order, is_published) VALUES (?, ?, ?, ?, ?)',
+    [`erisim-denemesi-${damga}`, `Erisim Denemesi ${damga}`, 'Avukat', 0, true],
+  )
+
   await girisYap(page, ADMIN)
 
-  for (const adres of ['/panel/kadro', '/panel/kadro/yeni', '/panel/ayarlar', '/panel/kategoriler']) {
+  for (const adres of ERISIM_ADRESLERI) {
     await page.goto(adres)
     const sonuc = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
     expect(sonuc.violations, `${adres} ihlalleri`).toEqual([])
@@ -186,15 +225,48 @@ test('geçersiz e-posta ayarları kaydettirmez', async ({ page }, testInfo) => {
 test('harita koordinatları formda çizilir ve boş bırakılabilir', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'masaustu', 'Ayarlar tek satırlık tablo; projeler arası yarışı önlemek için tek projede koşar.')
 
-  await girisYap(page, ADMIN)
-  await page.goto('/panel/ayarlar')
-  await expect(page.getByLabel('Harita enlemi')).toBeVisible()
-  await page.getByLabel('Harita enlemi').fill('')
-  await page.getByLabel('Harita boylamı').fill('')
-  await page.getByRole('button', { name: 'Kaydet' }).click()
-  await expect(page.getByRole('status')).toHaveText('Ayarlar kaydedildi.')
+  const temizlikci = await temizlikciAc()
+  try {
+    // Önceki değerler saklanıp geri konuyor: geliştirici gerçek koordinat girdiyse bir
+    // e2e turu onu silmemeli (telefon testiyle aynı sözleşme).
+    const [onceki] = await temizlikci.sorgu<{ map_lat: string | null; map_lng: string | null }>(
+      'SELECT map_lat, map_lng FROM settings WHERE id = 1',
+      [],
+    )
+    if (onceki === undefined) throw new Error('settings satırı yok; `npm run db:seed` çalıştırılmalı.')
 
-  await page.getByLabel('Harita enlemi').fill('kuzey')
-  await page.getByRole('button', { name: 'Kaydet' }).click()
-  await expect(page.getByText('Koordinat sayı olmalı.')).toBeVisible()
+    await girisYap(page, ADMIN)
+    await page.goto('/panel/ayarlar')
+    await expect(page.getByLabel('Harita enlemi')).toBeVisible()
+    await page.getByLabel('Harita enlemi').fill('40.9905')
+    await page.getByLabel('Harita boylamı').fill('')
+    await page.getByRole('button', { name: 'Kaydet' }).click()
+    await expect(page.getByRole('status')).toHaveText('Ayarlar kaydedildi.')
+
+    // Dolu ve boş koordinat birlikte kaydedilebiliyor: alan zorunlu ANAHTAR, zorunlu
+    // DEĞER değil.
+    await page.reload()
+    await expect(page.getByLabel('Harita enlemi')).toHaveValue('40.9905')
+    await expect(page.getByLabel('Harita boylamı')).toHaveValue('')
+
+    await page.getByLabel('Harita enlemi').fill('kuzey')
+    await page.getByRole('button', { name: 'Kaydet' }).click()
+    await expect(page.getByText('Koordinat sayı olmalı.')).toBeVisible()
+
+    // `sil` DEĞİL `calistir`: MySQL bir UPDATE'te yalnız DEĞİŞEN satırı sayıyor ve
+    // geliştiricinin gerçek değeri tesadüfen aynıysa affectedRows sıfır olur — yanlış
+    // alarm. Geri koymanın gerçekleştiği okuyarak doğrulanıyor.
+    await temizlikci.calistir('UPDATE settings SET map_lat = ?, map_lng = ? WHERE id = 1', [
+      onceki.map_lat,
+      onceki.map_lng,
+    ])
+    const [sonrasi] = await temizlikci.sorgu<{ map_lat: string | null; map_lng: string | null }>(
+      'SELECT map_lat, map_lng FROM settings WHERE id = 1',
+      [],
+    )
+    expect(sonrasi.map_lat).toBe(onceki.map_lat)
+    expect(sonrasi.map_lng).toBe(onceki.map_lng)
+  } finally {
+    await temizlikci.kapat()
+  }
 })

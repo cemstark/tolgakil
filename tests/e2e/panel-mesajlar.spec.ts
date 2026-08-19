@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import AxeBuilder from '@axe-core/playwright'
 import { girisYap, ADMIN } from './helpers/auth'
 import { temizlikciAc, type Temizlikci } from './helpers/db-cleanup'
 
@@ -79,4 +80,25 @@ test('mesaj gövdesi açılır bölümde metin olarak gösterilir', async ({ pag
   await expect(page.getByText('<script>alert(1)</script> Merhaba')).toBeVisible()
   // KVKK onayı kaydedilmemişse bu açıkça yazılmalı; boş bırakmak "onay var" izlenimi verirdi.
   await expect(page.getByText('KVKK onayı kaydedilmemiş.')).toBeVisible()
+})
+
+// Tarama BURADA, kadro dosyasında değil: anlamlı olması için listede gerçek bir mesaj
+// satırı bulunmalı. Boş bir tabloyu taramak satır içi eylemler ("Okundu işaretle" düğmesi,
+// açılır gövde, silme tetikleyicisi) hakkında hiçbir şey söylemez.
+test('mesajlar listesinde erişilebilirlik ihlali yok', async ({ page }) => {
+  await mesajEkle(`Okunmamış ${damga}`, false)
+  await mesajEkle(`Okunmuş ${damga}`, true)
+
+  await girisYap(page, ADMIN)
+  await page.goto('/panel/mesajlar')
+  await expect(page.getByRole('row', { name: new RegExp(damga) }).first()).toBeVisible()
+
+  const sonuc = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
+  expect(sonuc.violations).toEqual([])
+
+  // Açılır gövde açıkken de taranıyor: <details> açıldığında içerik erişilebilirlik
+  // ağacına giriyor ve kapalıyken taranmış olması onu kapsamıyor.
+  await page.getByRole('row', { name: new RegExp(damga) }).first().locator('summary').click()
+  const acikSonuc = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
+  expect(acikSonuc.violations).toEqual([])
 })

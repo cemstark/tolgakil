@@ -155,6 +155,18 @@ describe('onay kutusu', () => {
     expect(sonuc.data?.barAssociation).toBeNull()
     expect(sonuc.data?.sortOrder).toBe(0)
   })
+
+  // Aynı tuzağın son iki örneği: harita koordinatları ve düzenlemedeki parola alanı.
+  it('gönderilmeyen koordinat ve parola alanları null değerle de çözülür', () => {
+    const ayarlar = settingsSchema.safeParse({ ...gecerliAyarlar, mapLat: null, mapLng: null })
+    expect(ayarlar.success).toBe(true)
+    expect(ayarlar.data?.mapLat).toBeNull()
+
+    const kullanici = userUpdateSchema.safeParse({ role: 'editor', isActive: null, password: null })
+    expect(kullanici.success).toBe(true)
+    // Çıktı tipi `string` kalmalı: çağıran "boşsa mevcut özeti koru" kararını `=== ''` ile veriyor.
+    expect(kullanici.data?.password).toBe('')
+  })
 })
 
 describe('hata mesajları', () => {
