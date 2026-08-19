@@ -38,8 +38,11 @@ export function LoginForm() {
           aria-invalid={emailError ? true : undefined}
           aria-describedby={emailError ? 'email-error' : undefined}
         />
+        {/* role="alert": aria-describedby hatayı yalnız girdiye odaklanınca okutur. Formu
+            gönderip odağı düğmede bırakan ekran okuyucu kullanıcısı, canlı bölge olmadan
+            hiçbir şey duymaz — bastığını bilir, sonucunu bilmez. axe bunu ihlal saymıyor. */}
         {emailError ? (
-          <p id="email-error" className={styles.fieldError}>
+          <p id="email-error" role="alert" className={styles.fieldError}>
             {emailError}
           </p>
         ) : null}
@@ -60,7 +63,7 @@ export function LoginForm() {
           aria-describedby={passwordError ? 'password-error' : undefined}
         />
         {passwordError ? (
-          <p id="password-error" className={styles.fieldError}>
+          <p id="password-error" role="alert" className={styles.fieldError}>
             {passwordError}
           </p>
         ) : null}

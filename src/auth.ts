@@ -5,13 +5,9 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/db/client'
 import { users } from '@/db/schema'
 import { authConfig } from '@/auth.config'
+import { loginRateLimiter, loginRateLimitKey } from '@/lib/login-rate-limit'
+import { dummyPasswordHash } from '@/lib/password'
 import { loginSchema } from '@/lib/validation'
-
-// Kullanıcı yoksa da özet doğrulama maliyetini ödemek için kullanılan sabit; "bu e-posta
-// kayıtlı mı" sorusunun yanıt süresinden okunmasını zorlaştırır. Geçerli bir argon2id
-// dizesidir — ölçüldü: verify bunu gerçek bir özetle aynı sürede (~32 ms) reddediyor,
-// bozuk bir dize olsaydı anında fırlatır ve zaman farkını kapatmazdı.
-const DUMMY_HASH = '$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHR2YWx1ZQ$0000000000000000000000000000000000000000000'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -22,15 +18,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const parsed = loginSchema.safeParse(credentials)
         if (!parsed.success) return null
 
+        // Hız sınırı buraya konmak zorunda: giriş formunun server action'ı tek giriş yolu
+        // değil, saldırgan bu uca doğrudan POST atabiliyor. Formdaki kontrol yalnız Türkçe
+        // mesaj üretmek için var; gerçek kapı burası.
+        const rateLimitKey = loginRateLimitKey(parsed.data.email)
+        if (!loginRateLimiter.peek(rateLimitKey).allowed) return null
+
         const [user] = await db.select().from(users).where(eq(users.email, parsed.data.email))
-        // Bozuk bir özet dizesi kimlik doğrulama başarısızlığıdır, uygulama hatası değil —
-        // bu plandaki tek "hatayı false'a çevir" istisnası.
-        const ok = await argon2
-          .verify(user?.passwordHash ?? DUMMY_HASH, parsed.data.password)
-          .catch(() => false)
+        const passwordHash = user?.passwordHash ?? (await dummyPasswordHash())
+        const ok = await argon2.verify(passwordHash, parsed.data.password).catch((error: unknown) => {
+          // Bozuk bir özet dizesi kimlik doğrulama başarısızlığıdır. Ama argon2'nin yerel
+          // ikilisi yüklenemezse de buraya düşülür ve o bir altyapı hatasıdır: hiçbir iz
+          // bırakmadan "parola hatalı" demek arızayı görünmez kılardı.
+          console.error('argon2.verify başarısız oldu:', error)
+          return false
+        })
 
         // Pasifleştirilmiş kullanıcı parolası doğru olsa da giremez (Görev 7).
-        if (!user || !user.isActive || !ok) return null
+        if (!user || !user.isActive || !ok) {
+          // Yalnız başarısız denemeler sayılıyor. Brute-force'un her denemesi başarısızdır,
+          // yani savunma zayıflamıyor; buna karşılık 15 dakikada altı kez giriş yapan meşru
+          // bir kullanıcı kendi hesabını kilitlemiyor.
+          loginRateLimiter.record(rateLimitKey)
+          return null
+        }
 
         await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id))
         // Parola özeti oturuma sızmasın diye yalnız gereken alanlar dönüyor.

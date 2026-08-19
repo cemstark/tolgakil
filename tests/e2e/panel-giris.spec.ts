@@ -2,14 +2,6 @@ import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { girisYap, ADMIN, EDITOR } from './helpers/auth'
 
-// Hız sınırı IP başına 15 dakikada 5 deneme veriyor ve Next dev sunucusu her isteğe
-// x-forwarded-for: ::1 koyuyor (ölçüldü) — yani başlık verilmezse dosyadaki bütün testler
-// tek bir bütçeyi paylaşır ve iki proje birlikte koşarken sekizinci deneme kilitlenir.
-// Her test kendi istemcisiymiş gibi davranıyor; sınırın kendisi ayrı bir testte ölçülüyor.
-test.beforeEach(async ({ page }, testInfo) => {
-  await page.setExtraHTTPHeaders({ 'x-forwarded-for': `test-${testInfo.testId}` })
-})
-
 test('oturumsuz kullanıcı panele giremez, giriş sayfasına yönlenir', async ({ page }) => {
   await page.goto('/panel')
   await expect(page).toHaveURL(/\/panel\/giris/)
@@ -27,6 +19,18 @@ test('yanlış parola alan bazında Türkçe hata gösterir ve oturum açmaz', a
   await expect(page).toHaveURL(/\/panel\/giris/)
 })
 
+// Alan hatası yalnız aria-describedby ile bağlansaydı, formu gönderip odağı düğmede bırakan
+// ekran okuyucu kullanıcısı hiçbir şey duymazdı: açıklama ancak girdiye odaklanınca okunur.
+test('boş parola hatası canlı bölgede duyurulur ve girdiye bağlanır', async ({ page }) => {
+  await page.goto('/panel/giris')
+  await page.getByLabel('E-posta').fill(ADMIN.email)
+  await page.getByRole('button', { name: 'Giriş yap' }).click()
+
+  await expect(page.locator('form').getByRole('alert')).toHaveText('Parola zorunlu.')
+  await expect(page.getByLabel('Parola')).toHaveAttribute('aria-invalid', 'true')
+  await expect(page.getByLabel('Parola')).toHaveAttribute('aria-describedby', 'password-error')
+})
+
 test('doğru bilgiyle giriş panele düşürür ve kullanıcı adını gösterir', async ({ page }) => {
   await girisYap(page, ADMIN)
   await expect(page).toHaveURL(/\/panel$/)
@@ -34,7 +38,7 @@ test('doğru bilgiyle giriş panele düşürür ve kullanıcı adını gösterir
 })
 
 test('çıkış yapınca panel yeniden korumaya girer', async ({ page }) => {
-  await girisYap(page, EDITOR)
+  await girisYap(page, ADMIN)
   await page.getByRole('button', { name: 'Çıkış yap' }).click()
   await expect(page).toHaveURL(/\/panel\/giris/)
   await page.goto('/panel')
@@ -44,16 +48,15 @@ test('çıkış yapınca panel yeniden korumaya girer', async ({ page }) => {
 // Bu yönlendirmeyi giriş sayfası kendisi yapıyor: next-auth proxy'si giriş sayfasında
 // yönlendirmeyi atladığı için authorized callback'i oturumu açık kullanıcıyı geri göndermiyor.
 test('oturumu açık kullanıcı giriş sayfasını görmez, panele döner', async ({ page }) => {
-  await girisYap(page, EDITOR)
+  await girisYap(page, ADMIN)
   await page.goto('/panel/giris')
   await expect(page).toHaveURL(/\/panel$/)
 })
 
 // Sayaç sunucu süreci boyunca yaşıyor; bu yüzden test sabit bir deneme sayısına değil,
 // "sınır mesajı çıkana kadar dene" kuralına dayanıyor: sunucu yeniden kullanılırsa da geçerli.
-// beforeEach bu teste kendi x-forwarded-for anahtarını verdiği için tükettiği bütçe
-// diğer testleri etkilemiyor; kayıtlı olmayan e-posta kullanılıyor ki tohum kullanıcılarının
-// lastLoginAt kaydı gereksizce dolmasın.
+// Kayıtlı olmayan bir e-posta kullanılıyor — anahtar e-posta olduğu için tohum kullanıcılarının
+// bütçesi harcanmasın.
 test('art arda başarısız denemeler hız sınırına takılır', async ({ page }) => {
   await page.goto('/panel/giris')
   const uyari = page.locator('form').getByRole('alert')
@@ -73,6 +76,41 @@ test('art arda başarısız denemeler hız sınırına takılır', async ({ page
   }
 
   await expect(uyari).toHaveText(/^Çok fazla deneme yapıldı\. \d+ dakika sonra tekrar deneyin\.$/)
+})
+
+// Denetim bulgusu Ö1 + Ö2'nin kanıtı. Saldırgan giriş formunu hiç kullanmak zorunda değil:
+// CSRF token'ını alıp doğrudan Auth.js callback ucuna POST atabiliyor. Sınır yalnız server
+// action'da dursaydı bu yol tamamen sınırsız olurdu.
+test('kimlik doğrulama ucuna doğrudan POST da hız sınırına takılır', async ({ request }, testInfo) => {
+  test.skip(
+    testInfo.project.name !== 'masaustu',
+    'HTTP düzeyinde kanıt, tarayıcıdan bağımsız. İki projede koşarsa aynı e-posta kovasını paylaşıp birbirinin ilk adımını bozar.',
+  )
+
+  const { csrfToken } = await (await request.get('/api/auth/csrf')).json()
+
+  // Her istek FARKLI bir x-forwarded-for taşıyor. Anahtar IP olsaydı her deneme yeni kova
+  // alır ve sınır hiç devreye girmezdi; kilitlenmesi anahtarın e-posta olduğunun kanıtı.
+  async function dogrudanGiris(password: string, sahteIpSonEki: number) {
+    return request.post('/api/auth/callback/credentials', {
+      headers: { 'x-forwarded-for': `203.0.113.${sahteIpSonEki}` },
+      form: { csrfToken, email: EDITOR.email, password, callbackUrl: '/panel' },
+      maxRedirects: 0,
+    })
+  }
+
+  // 1) Doğru parola: uç gerçekten açık ve form olmadan oturum açılabiliyor.
+  const ilk = await dogrudanGiris(EDITOR.password, 1)
+  expect(ilk.headers()['location']).not.toContain('error=')
+
+  // 2) Beş başarısız deneme kovayı doldurur.
+  for (let sira = 0; sira < 5; sira += 1) {
+    await dogrudanGiris('kesinlikle-yanlis-parola', 10 + sira)
+  }
+
+  // 3) Aynı doğru parola artık reddediliyor: sınır bu yolda da devrede.
+  const son = await dogrudanGiris(EDITOR.password, 100)
+  expect(son.headers()['location']).toContain('error=')
 })
 
 test('giriş sayfasında erişilebilirlik ihlali yok', async ({ page }) => {

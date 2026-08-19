@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm'
-import argon2 from 'argon2'
 // Uzantılı ve göreli yollar bilinçli: scripts/seed.mts bu dosyayı doğrudan Node ESM ile
 // yüklüyor; Node ne `@/` takma adını çözer ne de uzantısız göreli belirteci kabul eder.
 import { db } from './client.ts'
 import { categories, practiceAreas, settings, users } from './schema.ts'
+import { hashPassword } from '../lib/password.ts'
 import { SETTINGS_ID } from '../lib/settings-id.ts'
 
 const SEED_CATEGORIES = [
@@ -33,7 +33,8 @@ async function addUser(email: string, password: string, name: string, role: 'adm
   if (existing.length > 0) return
   await db.insert(users).values({
     email, name, role, isActive: true,
-    passwordHash: await argon2.hash(password, { type: argon2.argon2id }),
+    // Tek kaynak: sahte özet de dahil bütün argon2 parametreleri lib/password.ts'te.
+    passwordHash: await hashPassword(password),
   })
 }
 
