@@ -1,0 +1,78 @@
+/* --field-border ve --danger, seçicinin içinde durduğu ArticleForm'un .form kuralında
+   tanımlı ve miras alınıyor (PublishChecklist ile aynı düzen); renk burada yeniden
+   yazılmıyor ki iki form birbirinden ayrışmasın. */
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  min-width: 0;
+}
+
+.legend {
+  font-size: 15px;
+  font-weight: 500;
+  padding: 0 6px;
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.options {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: var(--radius-card);
+  padding: 8px;
+  min-width: 0;
+}
+
+/* Seçili seçenek yalnız radyo düğmesinin küçük noktasıyla değil, kartın kendisiyle de
+   ayrışıyor; :has ile seçim durumu etiketin tamamına taşınıyor. */
+.option:has(.radio:checked) {
+  border-color: var(--accent);
+}
+
+/* Odak halkası radyo düğmesinin kendisinde kalıyor ama kart da işaretleniyor: klavye
+   kullanıcısı seçenekler arasında gezinirken hangi kartta olduğunu görebilmeli. */
+.option:has(.radio:focus-visible) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.radio {
+  /* Dokunma hedefi 24 pikselin altına düşmesin (WCAG 2.5.8). */
+  width: 24px;
+  height: 24px;
+  flex: none;
+  accent-color: var(--accent);
+}
+
+.thumb {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+
+.optionText {
+  font-size: 15px;
+  line-height: 1.4;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

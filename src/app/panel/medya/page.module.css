@@ -1,0 +1,55 @@
+.library {
+  margin-top: 48px;
+}
+
+.libraryHeading {
+  font-size: 26px;
+  margin-bottom: 20px;
+}
+
+.empty {
+  color: var(--text-muted);
+}
+
+.grid {
+  list-style: none;
+  display: grid;
+  gap: 20px;
+  /* auto-fill + minmax: kart sayısı ekrana göre kendiliğinden ayarlanıyor, kırılma
+     noktası elle yazılmıyor. */
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* next/image gerçek piksel ölçüsünü width/height olarak basıyor; oranı korumak için
+   yükseklik auto kalmalı, yoksa dik görseller eziliyor. */
+.image {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line);
+}
+
+.alt {
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.itemActions {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+}

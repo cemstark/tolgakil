@@ -3,7 +3,9 @@
 import { useActionState, useState } from 'react'
 import { saveArticle } from '@/app/panel/makaleler/actions'
 import type { SelectOption } from '@/db/queries/articles'
+import type { MediaOption } from '@/db/queries/media'
 import type { FormState } from '@/lib/validation'
+import { MediaPicker } from './MediaPicker'
 import { PublishChecklist } from './PublishChecklist'
 import { RichTextEditor } from './RichTextEditor'
 import styles from './ArticleForm.module.css'
@@ -21,21 +23,30 @@ export type ArticleFormValues = {
   /** Seçim yapılmadığında boş dize; sütun NULL bekliyor. */
   categoryId: string
   authorId: string
+  coverMediaId: string
 }
 
 const EMPTY_VALUES: ArticleFormValues = {
-  id: null, title: '', slug: '', excerpt: '', content: '', categoryId: '', authorId: '',
+  id: null, title: '', slug: '', excerpt: '', content: '', categoryId: '', authorId: '', coverMediaId: '',
 }
 
 type ArticleFormProps = {
   values?: ArticleFormValues
   categories: SelectOption[]
   authors: SelectOption[]
+  /** Kapak görseli seçicisinin kaynağı; kitaplık boşsa seçici açıklama gösterir. */
+  mediaOptions: MediaOption[]
   /** Yeni kayıttan sonraki yönlendirmeyle taşınan bildirim. */
   initialMessage?: string
 }
 
-export function ArticleForm({ values = EMPTY_VALUES, categories, authors, initialMessage }: ArticleFormProps) {
+export function ArticleForm({
+  values = EMPTY_VALUES,
+  categories,
+  authors,
+  mediaOptions,
+  initialMessage,
+}: ArticleFormProps) {
   const [state, formAction, isPending] = useActionState(saveArticle, INITIAL_STATE)
 
   // Alanlar denetimli tutuluyor: React 19 form action'dan sonra denetimsiz alanları
@@ -46,6 +57,7 @@ export function ArticleForm({ values = EMPTY_VALUES, categories, authors, initia
   const [excerpt, setExcerpt] = useState(values.excerpt)
   const [categoryId, setCategoryId] = useState(values.categoryId)
   const [authorId, setAuthorId] = useState(values.authorId)
+  const [coverMediaId, setCoverMediaId] = useState(values.coverMediaId)
   const [acknowledged, setAcknowledged] = useState(false)
 
   // INITIAL_STATE bir modül sabiti; useActionState action çözülene kadar tam o nesneyi
@@ -63,6 +75,7 @@ export function ArticleForm({ values = EMPTY_VALUES, categories, authors, initia
   const contentError = fieldError('content')
   const categoryError = fieldError('categoryId')
   const authorError = fieldError('authorId')
+  const coverError = fieldError('coverMediaId')
 
   return (
     <form action={formAction} className={styles.form} noValidate>
@@ -221,6 +234,21 @@ export function ArticleForm({ values = EMPTY_VALUES, categories, authors, initia
             </p>
           ) : null}
         </div>
+      </div>
+
+      <div className={styles.field}>
+        <MediaPicker
+          name="coverMediaId"
+          options={mediaOptions}
+          value={coverMediaId}
+          onChange={setCoverMediaId}
+          describedBy={coverError ? 'article-cover-error' : undefined}
+        />
+        {coverError ? (
+          <p id="article-cover-error" role="alert" className={styles.fieldError}>
+            {coverError}
+          </p>
+        ) : null}
       </div>
 
       <PublishChecklist

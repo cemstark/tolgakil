@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getArticleById, listAuthorOptions, listCategoryOptions } from '@/db/queries/articles'
+import { listMedia } from '@/db/queries/media'
 import { requireAccess } from '@/lib/auth-guards'
 import { formatDateTime } from '@/lib/date'
 import { sanitizeArticleHtml } from '@/lib/sanitize'
@@ -30,9 +31,10 @@ export default async function EditArticlePage({ params, searchParams }: EditArti
   const article = await getArticleById(Number(id))
   if (article === null) notFound()
 
-  const [categories, authors, query] = await Promise.all([
+  const [categories, authors, mediaOptions, query] = await Promise.all([
     listCategoryOptions(),
     listAuthorOptions(),
+    listMedia(),
     searchParams,
   ])
 
@@ -50,6 +52,7 @@ export default async function EditArticlePage({ params, searchParams }: EditArti
       <ArticleForm
         categories={categories}
         authors={authors}
+        mediaOptions={mediaOptions}
         initialMessage={saveMessageFor(query.kaydedildi)}
         values={{
           id: article.id,
@@ -59,6 +62,7 @@ export default async function EditArticlePage({ params, searchParams }: EditArti
           content: article.content,
           categoryId: article.categoryId === null ? '' : String(article.categoryId),
           authorId: article.authorId === null ? '' : String(article.authorId),
+          coverMediaId: article.coverMediaId === null ? '' : String(article.coverMediaId),
         }}
       />
 

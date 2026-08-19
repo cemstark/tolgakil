@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/db/client'
 import { articles } from '@/db/schema'
 import { getArticleById, isSlugTaken } from '@/db/queries/articles'
+import { getMediaById } from '@/db/queries/media'
 import { findBannedPhrases, formatBannedMatch } from '@/lib/ad-ban'
 import { requireAccess } from '@/lib/auth-guards'
 import { TAGS, articleTag } from '@/lib/cache-tags'
@@ -33,6 +34,14 @@ export async function saveArticle(_prev: FormState, formData: FormData): Promise
 
   const id = parseId(formData.get('id'))
   if (id === 'invalid') return INVALID_ID
+
+  // Kapak görseli articleSchema'ya EKLENMEDİ: şema alanın FormData'da bulunmasını şart
+  // koşardı ve kapak seçicisi olmayan bir çağrı (ör. eski bir sekme) anlaşılmaz bir
+  // "beklenen dize" hatası alırdı. Kimlik alanıyla aynı yerel ayrıştırıcıdan geçiyor.
+  const coverMediaId = parseId(formData.get('coverMediaId'))
+  if (coverMediaId === 'invalid') {
+    return { ok: false, errors: { coverMediaId: ['Geçersiz kapak görseli seçildi.'] } }
+  }
 
   const parsed = articleSchema.safeParse({
     title: formData.get('title'),
@@ -79,6 +88,18 @@ export async function saveArticle(_prev: FormState, formData: FormData): Promise
     }
   }
 
+  // Kapak görselinin HÂLÂ var olduğu doğrulanıyor. Senaryo gerçek: editör A makaleyi açık
+  // tutarken B o görseli kitaplıktan siliyor; A kaydettiğinde MariaDB
+  // ER_NO_REFERENCED_ROW_2 fırlatır, hata sınırı formu değiştirir ve A'nın yazdığı metin
+  // gider. categoryId/authorId'de bu açık yok — onların kısıtı RESTRICT, satır silinemiyor;
+  // coverMediaId ise SET NULL, yani hedefi gerçekten kaybolabiliyor.
+  //
+  // Denetim ile yazma arasında hâlâ çok dar bir pencere var (aynı anda silinirse); orada
+  // hata yutulmuyor, yalnız sıklığı pratikte sıfıra iniyor.
+  if (coverMediaId !== null && (await getMediaById(coverMediaId)) === null) {
+    return { ok: false, errors: { coverMediaId: ['Seçilen kapak görseli artık kitaplıkta yok; yeniden seçin.'] } }
+  }
+
   const existing = id === null ? null : await getArticleById(id)
   if (id !== null && existing === null) {
     return { ok: false, errors: {}, message: 'Makale bulunamadı; başka bir oturumda silinmiş olabilir.' }
@@ -97,13 +118,14 @@ export async function saveArticle(_prev: FormState, formData: FormData): Promise
     status: parsed.data.status,
     categoryId: parsed.data.categoryId,
     authorId: parsed.data.authorId,
+    // Form kapak alanını her gönderimde taşıyor (seçim yoksa boş dize), bu yüzden
+    // güncellemede de açıkça yazılıyor: "Kapak yok" seçmek gerçekten kapağı kaldırmalı.
+    coverMediaId,
     publishedAt,
   }
 
   let savedId: number
   if (existing === null) {
-    // coverMediaId bilinçli olarak yazılmıyor: kapak seçicisi Görev 6'da geliyor, o zamana
-    // kadar sütun NULL kalır ve güncellemede de ellenmediği için ileride kaybolmaz.
     const [result] = await db.insert(articles).values(values)
     savedId = result.insertId
   } else {
