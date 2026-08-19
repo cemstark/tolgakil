@@ -326,15 +326,15 @@ describe('şema', () => {
 ```
 
 > **Uygulamada ölçülen düzeltme (Görev 1, onaylı sapma):** drizzle-orm 0.45.2 sürücü hatasını
->  içine sarıyor;  yalnızca "Failed query: …" taşıyor,
-> MariaDB kodu  altında. Bu yüzden yukarıdaki iki 
-> iddiası şema doğru olduğu hâlde başarısız olur. Doğrusu  üzerinden kontrol eden
+> `DrizzleQueryError` içine sarıyor; `error.message` yalnızca "Failed query: …" taşıyor,
+> MariaDB kodu `error.cause.code` altında. Bu yüzden yukarıdaki iki `rejects.toThrow(...)`
+> iddiası şema doğru olduğu hâlde başarısız olur. Doğrusu `cause.code` üzerinden kontrol eden
 > bir yardımcıdır ve **beklenen kodu açıkça iddia etmelidir**; hiç hata fırlatılmazsa yardımcı
-> kendi hatasını fırlatır. Ölçülen kodlar: yinelenen slug →  (1062);
-> makalesi olan kategoriyi silme →  (**1451, sondaki `_2` dahil**);
-> ENUM dışı değer →  (1265, STRICT modda hata).
+> kendi hatasını fırlatır. Ölçülen kodlar: yinelenen slug → `ER_DUP_ENTRY` (1062);
+> makalesi olan kategoriyi silme → `ER_ROW_IS_REFERENCED_2` (**1451, sondaki `_2` dahil**);
+> ENUM dışı değer → `WARN_DATA_TRUNCATED` (1265, STRICT modda hata).
 >
-> Ayrıca  içindeki şema importu da uzantılı olmalıdır () —
+> Ayrıca `src/db/client.ts` içindeki şema importu da uzantılı olmalıdır (`./schema.ts`) —
 > Node ESM uzantısız çözemiyor; `allowImportingTsExtensions` tam olarak bunun için eklendi.
 
 **Bu testler hangi mutasyonda kırılır:**
