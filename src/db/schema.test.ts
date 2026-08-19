@@ -19,14 +19,14 @@ afterAll(async () => {
 // drizzle-orm 0.45.2 sürücü hatasını DrizzleQueryError içine sarıyor; message yalnızca
 // "Failed query: ..." diyor, MariaDB'nin kodu cause içinde kalıyor (ölçüldü). İşlem hata
 // vermeden geçerse burada patlıyoruz: kısıt kalkarsa test sessizce yeşile dönmesin.
-async function hataKodu(islem: Promise<unknown>): Promise<string> {
+async function hataKodu(islem: Promise<unknown>, islemAdi: string): Promise<string> {
   try {
     await islem
   } catch (hata) {
     const neden = (hata as { cause?: { code?: string } }).cause
     return neden?.code ?? (hata as Error).message
   }
-  throw new Error('İşlem hata vermesi gerekirken başarıyla tamamlandı.')
+  throw new Error(`${islemAdi} hata vermesi gerekirken başarıyla tamamlandı.`)
 }
 
 async function kategoriEkle(slug: string) {
@@ -51,9 +51,12 @@ describe('şema', () => {
   it('aynı slug ile ikinci avukat eklenemez', async () => {
     const veri = { slug: 'tolga-akil', fullName: 'Tolga Akıl', title: 'Avukat', isPublished: false, sortOrder: 0 }
     await db.insert(lawyers).values(veri)
-    expect(await hataKodu(db.insert(lawyers).values({ ...veri, fullName: 'Başka Kişi' }))).toBe(
-      'ER_DUP_ENTRY',
-    )
+    expect(
+      await hataKodu(
+        db.insert(lawyers).values({ ...veri, fullName: 'Başka Kişi' }),
+        'Aynı slug ile ikinci avukat eklemek',
+      ),
+    ).toBe('ER_DUP_ENTRY')
   })
 
   it('makalesi olan kategori silinemez', async () => {
@@ -62,9 +65,12 @@ describe('şema', () => {
       slug: 'ise-iade', title: 'İşe iade', excerpt: 'özet', content: '<p>gövde</p>',
       categoryId, status: 'draft',
     })
-    expect(await hataKodu(db.delete(categories).where(eq(categories.id, categoryId)))).toBe(
-      'ER_ROW_IS_REFERENCED_2',
-    )
+    expect(
+      await hataKodu(
+        db.delete(categories).where(eq(categories.id, categoryId)),
+        'Makalesi olan kategoriyi silmek',
+      ),
+    ).toBe('ER_ROW_IS_REFERENCED_2')
   })
 
   it('bilinmeyen durum değeri kabul edilmez', async () => {
