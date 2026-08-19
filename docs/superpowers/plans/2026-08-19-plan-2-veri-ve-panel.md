@@ -325,6 +325,18 @@ describe('şema', () => {
 })
 ```
 
+> **Uygulamada ölçülen düzeltme (Görev 1, onaylı sapma):** drizzle-orm 0.45.2 sürücü hatasını
+>  içine sarıyor;  yalnızca "Failed query: …" taşıyor,
+> MariaDB kodu  altında. Bu yüzden yukarıdaki iki 
+> iddiası şema doğru olduğu hâlde başarısız olur. Doğrusu  üzerinden kontrol eden
+> bir yardımcıdır ve **beklenen kodu açıkça iddia etmelidir**; hiç hata fırlatılmazsa yardımcı
+> kendi hatasını fırlatır. Ölçülen kodlar: yinelenen slug →  (1062);
+> makalesi olan kategoriyi silme →  (**1451, sondaki `_2` dahil**);
+> ENUM dışı değer →  (1265, STRICT modda hata).
+>
+> Ayrıca  içindeki şema importu da uzantılı olmalıdır () —
+> Node ESM uzantısız çözemiyor; `allowImportingTsExtensions` tam olarak bunun için eklendi.
+
 **Bu testler hangi mutasyonda kırılır:**
 1. Bağlantı dizesinden `charset=utf8mb4` düşerse veya sütun `latin1` olursa Türkçe harf testi kırılır.
 2. `lawyers.slug` üstündeki `.unique()` kalkarsa ikinci ekleme başarılı olur ve test kırılır.
