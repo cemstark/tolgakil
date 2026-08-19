@@ -119,6 +119,39 @@ Yerel sunucu 10.11'den **yeni**. Yerelde çalışan her SQL 10.11'de de çalış
 - **Her görev, doğrulama komutları yeşil olduktan sonra tek commit ile biter.** Mesaj Türkçe,
   `tür: özet` biçiminde; gövdede hangi doğrulamanın koşturulduğu yazılır.
 
+### Görev 1-2'den devredilen sözleşmeler (uygulama sırasında ölçüldü — bağlayıcı)
+
+- **Veritabanı oturumu UTC.** `client.ts` her bağlantıda `SET time_zone = '+00:00'` çalıştırır.
+  Ekrana basarken `Intl`'e **açıkça `timeZone` verilir**; ham `toLocaleString()` sunucunun
+  dilimine bağlı çıkar.
+- **Her veritabanı test dosyası `afterAll` içinde `closeDb()` çağırır** — havuz `globalThis`
+  üzerinde önbelleklendi; çağrılmazsa Vitest çıkışta asılır.
+- **`DATABASE_URL`'e `?charset=...` eklenmez** (üretim `.env`'i dahil). Ölçüldü: `charset=utf8mb4`
+  bağlantı harmanlamasını `uca1400` ailesine çekiyor, o aile MariaDB 10.11'de yok.
+- **`server-only` paketi bilinçli olarak yok.** `src/db/client.ts` yalnız sunucuda çalışır;
+  kuralı yalnızca bir yorum korur, istemci bileşeninden import edilmez.
+- **Yeni bir `CREATE TABLE` migration'ına `DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  elle eklenir** — drizzle snapshot'ı harmanlamayı kaydetmiyor, aksi hâlde üretimde veritabanı
+  varsayılanına teslim olunur.
+- **`process.loadEnvFile()` mevcut ortam değişkenlerini EZMEZ.** Bu yüzden `scripts/*.mts` ve
+  `vitest.setup.ts` dosyayı `node:util`'in `parseEnv`'i ile okuyup değeri **açıkça atar**;
+  test kurulumu ayrıca hedef veritabanı adı `_test` ile bitmiyorsa **fırlatır**. Yeni bir Node
+  giriş noktası yazılırsa aynı desen uygulanır — aksi hâlde yanlış veritabanına yazma yolu açılır.
+- **Alan hataları `toFieldErrors`, tam form durumu `toFormState` ile üretilir.** `z.flattenError`
+  path'siz hataları `formErrors`'a koyar; yalnız `toFieldErrors` kullanılırsa o hatalar kaybolur
+  ve kullanıcı "Kaydet"e basıp hiçbir şey olmadığını görür. **Server action'lar `toFormState`
+  kullanır.**
+- **Hata mesajları Türkçe:** `validation.ts` `z.config(z.locales.tr())` çağırır. Zod'u doğrudan
+  import edip `validation.ts`'i import etmeyen bir modül İngilizce mesaj döndürür.
+- **`formatBannedMatch` 1 tabanlı konum yazar, `BannedMatch.index` 0 tabanlıdır.** Tüketen kod
+  ikinci bir `+1` eklemez.
+- **Testler `TZ=America/New_York` altında koşar** (`vitest.config.mts`), geliştirme ve üretim
+  `+03`'tedir. `timestamp` sütunları bu asimetriden etkilenmez (drizzle UTC sabitler), ama
+  **`date` sütunları (`lawyers.practiceStartDate`) etkilenebilir** — ekrana basan görev bunu
+  ölçmek zorundadır.
+- **`settingsSchema.mapLat`/`mapLng` şu an zorunludur.** Ayarlar formunu yazan görev ya alanları
+  forma koyar ya şemayı `.optional()` yapar; aksi hâlde kullanıcı görmediği bir alan için hata alır.
+
 ### Ortam değişkenleri
 
 `.env.local` (geliştirme ve `npm run dev`/`start`):
