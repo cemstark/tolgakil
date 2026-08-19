@@ -40,13 +40,19 @@ const optionalId = z
   .refine((v) => v === '' || /^[1-9]\d*$/.test(v), 'Geçersiz kayıt seçildi.')
   .transform((v) => (v === '' ? null : Number(v)))
 
-// İşaretlenmemiş onay kutusu FormData'ya hiç girmez; bu yüzden alan optional ve yokluğu false.
+// İşaretlenmemiş onay kutusu FormData'ya hiç girmez; bu yüzden alan isteğe bağlı ve yokluğu
+// false. `nullish` ZORUNLU, yalnız `optional` DEĞİL: `FormData.get()` bulunmayan alan için
+// `undefined` değil **null** döndürüyor. Yalnız optional yazıldığında (Görev 1) kutuyu
+// işaretlemeden kaydeden kullanıcı, hiçbir alana bağlanamayan bir "beklenen string" hatası
+// alıyordu — ekranda hiçbir şey görünmüyor, kayıt da yapılmıyordu. Görev 7'de ölçüldü:
+// kadro formunun ilk gönderimi bu yüzden sessizce düşüyordu.
+//
 // 'on' de kabul ediliyor: <input type="checkbox"> value yazılmazsa HTML varsayılanı olarak
 // 'on' gönderir; yalnız 'evet' aransaydı kullanıcı kutuyu işaretler, "Kaydedildi" görür,
 // kayıt yayına girmezdi — sessiz veri kaybı.
 const checkbox = z
   .string()
-  .optional()
+  .nullish()
   .transform((v) => v === 'evet' || v === 'on')
 
 // Harita koordinatı boş bırakılabilir. Sütun varchar olduğu için (schema.ts) değer metin olarak
@@ -56,6 +62,56 @@ const coordinate = z
   .trim()
   .refine((v) => v === '' || Number.isFinite(Number(v)), 'Koordinat sayı olmalı.')
   .transform((v) => (v === '' ? null : v))
+
+// Panel formları alanı boş bırakılsa bile FormData'ya "" olarak koyar; sütunlar ise NULL
+// bekliyor. `.nullish()` ayrıca alanın hiç gönderilmediği durumu da karşılıyor: yeni bir
+// alan eklendiğinde açık duran eski bir sekme, kullanıcının hiç görmediği bir alan için
+// "Beklenen dize" hatası almasın (settingsSchema.mapLat'ta yaşanan tuzağın ta kendisi).
+// `optional` DEĞİL `nullish`: FormData.get() bulunmayan alan için null döndürüyor (bkz. checkbox).
+function optionalText(max: number, alanAdi: string) {
+  return z
+    .string()
+    .trim()
+    .max(max, `${alanAdi} en fazla ${max} karakter olabilir.`)
+    .nullish()
+    .transform((v) => (v === undefined || v === null || v === '' ? null : v))
+}
+
+// Boş bırakılabilen e-posta. z.email() boş dizeyi reddettiği için önce boşluk elenip
+// sonra biçim denetleniyor.
+const optionalEmail = z
+  .string()
+  .trim()
+  .nullish()
+  .transform((v) => (v === undefined || v === null || v === '' ? null : v))
+  .refine((v) => v === null || z.email().safeParse(v).success, 'Geçerli bir e-posta adresi girin.')
+
+// <input type="date"> daima "YYYY-MM-DD" gönderir ve sütun (mode: 'string') tam olarak bunu
+// saklıyor; dönüşüm yok, dolayısıyla dilim kayması da yok. Takvimsel geçerlilik ayrıca
+// denetleniyor: "2026-02-31" desene uyar ama böyle bir gün yoktur ve MariaDB
+// STRICT_TRANS_TABLES altında satırı reddeder — kullanıcı hata sayfası görürdü.
+const optionalIsoDate = z
+  .string()
+  .trim()
+  .nullish()
+  .transform((v) => (v === undefined || v === null || v === '' ? null : v))
+  .refine((v) => v === null || isTakvimGunu(v), 'Tarihi GG.AA.YYYY takvim günü olarak seçin.')
+
+function isTakvimGunu(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const parsed = new Date(`${value}T00:00:00Z`)
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value
+}
+
+// Sıra alanı sütunda NOT NULL DEFAULT 0; boş bırakmak "sıralama verilmedi" demek.
+// Negatif ve ondalık değerler eleniyor: sütun int ve sıra bir sayaç, ölçü değil.
+const sortOrder = z
+  .string()
+  .trim()
+  .nullish()
+  .transform((v) => v ?? '')
+  .refine((v) => v === '' || /^\d{1,4}$/.test(v), 'Sıra 0 ile 9999 arasında bir tam sayı olmalı.')
+  .transform((v) => (v === '' ? 0 : Number(v)))
 
 // Slug boşsa kaynak alandan üretilir; slugify her iki durumda da uygulanır ki elle girilen
 // "Kira Tespit Davası" da geçerli bir adrese dönüşsün.
@@ -100,11 +156,21 @@ export function byteLength(value: string): number {
   return new TextEncoder().encode(value).length
 }
 
-/** Sınırı aşıyorsa Türkçe alan hatası, aşmıyorsa null. */
-export function articleContentLengthError(content: string): string | null {
-  const bytes = byteLength(content)
+/**
+ * Sınırı aşıyorsa Türkçe alan hatası, aşmıyorsa null.
+ *
+ * Aynı denetim avukat özgeçmişi ve çalışma alanı içeriği için de gerekli (Görev 7): üçü de
+ * TEXT sütunu ve üçü de zengin metin editöründen besleniyor. Alan adı çağırandan geliyor ki
+ * kullanıcı hatanın hangi kutuyu işaret ettiğini bilsin.
+ */
+export function textColumnLengthError(value: string, alanAdi: string): string | null {
+  const bytes = byteLength(value)
   if (bytes <= ARTICLE_CONTENT_MAX_BYTES) return null
-  return `İçerik çok uzun: en fazla ${ARTICLE_CONTENT_MAX_BYTES} bayt olabilir, şu an ${bytes} bayt. Yazıyı bölün veya kısaltın.`
+  return `${alanAdi} çok uzun: en fazla ${ARTICLE_CONTENT_MAX_BYTES} bayt olabilir, şu an ${bytes} bayt. Yazıyı bölün veya kısaltın.`
+}
+
+export function articleContentLengthError(content: string): string | null {
+  return textColumnLengthError(content, 'İçerik')
 }
 
 export const articleSchema = z
@@ -126,11 +192,22 @@ export const articleSchema = z
     }
   })
 
+// Zorunlu alanlar yalnız ad soyad ve unvan. Mevzuatın saydığı diğer alanlar (baro, sicil
+// numaraları, mesleğe başlama tarihi, üniversite, diller) isteğe bağlı: büro bu bilgileri
+// kademeli olarak dolduruyor ve eksik bir sicil numarası kaydı bloke etmemeli.
 export const lawyerSchema = z
   .object({
     slug: z.string().trim(),
     fullName: z.string().trim().min(3, 'Ad soyad en az 3 karakter olmalı.').max(160, 'Ad soyad en fazla 160 karakter olabilir.'),
     title: z.string().trim().min(2, 'Unvan en az 2 karakter olmalı.').max(120, 'Unvan en fazla 120 karakter olabilir.'),
+    barAssociation: optionalText(120, 'Baro'),
+    barRegistryNo: optionalText(40, 'Baro sicil no'),
+    tbbRegistryNo: optionalText(40, 'TBB sicil no'),
+    practiceStartDate: optionalIsoDate,
+    university: optionalText(160, 'Üniversite'),
+    languages: optionalText(255, 'Diller'),
+    email: optionalEmail,
+    sortOrder,
     isPublished: checkbox,
   })
   .transform((v) => ({ ...v, slug: resolveSlug(v.slug, v.fullName) }))
@@ -141,6 +218,7 @@ export const practiceAreaSchema = z
     slug: z.string().trim(),
     name: z.string().trim().min(3, 'Alan adı en az 3 karakter olmalı.').max(160, 'Alan adı en fazla 160 karakter olabilir.'),
     summary: z.string().trim().min(20, 'Özet en az 20 karakter olmalı.').max(400, 'Özet en fazla 400 karakter olabilir.'),
+    sortOrder,
     isPublished: checkbox,
   })
   .transform((v) => ({ ...v, slug: resolveSlug(v.slug, v.name) }))
@@ -154,13 +232,22 @@ export const categorySchema = z
   .transform((v) => ({ ...v, slug: resolveSlug(v.slug, v.name) }))
   .superRefine((v, ctx) => requireSlug(v.slug, 'Kategori adından', ctx))
 
+// mapLat/mapLng zorunlu bir ANAHTAR (değer boş bırakılabilir) ve bu bilinçli: ayarlar
+// formunun tek çağıran olduğu ve formun bu alanları GERÇEKTEN çizdiği için şemayı
+// gevşetmeye gerek yok. Aynı gerekçeyle whatsapp/kep/sosyal/alt bilgi alanları da burada:
+// sütunları var, tohum verisi dolduruyor ve panelden düzenlenemeselerdi büro alt bilgi
+// metnini hiçbir yerden değiştiremezdi.
 export const settingsSchema = z.object({
   officeName: z.string().trim().min(2, 'Büro adı en az 2 karakter olmalı.').max(160, 'Büro adı en fazla 160 karakter olabilir.'),
   address: z.string().trim().min(10, 'Adres en az 10 karakter olmalı.').max(400, 'Adres en fazla 400 karakter olabilir.'),
   phone: z.string().trim().min(7, 'Telefon numarası en az 7 karakter olmalı.').max(40, 'Telefon numarası en fazla 40 karakter olabilir.'),
   email: z.email('Geçerli bir e-posta adresi girin.'),
+  whatsapp: optionalText(40, 'WhatsApp numarası'),
+  kep: optionalText(190, 'KEP adresi'),
   mapLat: coordinate,
   mapLng: coordinate,
+  socialLinks: optionalText(500, 'Sosyal medya adresleri'),
+  footerText: optionalText(500, 'Alt bilgi metni'),
 })
 
 export const mediaSchema = z.object({

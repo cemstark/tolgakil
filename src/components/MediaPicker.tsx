@@ -15,6 +15,10 @@ type MediaPickerProps = {
   onChange: (value: string) => void
   /** Hata metninin kimliği; gruba girildiğinde ekran okuyucu bunu da okur. */
   describedBy?: string
+  /** Grubun görünen adı. Kadro formunda seçilen şey kapak değil avukat fotoğrafı. */
+  legend?: string
+  /** "Seçim yok" seçeneğinin metni; grubun adıyla uyumlu olmalı. */
+  emptyOptionLabel?: string
 }
 
 /**
@@ -22,10 +26,18 @@ type MediaPickerProps = {
  * grup adının okunması tarayıcıdan geliyor; özel bir ızgara bunların hepsini elle
  * kurmak zorunda kalırdı.
  */
-export function MediaPicker({ name, options, value, onChange, describedBy }: MediaPickerProps) {
+export function MediaPicker({
+  name,
+  options,
+  value,
+  onChange,
+  describedBy,
+  legend = 'Kapak görseli',
+  emptyOptionLabel = 'Kapak yok',
+}: MediaPickerProps) {
   return (
     <fieldset className={styles.group} aria-describedby={describedBy}>
-      <legend className={styles.legend}>Kapak görseli</legend>
+      <legend className={styles.legend}>{legend}</legend>
 
       {options.length === 0 ? (
         <p className={styles.empty}>
@@ -43,7 +55,7 @@ export function MediaPicker({ name, options, value, onChange, describedBy }: Med
             onChange={() => onChange('')}
             className={styles.radio}
           />
-          <span className={styles.optionText}>Kapak yok</span>
+          <span className={styles.optionText}>{emptyOptionLabel}</span>
         </label>
 
         {options.map((option) => (

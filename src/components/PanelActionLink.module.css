@@ -1,0 +1,12 @@
+.link {
+  display: inline-block;
+  font-weight: 500;
+  background: var(--accent);
+  color: var(--ink);
+  border-radius: var(--radius-pill);
+  padding: 12px 24px;
+}
+
+.empty {
+  color: var(--text-muted);
+}

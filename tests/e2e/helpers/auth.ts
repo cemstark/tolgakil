@@ -32,6 +32,18 @@ export const EDITOR = {
   name: 'Yazar Avukat',
 }
 
+/**
+ * Oturumu kapatır.
+ *
+ * Çerez temizleniyor, "Çıkış yap" düğmesine BASILMIYOR: düğme yalnız panel gezinmesinde
+ * var, yani çağıran o an panelin neresinde olduğunu bilmek zorunda kalırdı. Asıl gerekçe
+ * ise girisYap'ın kendisi: /panel/giris oturumu açık kullanıcıyı /panel'e yolluyor, yani
+ * çerez durmadan ikinci bir giriş denemesi form alanlarını hiç bulamaz.
+ */
+export async function cikisYap(page: Page) {
+  await page.context().clearCookies()
+}
+
 export async function girisYap(page: Page, kullanici: { email: string; password: string }) {
   await page.goto('/panel/giris')
   await page.getByLabel('E-posta').fill(kullanici.email)

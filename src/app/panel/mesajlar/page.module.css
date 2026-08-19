@@ -1,0 +1,38 @@
+.dateCell {
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+/* Gönderen hücresi ad + iletişim adreslerini alt alta taşıyor. */
+.contact {
+  display: block;
+  font-weight: 400;
+  font-size: 15px;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.detail {
+  max-width: 46ch;
+}
+
+.summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* Kullanıcının yazdığı metin satır sonlarını koruyor; aksi hâlde paragrafları tek bloğa
+   yapışık okunurdu. */
+.body {
+  white-space: pre-wrap;
+  margin-top: 12px;
+  line-height: 1.6;
+}
+
+.consent {
+  margin-top: 12px;
+  color: var(--text-muted);
+  font-size: 15px;
+}

@@ -1,7 +1,6 @@
 'use client'
 
 import { useActionState, useRef } from 'react'
-import { deleteArticle } from '@/app/panel/makaleler/actions'
 import type { FormState } from '@/lib/validation'
 import styles from './ConfirmDeleteDialog.module.css'
 
@@ -9,23 +8,44 @@ import styles from './ConfirmDeleteDialog.module.css'
 // yan etkili, değer olarak import edilirse zod ve bütün panel şemaları istemci paketine girer.
 const INITIAL_STATE: FormState = { ok: false, errors: {} }
 
-type ConfirmDeleteDialogProps = { articleId: number; title: string }
+type ConfirmDeleteDialogProps = {
+  /**
+   * Silme action'ı sunucu bileşeninden prop olarak geliyor. Doğrudan import edilseydi bu
+   * bileşen tek bir kaynağa çivilenirdi; kadro, çalışma alanı, kategori ve mesaj listeleri
+   * aynı kip pencereyi kendi action'larıyla kullanıyor.
+   */
+  action: (prev: FormState, formData: FormData) => Promise<FormState>
+  recordId: number
+  /** Kip pencerenin h2 başlığı, ör. "Makaleyi sil". */
+  heading: string
+  /** Silinecek kaydın kullanıcıya görünen adı; onay metnine tırnak içinde giriyor. */
+  recordName: string
+  /** Satırdaki tetikleyicinin erişilebilir adı; birden çok satırda "Sil" yalnız başına yetersiz. */
+  triggerLabel?: string
+}
 
-export function ConfirmDeleteDialog({ articleId, title }: ConfirmDeleteDialogProps) {
-  const [state, formAction, isPending] = useActionState(deleteArticle, INITIAL_STATE)
+export function ConfirmDeleteDialog({
+  action,
+  recordId,
+  heading,
+  recordName,
+  triggerLabel,
+}: ConfirmDeleteDialogProps) {
+  const [state, formAction, isPending] = useActionState(action, INITIAL_STATE)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
-  const titleId = `delete-dialog-${articleId}`
+  const titleId = `delete-dialog-${heading}-${recordId}`
 
-  // Başarı yolunda buraya hiç dönülmez: deleteArticle listeye yönlendiriyor ve bildirim
-  // orada, odaklanan bir role="status" bölgesinde veriliyor (bkz. DeleteNotice). Bu
-  // bileşene yalnız HATA döner; o zaman kip pencere açık kalıp gerekçeyi gösteriyor.
+  // Başarı yolunda buraya hiç dönülmez: action listeye yönlendiriyor ve bildirim orada,
+  // odaklanan bir role="status" bölgesinde veriliyor (bkz. DeleteNotice). Bu bileşene
+  // yalnız HATA döner; o zaman kip pencere açık kalıp gerekçeyi gösteriyor.
   return (
     <>
       <button
         type="button"
         ref={triggerRef}
         className={styles.trigger}
+        aria-label={triggerLabel}
         onClick={() => dialogRef.current?.showModal()}
       >
         Sil
@@ -41,10 +61,10 @@ export function ConfirmDeleteDialog({ articleId, title }: ConfirmDeleteDialogPro
         onClose={() => triggerRef.current?.focus()}
       >
         <h2 id={titleId} className={styles.heading}>
-          Makaleyi sil
+          {heading}
         </h2>
         <p className={styles.body}>
-          “{title}” kalıcı olarak silinecek. Bu işlem geri alınamaz.
+          “{recordName}” kalıcı olarak silinecek. Bu işlem geri alınamaz.
         </p>
 
         {!state.ok && state.message ? (
@@ -54,7 +74,7 @@ export function ConfirmDeleteDialog({ articleId, title }: ConfirmDeleteDialogPro
         ) : null}
 
         <form action={formAction} className={styles.actions}>
-          <input type="hidden" name="id" value={articleId} readOnly />
+          <input type="hidden" name="id" value={recordId} readOnly />
           <button type="button" className={styles.cancel} onClick={() => dialogRef.current?.close()}>
             Vazgeç
           </button>

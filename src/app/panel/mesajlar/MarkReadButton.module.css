@@ -1,0 +1,29 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Silme tetikleyicisiyle aynı ölçü: iki düğme satırda yan yana duruyor. */
+.button {
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  padding: 8px 18px;
+}
+
+.button:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* Ölçüm Görev 3'ten: #f0a6a0 --ink zemininde 4.5:1'in üstünde. */
+.error {
+  color: #f0a6a0;
+  font-size: 15px;
+  line-height: 1.5;
+}

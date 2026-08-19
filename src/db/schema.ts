@@ -38,7 +38,13 @@ export const lawyers = mysqlTable('lawyers', {
   barAssociation: varchar('bar_association', { length: 120 }),
   barRegistryNo: varchar('bar_registry_no', { length: 40 }),
   tbbRegistryNo: varchar('tbb_registry_no', { length: 40 }),
-  practiceStartDate: date('practice_start_date'),
+  // mode: 'string' ÖLÇÜMLE seçildi (Görev 7). Varsayılan 'date' kipinde sürücü
+  // '2010-03-15' değerini UTC gece yarısına oturan bir Date'e çeviriyor; TZ=America/New_York
+  // altında o nesnenin getDate()'i 14 döndürüyor, yani yerel saat yöntemlerini kullanan
+  // her okuma bir gün geriye kayıyor. Sütun saat taşımıyor; dize olarak okunup yazıldığında
+  // <input type="date"> ile birebir aynı biçimde dolaşıyor ve kayma yolu tümüyle kapanıyor.
+  // SQL tipi değişmedi (`date`), drizzle anlık görüntüsü kipi kaydetmiyor: migration yok.
+  practiceStartDate: date('practice_start_date', { mode: 'string' }),
   university: varchar('university', { length: 160 }),
   // Diller virgülle ayrılmış düz metin: MariaDB'de JSON tipi LONGTEXT takma adı olduğu ve
   // 10.11'e taşınabilirliği tartışmalı olduğu için kullanılmadı.

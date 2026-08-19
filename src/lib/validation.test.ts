@@ -1,9 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import {
   ARTICLE_CONTENT_MAX_BYTES, articleContentLengthError, articleSchema, byteLength,
-  categorySchema, lawyerSchema, loginSchema, toFieldErrors, toFormState,
+  categorySchema, lawyerSchema, loginSchema, settingsSchema, toFieldErrors, toFormState,
   userCreateSchema, userUpdateSchema,
 } from '@/lib/validation'
+
+const gecerliAvukat = { slug: '', fullName: 'Tolga Akıl', title: 'Avukat' }
+
+const gecerliAyarlar = {
+  officeName: 'Akıl Hukuk Bürosu',
+  address: 'Örnek Mah. Örnek Cad. No: 1, Kadıköy / İstanbul',
+  phone: '+90 216 000 00 00',
+  email: 'info@example.com',
+  whatsapp: '',
+  kep: '',
+  mapLat: '',
+  mapLng: '',
+  socialLinks: '',
+  footerText: '',
+}
 
 const gecerliMakale = {
   title: 'İşe iade davasında süre koşulu',
@@ -108,6 +123,38 @@ describe('onay kutusu', () => {
   it('alan hiç gönderilmezse işaretsiz sayar', () => {
     expect(userUpdateSchema.safeParse({ role: 'editor', password: '' }).data?.isActive).toBe(false)
   })
+
+  // Görev 7'de ölçüldü: server action'lar alanları `formData.get(...)` ile okuyor ve o
+  // çağrı bulunmayan alan için `undefined` DEĞİL **null** döndürüyor. Şema yalnız
+  // `optional` olduğunda kutuyu işaretlemeden kaydeden kullanıcı, hiçbir alana
+  // bağlanamayan bir "beklenen string" hatası alıyordu: ekranda hiçbir şey görünmüyor,
+  // kayıt da yapılmıyordu. Bu iddia gerçek çağrı biçimini ölçüyor.
+  it('formData.get sonucu olan null değeri işaretsiz sayar', () => {
+    const veri = new FormData()
+    veri.set('role', 'editor')
+    veri.set('password', '')
+    const sonuc = userUpdateSchema.safeParse({
+      role: veri.get('role'),
+      isActive: veri.get('isActive'),
+      password: veri.get('password'),
+    })
+    expect(sonuc.success).toBe(true)
+    expect(sonuc.data?.isActive).toBe(false)
+
+    const avukat = lawyerSchema.safeParse({ ...gecerliAvukat, isPublished: null })
+    expect(avukat.success).toBe(true)
+    expect(avukat.data?.isPublished).toBe(false)
+  })
+
+  // Aynı tuzak isteğe bağlı metin, tarih ve sıra alanlarında da vardı.
+  it('gönderilmeyen isteğe bağlı alanlar null değerle de çözülür', () => {
+    const sonuc = lawyerSchema.safeParse({
+      ...gecerliAvukat, barAssociation: null, practiceStartDate: null, email: null, sortOrder: null,
+    })
+    expect(sonuc.success).toBe(true)
+    expect(sonuc.data?.barAssociation).toBeNull()
+    expect(sonuc.data?.sortOrder).toBe(0)
+  })
 })
 
 describe('hata mesajları', () => {
@@ -131,6 +178,73 @@ describe('hata mesajları', () => {
     expect(toFieldErrors(sonuc.error!)).toEqual({})
     expect(toFormState(sonuc.error!).message).toBeTruthy()
     expect(toFormState(sonuc.error!).ok).toBe(false)
+  })
+})
+
+describe('lawyerSchema isteğe bağlı alanları', () => {
+  // Bu alanlar formda boş bırakılabiliyor, sütunlar ise NULL bekliyor. Boş dize yazılsaydı
+  // "baro girilmedi" ile "baro boş yazıldı" ayırt edilemezdi.
+  it('boş bırakılan alanları null yapar', () => {
+    const sonuc = lawyerSchema.safeParse({
+      ...gecerliAvukat, barAssociation: '', barRegistryNo: '', practiceStartDate: '', email: '', sortOrder: '',
+    })
+    expect(sonuc.success).toBe(true)
+    expect(sonuc.data?.barAssociation).toBeNull()
+    expect(sonuc.data?.practiceStartDate).toBeNull()
+    expect(sonuc.data?.email).toBeNull()
+    // Sütun NOT NULL DEFAULT 0; boş sıra null değil sıfır olmalı.
+    expect(sonuc.data?.sortOrder).toBe(0)
+  })
+
+  it('mesleğe başlama tarihini olduğu gibi saklar', () => {
+    // Sütun mode: 'string'; dize hiç Date'e çevrilmediği için gün kayması yolu yok.
+    expect(lawyerSchema.safeParse({ ...gecerliAvukat, practiceStartDate: '2010-03-15' }).data?.practiceStartDate)
+      .toBe('2010-03-15')
+  })
+
+  // Desene uyan ama takvimde olmayan gün: MariaDB STRICT_TRANS_TABLES altında satırı
+  // reddeder ve kullanıcı formda değil hata sayfasında karşılanırdı.
+  it('takvimde olmayan günü reddeder', () => {
+    const sonuc = lawyerSchema.safeParse({ ...gecerliAvukat, practiceStartDate: '2026-02-31' })
+    expect(sonuc.success).toBe(false)
+    expect(toFieldErrors(sonuc.error!).practiceStartDate).toContain('Tarihi GG.AA.YYYY takvim günü olarak seçin.')
+  })
+
+  it('geçersiz e-postayı reddeder ama boş bırakılmasına izin verir', () => {
+    expect(lawyerSchema.safeParse({ ...gecerliAvukat, email: 'bu-bir-eposta-degil' }).success).toBe(false)
+    expect(lawyerSchema.safeParse({ ...gecerliAvukat, email: 'avukat@ornek.test' }).data?.email).toBe('avukat@ornek.test')
+  })
+
+  it('negatif ve ondalık sırayı reddeder', () => {
+    for (const deger of ['-1', '1.5', 'iki', '12345']) {
+      expect(lawyerSchema.safeParse({ ...gecerliAvukat, sortOrder: deger }).success, `sortOrder=${deger}`).toBe(false)
+    }
+    expect(lawyerSchema.safeParse({ ...gecerliAvukat, sortOrder: '7' }).data?.sortOrder).toBe(7)
+  })
+})
+
+describe('settingsSchema', () => {
+  it('harita koordinatları boş bırakılabilir', () => {
+    const sonuc = settingsSchema.safeParse(gecerliAyarlar)
+    expect(sonuc.success).toBe(true)
+    expect(sonuc.data?.mapLat).toBeNull()
+  })
+
+  it('sayı olmayan koordinatı reddeder', () => {
+    const sonuc = settingsSchema.safeParse({ ...gecerliAyarlar, mapLat: 'kuzey' })
+    expect(toFieldErrors(sonuc.error!).mapLat).toContain('Koordinat sayı olmalı.')
+  })
+
+  it('geçersiz e-postayı Türkçe mesajla reddeder', () => {
+    const sonuc = settingsSchema.safeParse({ ...gecerliAyarlar, email: 'bu-bir-eposta-degil' })
+    expect(toFieldErrors(sonuc.error!).email).toContain('Geçerli bir e-posta adresi girin.')
+  })
+
+  // Alt bilgi metni sütunu varchar(500); sınırı aşan değer STRICT_TRANS_TABLES altında
+  // "Data too long" fırlatır ve kullanıcı hata sayfası görürdü.
+  it('sütuna sığmayan alt bilgi metnini alan hatasıyla reddeder', () => {
+    const sonuc = settingsSchema.safeParse({ ...gecerliAyarlar, footerText: 'a'.repeat(501) })
+    expect(toFieldErrors(sonuc.error!).footerText).toContain('Alt bilgi metni en fazla 500 karakter olabilir.')
   })
 })
 

@@ -5,6 +5,7 @@ import { requireAccess } from '@/lib/auth-guards'
 import { formatDateTime } from '@/lib/date'
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
 import { PanelHeading } from '@/components/PanelHeading'
+import { deleteArticle } from './actions'
 import { DeleteNotice } from './DeleteNotice'
 import styles from './page.module.css'
 
@@ -71,7 +72,14 @@ export default async function ArticleListPage({ searchParams }: ArticleListPageP
                       veriyor, ham toLocaleString sunucunun dilimine bağlı çıkardı. */}
                   <td>{formatDateTime(article.updatedAt)}</td>
                   <td>
-                    <ConfirmDeleteDialog articleId={article.id} title={article.title} />
+                    {/* triggerLabel VERİLMİYOR: bu tablonun erişilebilir ad davranışı
+                        Görev 4'ten beri yürürlükte ve Görev 8'in cila kapsamında. */}
+                    <ConfirmDeleteDialog
+                      action={deleteArticle}
+                      recordId={article.id}
+                      heading="Makaleyi sil"
+                      recordName={article.title}
+                    />
                   </td>
                 </tr>
               ))}
