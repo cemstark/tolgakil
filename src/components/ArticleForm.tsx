@@ -148,9 +148,15 @@ export function ArticleForm({ values = EMPTY_VALUES, categories, authors, initia
 
       <div className={styles.field}>
         <span className={styles.label}>İçerik</span>
-        <RichTextEditor name="content" defaultValue={values.content} label="İçerik" />
+        <RichTextEditor
+          name="content"
+          defaultValue={values.content}
+          label="İçerik"
+          invalid={contentError ? true : undefined}
+          describedBy={contentError ? 'article-content-error' : undefined}
+        />
         {contentError ? (
-          <p role="alert" className={styles.fieldError}>
+          <p id="article-content-error" role="alert" className={styles.fieldError}>
             {contentError}
           </p>
         ) : null}

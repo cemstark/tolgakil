@@ -32,6 +32,27 @@ test('yanlış parola alan bazında Türkçe hata gösterir ve oturum açmaz', a
   }
 })
 
+// Ölçüldü: React 19 form action tamamlanınca DENETİMSİZ alanları sıfırlıyor. Bu yüzden
+// LoginForm alanları denetimli. İki sonucu var: (1) parolayı yanlış giren kullanıcı
+// yazdığı e-postayı kaybetmiyor, (2) gönderim yanıtından sonra düşen sıfırlama, araya
+// giren bir yazmayı silip formu boş göndermiyor — "art arda başarısız denemeler hız
+// sınırına takılır" testi bu yüzden rastgele kırmızı veriyordu.
+test('başarısız girişten sonra yazılan e-posta alanda kalır', async ({ page }) => {
+  const kullanici = await geciciKullaniciOlustur('alan-korunur')
+  try {
+    await page.goto('/panel/giris')
+    await page.getByLabel('E-posta').fill(kullanici.email)
+    await page.getByLabel('Parola').fill('kesinlikle-yanlis-parola')
+    await page.getByRole('button', { name: 'Giriş yap' }).click()
+    await expect(page.locator('form').getByRole('alert')).toHaveText('E-posta veya parola hatalı.')
+
+    await expect(page.getByLabel('E-posta')).toHaveValue(kullanici.email)
+    await expect(page.getByLabel('Parola')).toHaveValue('kesinlikle-yanlis-parola')
+  } finally {
+    await kullanici.temizle()
+  }
+})
+
 // Alan hatası yalnız aria-describedby ile bağlansaydı, formu gönderip odağı düğmede bırakan
 // ekran okuyucu kullanıcısı hiçbir şey duymazdı: açıklama ancak girdiye odaklanınca okunur.
 test('boş parola hatası canlı bölgede duyurulur ve girdiye bağlanır', async ({ page }) => {

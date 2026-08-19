@@ -5,10 +5,16 @@ const DAY_MONTH_YEAR = new Intl.DateTimeFormat('tr-TR', {
   day: '2-digit', month: 'long', year: 'numeric', timeZone: 'UTC',
 })
 
-// Veritabanı oturumu UTC'ye sabitli (src/db/client.ts); zaman damgaları da aynı dilimde
-// gösterilir ki panelde okunan an ile saklanan an birbirini tutsun.
+// Veritabanı oturumu UTC'ye sabitli (src/db/client.ts) ve öyle KALIYOR — saklama dilimi
+// değişmedi, yalnız gösterim değişti. UTC basmak panelde somut bir hataya yol açıyordu:
+// büro saatiyle 14:05'te kaydeden editör, listede güncellenme saatini 11:05 görüyor ve
+// kaydının işlenmediğini sanıyordu.
+//
+// Dilim sabit yazılıyor, sunucununkine bırakılmıyor: geliştirme +03, testler
+// America/New_York, üretim Hostinger'da bilinmiyor. Büro İstanbul'da, okuyan da orada.
 const WITH_TIME = new Intl.DateTimeFormat('tr-TR', {
-  day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
+  day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  timeZone: 'Europe/Istanbul',
 })
 
 export function formatDate(iso: string): string {

@@ -10,7 +10,7 @@ import { findBannedPhrases, formatBannedMatch } from '@/lib/ad-ban'
 import { requireAccess } from '@/lib/auth-guards'
 import { TAGS, articleTag } from '@/lib/cache-tags'
 import { htmlToPlainText, sanitizeArticleHtml } from '@/lib/sanitize'
-import { articleSchema, toFormState, type FormState } from '@/lib/validation'
+import { articleContentLengthError, articleSchema, toFormState, type FormState } from '@/lib/validation'
 import { SAVE_MESSAGES } from './save-messages'
 
 // Gizli alandan gelen kimlik de kullanıcı verisi: boş ise yeni kayıt, doludur ama pozitif
@@ -53,6 +53,14 @@ export async function saveArticle(_prev: FormState, formData: FormData): Promise
   // Boş <p></p> hâlâ HTML olarak doludur; "içerik girildi" sayılmaması için düz metne bakılıyor.
   if (plainContent === '') {
     return { ok: false, errors: { content: ['İçerik temizlendikten sonra boş kaldı; metin ekleyin.'] } }
+  }
+
+  // Sütun sınırı TEXT = 65.535 bayt. Denetim TEMİZLENMİŞ dize üzerinde: veritabanına
+  // yazılacak olan o. Alan hatası olarak dönüyor, fırlatmıyor — fırlatsaydı kullanıcı
+  // hata sayfası görür ve yazdığı metni geri alamazdı.
+  const contentLengthError = articleContentLengthError(content)
+  if (contentLengthError !== null) {
+    return { ok: false, errors: { content: [contentLengthError] } }
   }
 
   // spec §11: çakışma sessizce üzerine yazılmaz, kullanıcıya açıkça bildirilir.
@@ -111,6 +119,10 @@ export async function saveArticle(_prev: FormState, formData: FormData): Promise
   if (existing !== null && existing.slug !== parsed.data.slug) {
     revalidateTag(articleTag(existing.slug), 'max')
   }
+  // Yalnız LİSTE yolu tazeleniyor. /panel/makaleler/[id] için ek bir çağrı gerekmiyor:
+  // ölçüldü, server action yanıtı bulunulan rotanın sunucu bileşenlerini zaten yeniden
+  // çiziyor — "Önizleme" ve "İlk yayım" satırı kaydetmeden sonra reload olmadan
+  // tazeleniyor ve iki e2e testi bunu reload() kullanmadan sabitliyor.
   revalidatePath('/panel/makaleler')
 
   // Yeni kayıtta düzenleme sayfasına geçiliyor; yönlendirme useActionState durumunu
@@ -137,5 +149,8 @@ export async function deleteArticle(_prev: FormState, formData: FormData): Promi
   revalidateTag(articleTag(existing.slug), 'max')
   revalidatePath('/panel/makaleler')
 
-  return { ok: true, errors: {}, message: 'Makale silindi.' }
+  // Başarı bildirimi kip pencerede basılamaz: silinen satır yeniden çizimle kalkıyor ve
+  // pencereyi de beraberinde götürüyor, yani mesaj hiç görünmez, odak <body>'ye düşerdi.
+  // Bildirim listenin kendisine taşınıyor (bkz. DeleteNotice).
+  redirect('/panel/makaleler?silindi=1')
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  articleSchema, categorySchema, lawyerSchema, loginSchema, toFieldErrors, toFormState,
+  ARTICLE_CONTENT_MAX_BYTES, articleContentLengthError, articleSchema, byteLength,
+  categorySchema, lawyerSchema, loginSchema, toFieldErrors, toFormState,
   userCreateSchema, userUpdateSchema,
 } from '@/lib/validation'
 
@@ -13,6 +14,29 @@ const gecerliMakale = {
   categoryId: '3',
   authorId: '',
 }
+
+describe('articleContentLengthError', () => {
+  it('sınırın altındaki içeriği geçirir', () => {
+    expect(articleContentLengthError('<p>Kısa gövde</p>')).toBeNull()
+  })
+
+  it('tam sınırdaki içeriği geçirir', () => {
+    expect(articleContentLengthError('a'.repeat(ARTICLE_CONTENT_MAX_BYTES))).toBeNull()
+  })
+
+  it('sınırı aşan içeriği Türkçe mesajla reddeder', () => {
+    const mesaj = articleContentLengthError('a'.repeat(ARTICLE_CONTENT_MAX_BYTES + 1))
+    expect(mesaj).toContain('İçerik çok uzun')
+    expect(mesaj).toContain(String(ARTICLE_CONTENT_MAX_BYTES + 1))
+  })
+
+  // Asıl tuzak: karakter sayan bir kontrol bunu geçirir, veritabanı geçirmez.
+  it('Türkçe harfleri iki bayt sayar', () => {
+    expect(byteLength('ş')).toBe(2)
+    const yariUzunluk = ARTICLE_CONTENT_MAX_BYTES / 2 + 1
+    expect(articleContentLengthError('ş'.repeat(yariUzunluk))).not.toBeNull()
+  })
+})
 
 describe('articleSchema', () => {
   it('boş slug alanını başlıktan üretir', () => {

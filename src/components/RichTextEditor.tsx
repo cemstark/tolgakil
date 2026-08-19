@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import styles from './RichTextEditor.module.css'
@@ -10,13 +10,32 @@ type RichTextEditorProps = {
   name: string
   defaultValue: string
   label: string
+  /** Sunucu bu alan için hata döndürdüyse true. */
+  invalid?: boolean
+  /** Hata metnini taşıyan öğenin id'si; formun diğer beş alanıyla aynı bağ. */
+  describedBy?: string
+}
+
+// Öznitelikler iki yerde gerekiyor: editör kurulurken ve hata durumu değiştiğinde
+// (setOptions). Tek kaynakta tutulmazsa ikisi ayrışır.
+function editorAttributes(label: string, invalid?: boolean, describedBy?: string): Record<string, string> {
+  return {
+    // contenteditable bir div'in rolü tarayıcıdan tarayıcıya değişiyor; ekran okuyucunun
+    // çok satırlı metin kutusu olarak duyurması için açıkça yazılıyor.
+    role: 'textbox',
+    'aria-multiline': 'true',
+    'aria-label': label,
+    ...(invalid ? { 'aria-invalid': 'true' } : {}),
+    ...(describedBy ? { 'aria-describedby': describedBy } : {}),
+    class: styles.surface,
+  }
 }
 
 // Bağlantı adresi güvenilmez veri. Sunucu tarafı temizleme (sanitize.ts) son söz sahibi;
 // buradaki denetim yalnız kullanıcıya anında geri bildirim vermek için.
 const SAFE_LINK = /^(https?:|mailto:|tel:)/i
 
-export function RichTextEditor({ name, defaultValue, label }: RichTextEditorProps) {
+export function RichTextEditor({ name, defaultValue, label, invalid, describedBy }: RichTextEditorProps) {
   // Gizli alan editörün kendi yeniden çizimine DEĞİL bu duruma bağlanıyor: Tiptap 3'te
   // useEditor'ın shouldRerenderOnTransaction varsayılanı false (paket tipleriyle ölçüldü),
   // yani `value={editor.getHTML()}` yazan bir alan ilk içerikte donar ve her kayıt
@@ -33,17 +52,15 @@ export function RichTextEditor({ name, defaultValue, label }: RichTextEditorProp
     // sürümde kalkarsa hydrate hatasını sessizce geri getirirdi.
     immediatelyRender: false,
     onUpdate: ({ editor: current }) => setHtml(current.getHTML()),
-    editorProps: {
-      attributes: {
-        // contenteditable bir div'in rolü tarayıcıdan tarayıcıya değişiyor; ekran okuyucunun
-        // çok satırlı metin kutusu olarak duyurması için açıkça yazılıyor.
-        role: 'textbox',
-        'aria-multiline': 'true',
-        'aria-label': label,
-        class: styles.surface,
-      },
-    },
+    editorProps: { attributes: editorAttributes(label, invalid, describedBy) },
   })
+
+  // Öznitelikler editör KURULURKEN okunuyor; hata gönderimden sonra geldiği için o an
+  // editör çoktan ayakta. useEditor'a deps vermek editörü yeniden kurar ve kullanıcının
+  // yazdığı metni siler — bu yüzden var olan örneğe setOptions ile bildiriliyor.
+  useEffect(() => {
+    editor?.setOptions({ editorProps: { attributes: editorAttributes(label, invalid, describedBy) } })
+  }, [editor, label, invalid, describedBy])
 
   return (
     <div className={styles.wrapper}>

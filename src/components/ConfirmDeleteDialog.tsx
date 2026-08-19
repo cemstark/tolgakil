@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useRef } from 'react'
+import { useActionState, useRef } from 'react'
 import { deleteArticle } from '@/app/panel/makaleler/actions'
 import type { FormState } from '@/lib/validation'
 import styles from './ConfirmDeleteDialog.module.css'
@@ -17,13 +17,9 @@ export function ConfirmDeleteDialog({ articleId, title }: ConfirmDeleteDialogPro
   const triggerRef = useRef<HTMLButtonElement>(null)
   const titleId = `delete-dialog-${articleId}`
 
-  // Silme başarısızsa kip pencere açık kalır ve gerekçe orada okunur; başarılıysa satır
-  // zaten yeniden çizimle kaybolur, ama başka bir hata durumunda kilitli kalmasın diye
-  // kapanış açıkça yapılıyor.
-  useEffect(() => {
-    if (state.ok) dialogRef.current?.close()
-  }, [state.ok])
-
+  // Başarı yolunda buraya hiç dönülmez: deleteArticle listeye yönlendiriyor ve bildirim
+  // orada, odaklanan bir role="status" bölgesinde veriliyor (bkz. DeleteNotice). Bu
+  // bileşene yalnız HATA döner; o zaman kip pencere açık kalıp gerekçeyi gösteriyor.
   return (
     <>
       <button

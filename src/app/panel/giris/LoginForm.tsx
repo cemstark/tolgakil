@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { login } from './actions'
 import type { FormState } from '@/lib/validation'
 import styles from './LoginForm.module.css'
@@ -13,6 +13,18 @@ const INITIAL_STATE: FormState = { ok: false, errors: {} }
 
 export function LoginForm() {
   const [state, formAction, isPending] = useActionState(login, INITIAL_STATE)
+
+  // Alanlar DENETİMLİ. Ölçüldü: React 19 form action tamamlanınca denetimsiz alanları
+  // sıfırlıyor — parolayı yanlış giren kullanıcı yazdığı e-postayı da kaybediyor ve
+  // baştan yazmak zorunda kalıyordu.
+  //
+  // Parola da denetimli: yalnız e-posta korunsaydı sıfırlama yarışı sürerdi. Sıfırlama,
+  // gönderim yanıtı geldikten SONRA düştüğü için araya giren bir yazma (kullanıcı ya da
+  // otomatik test) silinip form boş gönderilebiliyor. E2E'de bu, "art arda başarısız
+  // denemeler hız sınırına takılır" testini rastgele kırmızıya düşürüyordu.
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+
   const emailError = state.errors.email?.join(' ')
   const passwordError = state.errors.password?.join(' ')
 
@@ -34,6 +46,8 @@ export function LoginForm() {
           type="email"
           autoComplete="username"
           required
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
           className={styles.input}
           aria-invalid={emailError ? true : undefined}
           aria-describedby={emailError ? 'email-error' : undefined}
@@ -58,6 +72,8 @@ export function LoginForm() {
           type="password"
           autoComplete="current-password"
           required
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
           className={styles.input}
           aria-invalid={passwordError ? true : undefined}
           aria-describedby={passwordError ? 'password-error' : undefined}

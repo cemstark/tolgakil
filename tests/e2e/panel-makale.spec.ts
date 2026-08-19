@@ -5,18 +5,28 @@ import { testIcerigiHazirla, type TestIcerigi } from './helpers/test-content'
 
 // Her koşu kendi kategorisini ve makalelerini üretip siler; testler geliştirme veritabanına
 // karşı koşsun, birbirine ve tohum verisine karışmasın.
-let icerik: TestIcerigi
+let icerik: TestIcerigi | null = null
 
 test.beforeEach(async () => {
   icerik = await testIcerigiHazirla()
 })
 
+// Referans önce boşaltılıyor: beforeEach fırlarsa afterEach bir ÖNCEKİ testin kapatılmış
+// bağlantısını temizlemeye çalışır, "Can't add new command when connection is in closed
+// state" fırlatır ve asıl hatayı örter.
 test.afterEach(async () => {
-  await icerik.temizle()
+  const mevcut = icerik
+  icerik = null
+  await mevcut?.temizle()
 })
 
+function hazirIcerik(): TestIcerigi {
+  if (icerik === null) throw new Error('Test içeriği hazırlanmadı; beforeEach düşmüş olmalı.')
+  return icerik
+}
+
 test('giriş → makale yaz → taslak kaydet → yayımla → listede yayında görünür', async ({ page }) => {
-  const baslik = `Kira tespit notu ${icerik.damga}`
+  const baslik = `Kira tespit notu ${hazirIcerik().damga}`
   await girisYap(page, EDITOR)
   await page.getByRole('link', { name: 'Makaleler' }).click()
   await page.getByRole('link', { name: 'Yeni makale' }).click()
@@ -27,9 +37,9 @@ test('giriş → makale yaz → taslak kaydet → yayımla → listede yayında 
   await page.getByRole('button', { name: 'Taslak olarak kaydet' }).click()
 
   await expect(page.getByRole('status')).toHaveText('Makale taslak olarak kaydedildi.')
-  await expect(page.getByLabel('Adres (slug)')).toHaveValue(new RegExp(`^kira-tespit-notu-${icerik.damga}$`))
+  await expect(page.getByLabel('Adres (slug)')).toHaveValue(new RegExp(`^kira-tespit-notu-${hazirIcerik().damga}$`))
 
-  await page.getByLabel('Kategori').selectOption({ label: icerik.kategoriAdi })
+  await page.getByLabel('Kategori').selectOption({ label: hazirIcerik().kategoriAdi })
   await page.getByRole('button', { name: 'Yayımla' }).click()
   await expect(page.getByRole('status')).toHaveText('Makale yayımlandı.')
 
@@ -41,12 +51,18 @@ test('giriş → makale yaz → taslak kaydet → yayımla → listede yayında 
   await satir.getByRole('button', { name: 'Sil' }).click()
   await page.getByRole('button', { name: 'Evet, sil' }).click()
   await expect(page.getByRole('row', { name: new RegExp(baslik) })).toHaveCount(0)
+
+  // Silme sessiz olmamalı: satır kalkınca tetikleyen düğme de gittiği için odak
+  // <body>'ye düşerdi ve ekran okuyucu kullanıcısı sonucu hiç öğrenemezdi (WCAG 4.1.3).
+  const bildirim = page.getByRole('status')
+  await expect(bildirim).toHaveText('Makale silindi.')
+  await expect(bildirim).toBeFocused()
 })
 
 test('kategorisiz yayımlama alan hatası verir ve kaydetmez', async ({ page }) => {
   await girisYap(page, EDITOR)
   await page.goto('/panel/makaleler/yeni')
-  await page.getByLabel('Başlık').fill(`Kategorisiz ${icerik.damga}`)
+  await page.getByLabel('Başlık').fill(`Kategorisiz ${hazirIcerik().damga}`)
   await page.getByLabel('Özet').fill('Yayımlamayı kategori olmadan denemek için yazılmış özet metni.')
   await page.locator('[contenteditable="true"]').fill('Gövde')
   await page.getByRole('button', { name: 'Yayımla' }).click()
@@ -57,7 +73,7 @@ test('kategorisiz yayımlama alan hatası verir ve kaydetmez', async ({ page }) 
 })
 
 test('çakışan slug kullanıcıya açıkça bildirilir', async ({ page }) => {
-  const baslik = `Çakışan başlık ${icerik.damga}`
+  const baslik = `Çakışan başlık ${hazirIcerik().damga}`
   await girisYap(page, EDITOR)
 
   for (const sira of [1, 2]) {
@@ -74,13 +90,13 @@ test('çakışan slug kullanıcıya açıkça bildirilir', async ({ page }) => {
 // Reklam yasağı taraması ENGEL DEĞİL, onaylı uyarıdır: ilk gönderimde yayın durur ve
 // bulgular konumuyla listelenir; onay kutusu işaretlenip yeniden gönderilince yayın geçer.
 test('yasaklı ifade önce uyarı üretir, onaylanınca yayın tamamlanır', async ({ page }) => {
-  const baslik = `Uyarı denemesi ${icerik.damga}`
+  const baslik = `Uyarı denemesi ${hazirIcerik().damga}`
   await girisYap(page, EDITOR)
   await page.goto('/panel/makaleler/yeni')
   await page.getByLabel('Başlık').fill(baslik)
   await page.getByLabel('Özet').fill('Bu alanda uzman kadromuzla hizmet veriyoruz ifadesini içeren özet.')
   await page.locator('[contenteditable="true"]').fill('Gövde')
-  await page.getByLabel('Kategori').selectOption({ label: icerik.kategoriAdi })
+  await page.getByLabel('Kategori').selectOption({ label: hazirIcerik().kategoriAdi })
   await page.getByRole('button', { name: 'Yayımla' }).click()
 
   // Panel içeriğine daraltıldı: Next kendi rota duyurucusunu (#__next-route-announcer__)
@@ -106,7 +122,7 @@ test('yasaklı ifade önce uyarı üretir, onaylanınca yayın tamamlanır', asy
 })
 
 test('silme onayı Escape ile kapanır ve odak tetikleyen düğmeye döner', async ({ page }) => {
-  const baslik = `Odak denemesi ${icerik.damga}`
+  const baslik = `Odak denemesi ${hazirIcerik().damga}`
   await girisYap(page, EDITOR)
   await page.goto('/panel/makaleler/yeni')
   await page.getByLabel('Başlık').fill(baslik)
@@ -130,7 +146,7 @@ test('silme onayı Escape ile kapanır ve odak tetikleyen düğmeye döner', asy
 })
 
 test('makale düzenleme sayfası temizlenmiş içeriğin önizlemesini gösterir', async ({ page }) => {
-  const baslik = `Önizleme denemesi ${icerik.damga}`
+  const baslik = `Önizleme denemesi ${hazirIcerik().damga}`
   await girisYap(page, EDITOR)
   await page.goto('/panel/makaleler/yeni')
   await page.getByLabel('Başlık').fill(baslik)
@@ -141,6 +157,14 @@ test('makale düzenleme sayfası temizlenmiş içeriğin önizlemesini gösterir
   const onizleme = page.getByRole('region', { name: 'Önizleme' })
   await expect(onizleme).toContainText('Kiracının dava açma süresi.')
   await expect(onizleme.locator('.prose')).toHaveCount(1)
+
+  // Önizleme veritabanından okunuyor. Kaydetmeden sonra reload OLMADAN tazelenmezse
+  // kullanıcı yazdığının kaydedilmediğini sanır. reload() bilerek kullanılmıyor.
+  await page.locator('[contenteditable="true"]').fill('Tamamen değiştirilmiş gövde.')
+  await page.getByRole('button', { name: 'Taslak olarak kaydet' }).click()
+  await expect(page.getByRole('status')).toHaveText('Makale taslak olarak kaydedildi.')
+  await expect(onizleme).toContainText('Tamamen değiştirilmiş gövde.')
+  await expect(onizleme).not.toContainText('Kiracının dava açma süresi.')
 })
 
 // Tiptap'in useEditor'ı sunucuda çizilirse hydrate uyuşmazlığı üretiyor; immediatelyRender:
@@ -176,28 +200,52 @@ test('biçimlendirme düğmesi aria-pressed durumunu günceller', async ({ page 
   await expect(kalin).toHaveAttribute('aria-pressed', 'true')
 })
 
-// publishedAt ilk yayımda atanır ve taslağa geri alınınca SİLİNMEZ; sayfa başlığındaki
-// "İlk yayım" satırı bu sütunun tek görünür kanıtı.
-test('taslağa geri alınan makale ilk yayım tarihini korur', async ({ page }) => {
-  const baslik = `Geri alma denemesi ${icerik.damga}`
+// İki şeyi birden ölçüyor:
+// 1. publishedAt ilk yayımda atanır, taslağa geri alınınca SİLİNMEZ.
+// 2. Düzenleme sayfasının SUNUCU tarafı, kaydetmeden sonra kendiliğinden tazeleniyor mu.
+//    reload() bilerek kullanılmıyor — kullansaydı ikinci soru hiç sorulmamış olurdu.
+test('kaydetme sonrası sayfa tazelenir ve ilk yayım tarihi korunur', async ({ page }) => {
+  const baslik = `Geri alma denemesi ${hazirIcerik().damga}`
   await girisYap(page, EDITOR)
   await page.goto('/panel/makaleler/yeni')
   await page.getByLabel('Başlık').fill(baslik)
   await page.getByLabel('Özet').fill('Yayımdan taslağa dönüşte tarihin korunduğunu ölçen özet metni.')
   await page.locator('[contenteditable="true"]').fill('Gövde metni.')
-  await page.getByLabel('Kategori').selectOption({ label: icerik.kategoriAdi })
-  await page.getByRole('button', { name: 'Yayımla' }).click()
+  await page.getByRole('button', { name: 'Taslak olarak kaydet' }).click()
 
+  // Taslak: sunucu bileşeni henüz yayımlanmadığını yazıyor.
+  await expect(page.getByText('Bu makale henüz yayımlanmadı.')).toBeVisible()
+
+  // Yayımla artık DÜZENLEME yolu (kimlik var), yani yönlendirme yok. "İlk yayım"
+  // satırının belirmesi, sunucu bileşeninin action'dan sonra yeniden çizildiğinin kanıtı.
+  await page.getByLabel('Kategori').selectOption({ label: hazirIcerik().kategoriAdi })
+  await page.getByRole('button', { name: 'Yayımla' }).click()
   await expect(page.getByRole('status')).toHaveText('Makale yayımlandı.')
+  await expect(page.getByText('Bu makale henüz yayımlanmadı.')).toHaveCount(0)
   const ilkYayim = await page.getByText(/^İlk yayım: /).textContent()
   expect(ilkYayim).not.toBeNull()
 
   await page.getByRole('button', { name: 'Taslak olarak kaydet' }).click()
   await expect(page.getByRole('status')).toHaveText('Makale taslak olarak kaydedildi.')
-
-  await page.reload()
   await expect(page.getByText(/^İlk yayım: /)).toHaveText(ilkYayim as string)
-  await expect(page.getByText('Bu makale henüz yayımlanmadı.')).toHaveCount(0)
+})
+
+// Sütun TEXT = 65.535 bayt. Sınır uygulanmazsa MariaDB STRICT_TRANS_TABLES altında
+// "Data too long" fırlatır, kullanıcı hata sayfası görür ve yazdığı metin gider.
+// Beklenen davranış: formda kalıp alan hatası okumak.
+test('sütuna sığmayan içerik hata sayfası değil alan hatası verir', async ({ page }) => {
+  await girisYap(page, EDITOR)
+  await page.goto('/panel/makaleler/yeni')
+  await page.getByLabel('Başlık').fill(`Çok uzun ${hazirIcerik().damga}`)
+  await page.getByLabel('Özet').fill('Sütun sınırının kullanıcıya nasıl bildirildiğini ölçen özet metni.')
+  await page.locator('[contenteditable="true"]').fill('a'.repeat(70_000))
+  await page.getByRole('button', { name: 'Taslak olarak kaydet' }).click()
+
+  await expect(page.getByText(/^İçerik çok uzun/)).toBeVisible()
+  await expect(page.getByRole('status')).toHaveCount(0)
+  await expect(page).toHaveURL(/\/panel\/makaleler\/yeni$/)
+  // Hata editöre bağlanmalı; diğer beş alanda bu bağ zaten var.
+  await expect(page.locator('[contenteditable="true"]')).toHaveAttribute('aria-invalid', 'true')
 })
 
 test('makale listesinde ve editör sayfasında erişilebilirlik ihlali yok', async ({ page }) => {
@@ -211,7 +259,7 @@ test('makale listesinde ve editör sayfasında erişilebilirlik ihlali yok', asy
 })
 
 test('silme onayı kip penceresi açıkken erişilebilirlik ihlali yok', async ({ page }) => {
-  const baslik = `Erişim denemesi ${icerik.damga}`
+  const baslik = `Erişim denemesi ${hazirIcerik().damga}`
   await girisYap(page, EDITOR)
   await page.goto('/panel/makaleler/yeni')
   await page.getByLabel('Başlık').fill(baslik)

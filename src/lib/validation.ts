@@ -81,6 +81,32 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Parola zorunlu.'),
 })
 
+// articles.content sütunu TEXT: 65.535 BAYT (information_schema'dan ölçüldü).
+// Sınır KARAKTER değil BAYT: Türkçe harfler UTF-8'de iki bayt tutuyor, yani karakter
+// sayan bir kontrol "ş" dolu bir makaleyi geçirir, veritabanı ise STRICT_TRANS_TABLES
+// altında "Data too long" fırlatır. Fırlatma buradaki asıl zarar değil — hata sunucu
+// sınırına düşer, kullanıcı hata sayfası görür ve saatlerce yazdığı metin taslak olarak
+// bile kaydedilemeden gider.
+//
+// Denetim articleSchema'nın İÇİNDE DEĞİL, kasıtlı olarak dışında: sütuna yazılan dize
+// ham girdi değil, sanitizeArticleHtml'den geçmiş hâlidir. Temizleme hem küçültüyor
+// (script atılıyor) hem büyütüyor (bağlantılara rel ekleniyor); ham girdiyi ölçen bir
+// kural yanlış tarafa düşer. Bu yüzden server action temizlenmiş çıktıyı ölçüyor.
+export const ARTICLE_CONTENT_MAX_BYTES = 65_535
+
+// TextEncoder, Buffer'a tercih edildi: bu modül istemci bileşenlerince (yalnız tip olarak
+// da olsa) import ediliyor, Node'a özgü bir küresel eklemek o sınırı bulanıklaştırır.
+export function byteLength(value: string): number {
+  return new TextEncoder().encode(value).length
+}
+
+/** Sınırı aşıyorsa Türkçe alan hatası, aşmıyorsa null. */
+export function articleContentLengthError(content: string): string | null {
+  const bytes = byteLength(content)
+  if (bytes <= ARTICLE_CONTENT_MAX_BYTES) return null
+  return `İçerik çok uzun: en fazla ${ARTICLE_CONTENT_MAX_BYTES} bayt olabilir, şu an ${bytes} bayt. Yazıyı bölün veya kısaltın.`
+}
+
 export const articleSchema = z
   .object({
     title: z.string().trim().min(3, 'Başlık en az 3 karakter olmalı.').max(220, 'Başlık en fazla 220 karakter olabilir.'),

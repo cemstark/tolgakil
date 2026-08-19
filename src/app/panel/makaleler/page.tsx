@@ -5,6 +5,7 @@ import { requireAccess } from '@/lib/auth-guards'
 import { formatDateTime } from '@/lib/date'
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
 import { PanelHeading } from '@/components/PanelHeading'
+import { DeleteNotice } from './DeleteNotice'
 import styles from './page.module.css'
 
 export const metadata: Metadata = {
@@ -12,12 +13,18 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export default async function ArticleListPage() {
+type ArticleListPageProps = { searchParams: Promise<{ silindi?: string }> }
+
+export default async function ArticleListPage({ searchParams }: ArticleListPageProps) {
   await requireAccess('articles')
-  const articles = await listArticles()
+  const [articles, query] = await Promise.all([listArticles(), searchParams])
 
   return (
     <>
+      {/* Adres çubuğundan gelen değer kullanıcı tarafından yazılabilir; yalnız tam
+          eşleşmede bildirim çiziliyor, gelen metin ekrana basılmıyor. */}
+      {query.silindi === '1' ? <DeleteNotice /> : null}
+
       <PanelHeading
         title="Makaleler"
         description="Taslaklar ve yayımlanmış yazılar."
