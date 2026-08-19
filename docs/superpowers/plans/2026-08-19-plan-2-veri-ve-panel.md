@@ -151,6 +151,21 @@ Yerel sunucu 10.11'den **yeni**. Yerelde çalışan her SQL 10.11'de de çalış
   ölçmek zorundadır.
 - **`settingsSchema.mapLat`/`mapLng` şu an zorunludur.** Ayarlar formunu yazan görev ya alanları
   forma koyar ya şemayı `.optional()` yapar; aksi hâlde kullanıcı görmediği bir alan için hata alır.
+- **`rate-limit.ts` arayüzü değişti (Görev 3):** brief'te ilan edilen `check(key, now?)` yok;
+  yerine **`peek(key, now?)`** (sayacı ilerletmeden okur) ve **`record(key, now?)`** (denemeyi
+  sayar) var. Sınırlamayı uygulayan taraf **`record` çağırmalıdır** — yalnız `peek` kullanan bir
+  çağıran hiçbir şeyi sınırlamaz. Görev 8'in iletişim formu sınırı buna dikkat eder.
+- **Giriş hız sınırı e-posta anahtarlıdır, IP değil** (`src/lib/login-rate-limit.ts`).
+  `x-forwarded-for`'un ilk girdisi istemci tarafından yazılabildiği için bilinçli olarak
+  kullanılmıyor; bedeli, bir saldırganın bilinen bir e-postayı 15 dakika kilitleyebilmesidir.
+  Kabul edilmiş risk. Hostinger'ın vekil davranışı Plan 3'te ölçülünce IP + e-posta bileşimi
+  yeniden değerlendirilecek.
+- **Panel oturumu her istekte tazelenir** (`getPanelUser`): `isActive` ve `role` JWT'den değil
+  veritabanından okunur. Pasifleştirme ve rol düşürme **anında** etkilidir; JWT'ye güvenen bir
+  kısayol yazılmaz.
+- **E2E hız sınırı sayacı süreçte yaşar.** `reuseExistingServer` açıkken aynı sunucuya art arda
+  koşulan e2e turları birbirinin bütçesini tüketir; yeni giriş testleri kendi e-postalarını
+  kullanmalıdır.
 
 ### Ortam değişkenleri
 
