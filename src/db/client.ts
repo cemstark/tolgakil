@@ -1,4 +1,7 @@
-import 'server-only'
+// Bu modül yalnızca sunucuda çalışır; bir istemci bileşeninden import edilmez.
+// Kural `server-only` paketiyle zorlanmıyor: o paketin koşullu `exports` alanı bundler
+// dışındaki her Node giriş noktasını (migration ve tohum betikleri, Vitest'in node ortamı)
+// bilerek fırlatarak kırıyor ve her betiğe --conditions=react-server bayrağı gerektiriyor.
 import { drizzle } from 'drizzle-orm/mysql2'
 import mysql from 'mysql2/promise'
 import type { Pool } from 'mysql2/promise'
