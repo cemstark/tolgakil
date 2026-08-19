@@ -5,7 +5,7 @@
 import { drizzle } from 'drizzle-orm/mysql2'
 import mysql from 'mysql2/promise'
 import type { Pool } from 'mysql2/promise'
-import type { PoolConnection as HamPoolConnection } from 'mysql2'
+import type { PoolConnection as RawPoolConnection } from 'mysql2'
 // Uzantı bilinçli: scripts/migrate.mts bu dosyayı doğrudan Node ESM ile yüklüyor ve Node
 // tam dosya adı istiyor (allowImportingTsExtensions bunun için açık).
 import * as schema from './schema.ts'
@@ -16,35 +16,35 @@ if (!url) {
   throw new Error('DATABASE_URL tanımlı değil.')
 }
 
-function havuzKur(baglantiUrl: string): Pool {
-  const yeniHavuz = mysql.createPool({ uri: baglantiUrl, connectionLimit: 10 })
+function createPool(connectionUrl: string): Pool {
+  const newPool = mysql.createPool({ uri: connectionUrl, connectionLimit: 10 })
 
   // Oturumu gerçekten UTC'ye sabitliyoruz. mysql2'nin `timezone` seçeneği oturumun dilimini
   // ayarlamaz, yalnızca sürücüye "gelen değerler şu dilimde" diye beyan eder; üstelik drizzle
   // mysql2 sürücüsü TIMESTAMP/DATETIME için typeCast'i ezip ham dizeyi okuyor ve
   // mapFromDriverValue onu koşulsuz UTC sayıyor. Sunucunun SYSTEM dilimi +03:00 olduğu için
   // her zaman damgası 3 saat ileri okunuyordu (ölçüldü: 180 dakika).
-  yeniHavuz.on('connection', (baglanti) => {
+  newPool.on('connection', (connection) => {
     // Dönüştürme ölçüme dayanıyor: mysql2/promise havuzunun 'connection' olayı, tipi promise
     // API'si vaat etse de çalışma zamanında ham (callback tabanlı) PoolConnection iletiyor —
     // query() burada Promise döndürmüyor.
-    const hamBaglanti = baglanti as unknown as HamPoolConnection
-    hamBaglanti.query("SET time_zone = '+00:00'", (hata) => {
+    const rawConnection = connection as unknown as RawPoolConnection
+    rawConnection.query("SET time_zone = '+00:00'", (error) => {
       // Yutmuyoruz: oturum UTC'ye sabitlenemezse bütün zaman damgaları sessizce kayar,
       // bu da gürültülü bir çökmeden çok daha pahalıdır.
-      if (hata) throw hata
+      if (error) throw error
     })
   })
 
-  return yeniHavuz
+  return newPool
 }
 
 // Havuz globalThis üzerinde önbelleğe alınıyor: `npm run dev` sıcak yeniden yüklemede bu
 // modülü yeniden değerlendiriyor ve her değerlendirmede yeni bir havuz açılırsa eskisi
 // end() çağrılmadığı için bağlantılarını tutuyor (wait_timeout 8 saat, max_connections 151).
-const kuresel = globalThis as typeof globalThis & { __dbPool?: Pool }
-const pool = kuresel.__dbPool ?? havuzKur(url)
-kuresel.__dbPool = pool
+const globalCache = globalThis as typeof globalThis & { __dbPool?: Pool }
+const pool = globalCache.__dbPool ?? createPool(url)
+globalCache.__dbPool = pool
 
 // mode: 'default' zorunlu — şema verilince drizzle mysql2 sürücüsü ilişkisel sorgu kipini
 // istiyor (MySql2DrizzleConfig, drizzle-orm 0.45.2).
@@ -54,5 +54,5 @@ export const db = drizzle(pool, { schema, mode: 'default' })
 export async function closeDb(): Promise<void> {
   await pool.end()
   // Kapalı havuz önbellekte kalırsa sonraki import onu yeniden kullanmaya çalışır.
-  delete kuresel.__dbPool
+  delete globalCache.__dbPool
 }

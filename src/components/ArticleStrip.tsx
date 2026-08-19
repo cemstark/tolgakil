@@ -1,17 +1,9 @@
 import Link from 'next/link'
 import type { ArticleSummary } from '@/content/sample-content'
+import { formatDate } from '@/lib/date'
 import styles from './ArticleStrip.module.css'
 
 type ArticleStripProps = { articles: ArticleSummary[] }
-
-// tr-TR sunucuda biçimlendirilir; ISO tarih istemciye ham taşınmaz. timeZone 'UTC' sabitlenir:
-// new Date('YYYY-MM-DD') UTC gece yarısı olarak ayrıştırılır, negatif ofsetli bir sunucuda
-// bu sabitleme olmadan görünen tarih bir gün geriye kayıp dateTime özniteliğiyle çelişebilirdi.
-function formatDate(date: string): string {
-  return new Intl.DateTimeFormat('tr-TR', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
-    new Date(date),
-  )
-}
 
 export function ArticleStrip({ articles }: ArticleStripProps) {
   return (

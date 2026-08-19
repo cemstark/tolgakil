@@ -12,15 +12,21 @@
     "test:e2e": "playwright test",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node scripts/migrate.mts",
+    "db:seed": "node scripts/seed.mts",
     "db:studio": "drizzle-kit studio"
   },
-  "engines": { "node": "22.x", "npm": ">=10" },
+  "engines": {
+    "node": "22.x",
+    "npm": ">=10"
+  },
   "dependencies": {
+    "argon2": "0.45.1",
     "drizzle-orm": "0.45.2",
     "mysql2": "3.23.3",
     "next": "16.3.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
