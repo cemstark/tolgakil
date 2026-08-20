@@ -1,9 +1,11 @@
-// Hangi .env dosyasının okunacağını çağıran belirler: üretimde yanlışlıkla geliştirme
-// veritabanına migration çalıştırmayı zorlaştırır.
-process.loadEnvFile(process.argv[2] ?? '.env.local')
+// Ortam değişkenlerinin nereden geldiğini ve neden platform değişkenlerine düşülebildiğini
+// scripts/load-env.mts açıklıyor. Hedef veritabanının adı ekrana basılır.
+import { loadEnvForScript } from './load-env.mts'
 
-// Dinamik import bilinçli: loadEnvFile çağrısı client.ts'in modül seviyesindeki
-// DATABASE_URL okumasından ÖNCE çalışmalı, statik import bunu garanti etmiyor.
+loadEnvForScript(process.argv[2])
+
+// Dinamik import bilinçli: ortam değişkenleri client.ts'in modül seviyesindeki DATABASE_URL
+// okumasından ÖNCE atanmalı, statik import bunu garanti etmiyor.
 const { migrate } = await import('drizzle-orm/mysql2/migrator')
 const { closeDb, db } = await import('../src/db/client.ts')
 

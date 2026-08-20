@@ -1,18 +1,9 @@
-import { readFileSync } from 'node:fs'
-import { parseEnv } from 'node:util'
+// Ortam değişkenlerinin nereden geldiğini ve neden platform değişkenlerine düşülebildiğini
+// scripts/load-env.mts açıklıyor. Bu betik satır GÜNCELLEDİĞİ için hedefin ekrana basılması
+// özellikle önemli; yardımcı bunu her çağrıda yapıyor.
+import { loadEnvForScript } from './load-env.mts'
 
-// Hangi .env dosyasının okunacağını çağıran belirler.
-const envPath = process.argv[2] ?? '.env.local'
-
-// process.loadEnvFile KULLANILMIYOR: ortamda zaten tanımlı bir değişkeni EZMİYOR ve bu
-// betik satır GÜNCELLİYOR — hedefi daima argüman belirlemeli (bkz. scripts/seed.mts).
-Object.assign(process.env, parseEnv(readFileSync(envPath, 'utf8')))
-
-const databaseUrl = process.env.DATABASE_URL
-if (!databaseUrl) throw new Error(`${envPath} içinde DATABASE_URL yok; geri doldurmanın hedefi belirsiz.`)
-
-// Yalnız veritabanı adı yazdırılıyor — URL'de parola var.
-console.log(`Hedef veritabanı: ${new URL(databaseUrl).pathname.replace(/^\//, '')} (${envPath})`)
+loadEnvForScript(process.argv[2])
 
 // Dinamik import bilinçli: ortam değişkenleri client.ts'in modül seviyesindeki DATABASE_URL
 // okumasından ÖNCE atanmalı, statik import bunu garanti etmiyor.
