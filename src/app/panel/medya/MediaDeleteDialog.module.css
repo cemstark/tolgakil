@@ -21,6 +21,8 @@
   width: calc(100vw - 2 * var(--pad));
 }
 
+/* Ham renk bilinçli; gerekçesi ConfirmDeleteDialog.module.css'te (::backdrop eski
+   tarayıcılarda özel özellik devralmıyor ve karartma sessizce kayboluyor). */
 .dialog::backdrop {
   background: rgb(0 0 0 / .6);
 }

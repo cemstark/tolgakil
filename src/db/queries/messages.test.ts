@@ -1,7 +1,8 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { db, closeDb } from '@/db/client'
 import { messages } from '@/db/schema'
-import { MESSAGE_LIST_LIMIT, listMessages } from './messages'
+import type { Message } from '@/db/schema'
+import { MESSAGE_LIST_LIMIT, listMessages, splitMessagePage } from './messages'
 
 // Testler tek bir gerçek şemayı paylaşıyor; her test kendi zeminini sıfırdan kurar
 // (src/db/schema.test.ts ile aynı desen).
@@ -47,5 +48,30 @@ describe('listMessages', () => {
 
     const sonuc = await listMessages(2)
     expect(sonuc.map((m) => m.subject)).toEqual(['Konu 3', 'Konu 2'])
+  })
+})
+
+// Sayfa "gelen satır sayısı sınıra eşit" diye bakıyordu ve tam sınır kadar mesajda yanlış
+// pozitif veriyordu: hiçbir şey kesilmediği hâlde "daha eskileri görünmez" yazıyordu.
+// Sınır koşulu burada sabitleniyor — veritabanı gerektirmeyen saf bir kural.
+describe('splitMessagePage', () => {
+  const sahte = (n: number) => Array.from({ length: n }, () => ({}) as Message)
+
+  it('sınırın altında kesme bildirmez', () => {
+    const sonuc = splitMessagePage(sahte(MESSAGE_LIST_LIMIT - 1))
+    expect(sonuc.isTruncated).toBe(false)
+    expect(sonuc.messages).toHaveLength(MESSAGE_LIST_LIMIT - 1)
+  })
+
+  it('TAM sınırda kesme bildirmez', () => {
+    const sonuc = splitMessagePage(sahte(MESSAGE_LIST_LIMIT))
+    expect(sonuc.isTruncated).toBe(false)
+    expect(sonuc.messages).toHaveLength(MESSAGE_LIST_LIMIT)
+  })
+
+  it('sınırın bir üstünde keser ve fazlalığı listeye koymaz', () => {
+    const sonuc = splitMessagePage(sahte(MESSAGE_LIST_LIMIT + 1))
+    expect(sonuc.isTruncated).toBe(true)
+    expect(sonuc.messages).toHaveLength(MESSAGE_LIST_LIMIT)
   })
 })

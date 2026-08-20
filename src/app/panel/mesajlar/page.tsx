@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { MESSAGE_LIST_LIMIT, listMessages } from '@/db/queries/messages'
+import { MESSAGE_LIST_LIMIT, listMessages, splitMessagePage } from '@/db/queries/messages'
 import { requireAccess } from '@/lib/auth-guards'
 import { formatDateTime } from '@/lib/date'
 import { panelNoticeState, type PanelNoticeQuery } from '@/lib/panel-notice'
@@ -21,7 +21,9 @@ type MessagePageProps = { searchParams: Promise<PanelNoticeQuery> }
 
 export default async function MessagePage({ searchParams }: MessagePageProps) {
   await requireAccess('messages')
-  const [messages, query] = await Promise.all([listMessages(), searchParams])
+  // Sınırdan BİR fazlası çekiliyor; ayırma kuralı ve gerekçesi splitMessagePage'te.
+  const [fetched, query] = await Promise.all([listMessages(MESSAGE_LIST_LIMIT + 1), searchParams])
+  const { messages, isTruncated } = splitMessagePage(fetched)
   const { key, message: notice } = panelNoticeState(query, {
     saved: 'Mesaj okundu olarak işaretlendi.',
     deleted: 'Mesaj silindi.',
@@ -37,8 +39,8 @@ export default async function MessagePage({ searchParams }: MessagePageProps) {
       />
 
       {/* Kesilme SESSİZ olmamalı: kullanıcı listeyi eksiksiz sanıp eski bir başvuruyu
-          gözden kaçırabilir. Eşitlik yeterli — sorgu sınırdan fazlasını hiç getirmiyor. */}
-      {messages.length === MESSAGE_LIST_LIMIT ? (
+          gözden kaçırabilir. */}
+      {isTruncated ? (
         <p className={styles.limitNotice}>
           En yeni {MESSAGE_LIST_LIMIT} mesaj listeleniyor; daha eskileri bu ekranda görünmez.
         </p>

@@ -23,9 +23,8 @@
        #6b7688 → girdi zemini --ink üzerinde 3.7:1; WCAG 1.4.11 kullanıcı arayüzü
                  bileşenleri için 3:1 istiyor, düz --line-ink (0.12 saydamlık) bunu
                  karşılamıyordu.
-     İkisi de KOYU panel yüzeyine göre ölçüldü. Krem yüzey (`[data-surface="paper"]`) için
-     ayrı bir karşılık tanımlanmadı çünkü panel tek zeminle çalışıyor; krem bir yüzeyde
-     hata metni gerekirse ölçüm oradan yeniden yapılmalı. */
+     İkisi de KOYU panel yüzeyine göre ölçüldü; krem karşılıkları aşağıdaki
+     `[data-surface="paper"]` bloğunda, kendi ölçümleriyle. */
   --danger: #f0a6a0;
   --field-border: #6b7688;
 
@@ -66,6 +65,23 @@
   --line: var(--line-paper);
   --accent: var(--gold-ink);
   --focus-ring: var(--gold-ink);
+
+  /* Koyu yüzeyin --danger/--field-border değerleri krem zeminde çalışmıyor: #f0a6a0
+     --paper (#efece3) üzerinde 1.6:1 veriyor, yani hata metni pratikte görünmez oluyor.
+     Token'lar Görev 8'de küresel hâle geldiği için karşılıkları burada tanımlanmak
+     ZORUNDA — aksi hâlde Plan 3'ün krem yüzeydeki iletişim formu `var(--danger)` yazıp
+     okunmayan bir hata basardı.
+     Ölçüldü (WCAG 2.x göreli parlaklık):
+       #9b2c22 → --paper üzerinde 6.40:1, --paper-2 (#f7f5ef) üzerinde 6.94:1;
+                 metin için gereken 4.5:1'in üstünde.
+       #807b6e → --paper üzerinde 3.57:1, --paper-2 üzerinde 3.87:1; WCAG 1.4.11'in
+                 kullanıcı arayüzü bileşenleri için istediği 3:1'in üstünde
+                 (düz --line-paper #d5d1c4 yalnız 1.4:1 veriyor, kenarlık olarak yetmez).
+     Bu iki değer METİN ve KENARLIK kullanımı için ölçüldü. Dolu bir yüzey olarak
+     kullanılacaksa (ör. panelin "Evet, sil" düğmesi --danger'ı zemin yapıyor) üstündeki
+     metin rengi ayrıca ölçülmeli; o düğme yalnız koyu panelde çiziliyor. */
+  --danger: #9b2c22;
+  --field-border: #807b6e;
 
   background: var(--surface);
   color: var(--text);

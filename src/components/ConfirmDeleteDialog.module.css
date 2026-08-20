@@ -21,6 +21,12 @@
   width: calc(100vw - 2 * var(--pad));
 }
 
+/* Bu değer BİLİNÇLİ olarak token değil (denetim K2'de soruldu). ::backdrop'ın özgün
+   öğeden özel özellik devralması Chrome 122 / Safari 17.4 / Firefox 133 ile geldi;
+   ölçüldü, buradaki Chrome devralıyor. Ama daha eski bir tarayıcıda var() çözülmez,
+   background başlangıç değerine (saydam) düşer ve kip pencerenin karartması SESSİZCE
+   kaybolur — kullanıcı arkadaki sayfanın devre dışı olduğunu göremez. Tek bir ham renk,
+   bu riskten ucuz. Aynı değer MediaDeleteDialog'da da aynı gerekçeyle duruyor. */
 .dialog::backdrop {
   background: rgb(0 0 0 / .6);
 }

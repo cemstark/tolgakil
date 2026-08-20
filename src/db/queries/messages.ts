@@ -18,6 +18,20 @@ export async function listMessages(limit: number = MESSAGE_LIST_LIMIT): Promise<
   return db.select().from(messages).orderBy(desc(messages.createdAt)).limit(limit)
 }
 
+/**
+ * `listMessages(MESSAGE_LIST_LIMIT + 1)` çıktısını ekrana giden dilime ve kesilme bayrağına
+ * ayırır.
+ *
+ * Sınırdan bir fazlası çekilmek ZORUNDA: "gelen satır sayısı sınıra eşit" denetimi tam
+ * sınır kadar mesaj olduğunda yanlış pozitif verir — hiçbir şey kesilmediği hâlde ekran
+ * "daha eskileri görünmez" der ve kullanıcı var olmayan bir mesajı arar. Sınır koşulu saf
+ * bir fonksiyonda tutuluyor ki testle sabitlensin; hata tam olarak orada doğmuştu.
+ */
+export function splitMessagePage(fetched: Message[]): { messages: Message[]; isTruncated: boolean } {
+  const isTruncated = fetched.length > MESSAGE_LIST_LIMIT
+  return { messages: isTruncated ? fetched.slice(0, MESSAGE_LIST_LIMIT) : fetched, isTruncated }
+}
+
 export async function getMessageById(id: number): Promise<Message | null> {
   const [row] = await db.select().from(messages).where(eq(messages.id, id))
   return row ?? null
