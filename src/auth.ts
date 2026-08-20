@@ -26,8 +26,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // kapalıysa maliyetin hiçbiri ödenmiyor. `admit`, `check` DEĞİL — küresel bütçe
         // kabul ANINDA sayılıyor. Sayım denemenin sonucuna bırakılsaydı eşzamanlı bin istek
         // bayat sayacı görüp hep birlikte argon2 kuyruğuna girerdi (bkz.
-        // login-rate-limit.ts).
-        if (!loginGate.admit(parsed.data.email).allowed) return null
+        // login-rate-limit.ts). Güvence kimliği doğrulanmamış denemeler için geçerli;
+        // başarılı giriş kendi birimini geri veriyor.
+        const admission = loginGate.admit(parsed.data.email)
+        if (!admission.allowed) return null
 
         const [user] = await db.select().from(users).where(eq(users.email, parsed.data.email))
         const passwordHash = user?.passwordHash ?? (await dummyPasswordHash())
@@ -48,8 +50,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         // Başarı hesabın penceresini temizliyor ve küresel bütçeye kendi birimini iade
-        // ediyor (gerekçesi login-rate-limit.ts'te).
-        loginGate.clear(parsed.data.email)
+        // ediyor. İade, kabul makbuzundaki PENCERE KİMLİĞİYLE yapılıyor: argon2 çalışırken
+        // pencere dönmüş olabilir ve o zaman iade yeni pencereye gitmemeli (gerekçesi
+        // login-rate-limit.ts'te).
+        loginGate.clear(parsed.data.email, admission.budgetWindow)
 
         await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id))
         // Parola özeti oturuma sızmasın diye yalnız gereken alanlar dönüyor.

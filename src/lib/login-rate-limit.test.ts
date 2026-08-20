@@ -130,7 +130,7 @@ describe('createLoginGate başarılı giriş', () => {
     kapi.recordFailure('avukat@ornek.test', 0)
     expect(kapi.check('avukat@ornek.test', 0).allowed).toBe(false)
 
-    kapi.clear('avukat@ornek.test', 0)
+    kapi.clear('avukat@ornek.test', kapi.admit('avukat@ornek.test', 0).budgetWindow)
 
     // Üç yanılgı affedildi: aynı pencerede iki kez daha yanılmak kilitlemiyor.
     kapi.recordFailure('avukat@ornek.test', 0)
@@ -143,40 +143,65 @@ describe('createLoginGate başarılı giriş', () => {
   // ve 200'lük tavanı turun ortasında tüketip on bir testi kırdı.
   it('kendi birimini küresel bütçeye geri verir', () => {
     const kapi = kapiKur({ epostaSiniri: 5, kureselSinir: 2 })
-    kapi.admit('bir@ornek.test', 0)
+    const kabul = kapi.admit('bir@ornek.test', 0)
     kapi.admit('iki@ornek.test', 0)
     expect(kapi.check('uc@ornek.test', 0).scope).toBe('global')
 
-    kapi.clear('bir@ornek.test', 0)
+    kapi.clear('bir@ornek.test', kabul.budgetWindow)
 
     expect(kapi.check('uc@ornek.test', 0).allowed).toBe(true)
+  })
+
+  /**
+   * Kabul ile başarı arasında argon2 çalışıyor ve pencere o sırada dönebiliyor. İade eski
+   * pencerenin kimliğini taşıdığı için YENİ pencerenin sayacına dokunmuyor.
+   *
+   * Zamana bakan ilk sürüm burada yanılıyordu: pencere bitimine 1 ms kala kabul edilen
+   * girişler, iade sırasında yeni pencereyi düşürüyor ve eski pencerenin kullanılmamış
+   * bütçesini yeniye taşıyordu (en kötü hâlde tavanın iki katı kabul).
+   */
+  it('pencere dönmüşse iade yeni pencerenin bütçesini düşürmez', () => {
+    const kapi = kapiKur({ epostaSiniri: 5, kureselSinir: 2 })
+    const eskiKabul = kapi.admit('avukat@ornek.test', 0)
+
+    // argon2 dönerken pencere döndü; yeni pencerede bir kabul var.
+    kapi.admit('baska@ornek.test', PENCERE + 1)
+
+    kapi.clear('avukat@ornek.test', eskiKabul.budgetWindow)
+
+    // Yeni pencerenin sayacı 1'de kalmalı: bir kabul daha alınca doluyor.
+    expect(kapi.admit('ucuncu@ornek.test', PENCERE + 1).allowed).toBe(true)
+    expect(kapi.check('dorduncu@ornek.test', PENCERE + 1).scope).toBe('global')
   })
 
   // İade en fazla kendi tükettiğini geri verir. Sıfırlama olsaydı geçerli tek bir hesabı
   // olan saldırgan her girişten sonra tavanı tamamen etkisizleştirirdi.
   it('başkalarının başarısız denemelerini affetmez', () => {
     const kapi = kapiKur({ epostaSiniri: 5, kureselSinir: 3 })
-    kapi.admit('saldirgan@ornek.test', 0)
+    const saldirgan = kapi.admit('saldirgan@ornek.test', 0)
     kapi.admit('kurban-bir@ornek.test', 0)
     kapi.admit('kurban-iki@ornek.test', 0)
     expect(kapi.check('yeni@ornek.test', 0).scope).toBe('global')
 
     // Saldırganın elindeki geçerli hesap yalnız KENDİ birimini geri alıyor.
-    kapi.clear('saldirgan@ornek.test', 0)
+    kapi.clear('saldirgan@ornek.test', saldirgan.budgetWindow)
 
     expect(kapi.admit('yeni@ornek.test', 0).allowed).toBe(true)
     expect(kapi.check('yeni@ornek.test', 0).scope).toBe('global')
   })
 
-  // Bütçe sayacı eksiye düşmemeli: iade edilmemiş bir birim geri verilirse tavan sessizce
-  // yükselirdi.
-  it('harcanmamış birim iade edilemez', () => {
+  // Reddedilen deneme sayılmadığı için iade edilecek birimi de yok; makbuz bunu `null` ile
+  // söylüyor ve clear bütçeye hiç dokunmuyor.
+  it('reddedilen deneme iade makbuzu üretmez', () => {
     const kapi = kapiKur({ epostaSiniri: 5, kureselSinir: 1 })
-    kapi.clear('hic-denemeyen@ornek.test', 0)
-    kapi.clear('hic-denemeyen@ornek.test', 0)
+    kapi.admit('bir@ornek.test', 0)
+    const reddedilen = kapi.admit('iki@ornek.test', 0)
+    expect(reddedilen.budgetWindow).toBeNull()
 
-    expect(kapi.admit('bir@ornek.test', 0).allowed).toBe(true)
-    expect(kapi.check('iki@ornek.test', 0).scope).toBe('global')
+    kapi.clear('iki@ornek.test', reddedilen.budgetWindow)
+
+    // Bütçe hâlâ dolu: reddedilen deneme kimsenin birimini geri vermedi.
+    expect(kapi.check('uc@ornek.test', 0).scope).toBe('global')
   })
 })
 

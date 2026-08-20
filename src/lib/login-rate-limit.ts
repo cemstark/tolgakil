@@ -1,4 +1,4 @@
-import { createRateLimiter, type RateLimiter, type RateLimitResult } from '@/lib/rate-limit'
+import { createRateLimiter, type RateLimiter, type RateLimitResult, type WindowId } from '@/lib/rate-limit'
 
 const WINDOW_MS = 15 * 60 * 1000
 
@@ -44,6 +44,15 @@ export type LoginGateScope = 'email' | 'global'
 
 /** `scope`, reddin hangi tavandan geldiğini söyler; izin verilen sonuçta `null`. */
 export type LoginGateResult = RateLimitResult & { scope: LoginGateScope | null }
+
+/**
+ * Kabul edilen denemenin makbuzu.
+ *
+ * `budgetWindow`, denemenin küresel bütçede sayıldığı pencerenin kimliği; başarı yolunda
+ * `clear`'a geri verilir. Reddedilen denemede `null` — sayılmadığı için iade edilecek bir
+ * şey de yok.
+ */
+export type LoginAdmission = LoginGateResult & { budgetWindow: WindowId | null }
 
 export type LoginGate = ReturnType<typeof createLoginGate>
 
@@ -100,6 +109,12 @@ export function createLoginGate(perEmail: RateLimiter, budget: RateLimiter) {
      * parçacıklı olduğu için, kabul burada sayıldığında pencerede kabul edilen istek sayısı
      * gerçekten tavanda durur.
      *
+     * BU GÜVENCE YALNIZ BAŞARISIZ DENEMELER İÇİN GEÇERLİ. Başarılı giriş kendi birimini
+     * `clear` ile iade ediyor (gerekçesi orada), yani bütçeye net etkisi sıfır: doğru
+     * parolayla art arda POST atan biri sınırsız `argon2.verify` çalıştırabilir. Tavan
+     * "kimliği doğrulanmamış deneme sayısını" sınırlıyor, "toplam argon2 işini" değil.
+     * Kimliği doğrulanmış çağrılar için ayrı bir tavan Plan 3'e bırakıldı.
+     *
      * E-POSTA KOVASI BURADA SAYILMIYOR, `recordFailure`'da sayılıyor — ve bu ölçümle
      * belirlendi. Kabul anında sayıldığında, aynı hesabın EŞZAMANLI ve BAŞARILI girişleri
      * birbirinin hakkını yiyor: her deneme argon2 dönene kadar bir slot tutuyor, altıncı
@@ -112,13 +127,14 @@ export function createLoginGate(perEmail: RateLimiter, budget: RateLimiter) {
      * parola karşısında anlamsız kalır. Buna karşılık meşru bir kullanıcının doğru
      * parolayla kilitlenmesi her gün karşılaşılabilecek bir arıza olurdu.
      */
-    admit(email: string, now: number = Date.now()): LoginGateResult {
+    admit(email: string, now: number = Date.now()): LoginAdmission {
       const result = check(email, now)
-      if (!result.allowed) return result
+      if (!result.allowed) return { ...result, budgetWindow: null }
 
       // Arada await yok: kabul ile sayım arasına başka bir istek giremez.
-      budget.record(GLOBAL_KEY, now)
-      return result
+      // Pencere kimliği çağırana veriliyor — iade zamana değil bu kimliğe bakıyor.
+      const { windowId } = budget.record(GLOBAL_KEY, now)
+      return { ...result, budgetWindow: windowId }
     },
 
     /**
@@ -134,7 +150,12 @@ export function createLoginGate(perEmail: RateLimiter, budget: RateLimiter) {
 
     /**
      * Başarılı girişi işler: hesabın penceresi sıfırlanır, küresel bütçeye o denemenin
-     * BİR birimi iade edilir.
+     * BİR birimi `admit`'ten alınan pencere kimliğiyle iade edilir.
+     *
+     * Kimlik zorunlu, zaman damgası yetmez: kabul ile başarı arasında argon2 çalışıyor ve
+     * pencere o sırada dönmüş olabilir. Zamana bakan sürüm ölçüldü — pencere bitimine
+     * 1 ms kala kabul edilen girişler, iade sırasında YENİ pencerenin sayacını düşürüyor ve
+     * eski pencerenin kullanılmamış bütçesini yeniye taşıyordu.
      *
      * Pencerenin sıfırlanması: üç kez yanılıp dördüncüde giren avukat, aynı pencerede iki
      * kez daha yanıldığında kilitlenmemeli.
@@ -149,9 +170,9 @@ export function createLoginGate(perEmail: RateLimiter, budget: RateLimiter) {
      * hâliyle iade en fazla kendi tükettiğini geri verir, başkalarının başarısız
      * denemelerini affetmez.
      */
-    clear(email: string, now: number = Date.now()): void {
+    clear(email: string, budgetWindow: WindowId | null): void {
       perEmail.reset(loginRateLimitKey(email))
-      budget.refund(GLOBAL_KEY, now)
+      if (budgetWindow !== null) budget.refund(GLOBAL_KEY, budgetWindow)
     },
   }
 }

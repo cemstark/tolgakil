@@ -54,14 +54,15 @@ describe('createRateLimiter', () => {
   })
 
   // Kabul anında sayan çağıran için gerekli: deneme sonucu bilinmeden sayılıyor ve sonuç
-  // "bu sayılmamalıydı" çıkarsa tek yol geri vermek.
+  // "bu sayılmamalıydı" çıkarsa tek yol geri vermek. İade, record'un döndürdüğü PENCERE
+  // KİMLİĞİYLE yapılıyor — üretimdeki çağrı biçimi de bu.
   it('refund tek denemeyi geri alır, sayacı sıfırlamaz', () => {
     const limiter = createRateLimiter({ limit: 2, windowMs: 60_000 })
     limiter.record('kova', 0)
-    limiter.record('kova', 0)
+    const ikinci = limiter.record('kova', 0)
     expect(limiter.peek('kova', 0).allowed).toBe(false)
 
-    limiter.refund('kova', 0)
+    limiter.refund('kova', ikinci.windowId)
 
     // Bir hak geri geldi, ikisi birden değil.
     expect(limiter.record('kova', 0).allowed).toBe(true)
@@ -79,14 +80,37 @@ describe('createRateLimiter', () => {
     expect(limiter.peek('kova', 0).allowed).toBe(false)
   })
 
-  // Pencere döndükten sonra gelen iade YENİ pencerenin sayacını düşürmemeli; düşürseydi
-  // sayaç gerçekte olandan az görünürdü.
-  it('refund pencere döndükten sonra dokunmaz', () => {
-    const limiter = createRateLimiter({ limit: 1, windowMs: 60_000 })
-    limiter.record('kova', 0)
+  /**
+   * ÜRETİM YOLU: kabul ile iade arasında (argon2 doğrulaması) pencere dönebiliyor.
+   * İade eski pencerenin kimliğini taşıyor ve YENİ pencerenin sayacına dokunmamalı;
+   * dokunsaydı eski pencerenin kullanılmamış bütçesi yeniye taşınırdı.
+   *
+   * Zamana bakan ilk sürüm tam olarak burada yanılıyordu: `Date.now()` ile çağrılan iade
+   * yürürlükteki pencereyi buluyor ve onu düşürüyordu.
+   */
+  it('refund denemenin sayıldığı pencere dışına taşmaz', () => {
+    const limiter = createRateLimiter({ limit: 2, windowMs: 60_000 })
+    const eski = limiter.record('kova', 0)
+
+    // Pencere döndü; yeni pencerede bir deneme sayıldı.
     limiter.record('kova', 60_001)
-    limiter.refund('kova', 0)
+
+    limiter.refund('kova', eski.windowId)
+
+    // Yeni pencerenin sayacı 1'de kalmalı: bir deneme daha alınca dolar.
+    expect(limiter.record('kova', 60_001).allowed).toBe(true)
     expect(limiter.peek('kova', 60_001).allowed).toBe(false)
+  })
+
+  // Kimlik reddedilen denemede de dönüyor; çağıran onu iade etmiyor ama sayaç da
+  // ilerlemediği için yanlışlıkla iade edilirse yürürlükteki pencere düşmemeli.
+  it('record reddederken yürürlükteki pencerenin kimliğini döner', () => {
+    const limiter = createRateLimiter({ limit: 1, windowMs: 60_000 })
+    const ilk = limiter.record('kova', 0)
+    const reddedilen = limiter.record('kova', 10_000)
+
+    expect(reddedilen.allowed).toBe(false)
+    expect(reddedilen.windowId).toBe(ilk.windowId)
   })
 
   // Süpürme süresi dolmuş pencereleri siler ama yürürlüktekine dokunmaz; dokunsaydı saldırgan

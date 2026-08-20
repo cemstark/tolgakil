@@ -35,10 +35,10 @@ export async function createCategory(_prev: FormState, formData: FormData): Prom
   // olurdu.
   //
   // BAŞKA BİR YERDEN GELEN GÜVENCE YOK: makale taraması makalenin BAŞLIK, ÖZET ve
-  // GÖVDESİNİ okuyor, bağlı olduğu kategorinin adını değil. Bugün kategori adı yalnız
-  // panelde ve makale üstbilgisinde görünüyor. Plan 3'ün kategori arşiv sayfası
-  // (/makaleler/kategori/[slug]) geldiğinde ad, makaleden bağımsız bir sayfa başlığı
-  // olarak yayımlanacak; karar o noktada yeniden değerlendirilmelidir.
+  // GÖVDESİNİ okuyor, bağlı olduğu kategorinin adını değil. Bugün ad hiç yayımlanmıyor —
+  // yalnız panelde görünüyor, kamuya açık makale detay sayfası henüz yazılmadı. Plan 3'te
+  // hem o sayfa hem kategori arşivi (/makaleler/kategori/[slug]) gelecek ve ad makaleden
+  // bağımsız bir başlık olarak yayımlanacak; karar o noktada yeniden değerlendirilmelidir.
   //
   // spec §11: çakışma sessizce üzerine yazılmaz, kullanıcıya açıkça bildirilir.
   if (await isSlugTaken(parsed.data.slug)) {

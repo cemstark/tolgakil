@@ -186,9 +186,12 @@ test('ayarlar formu kaydedip geri okuduğunda değeri korur', async ({ page }, t
   test.skip(testInfo.project.name !== 'masaustu', 'Ayarlar tek satırlık tablo; projeler arası yarışı önlemek için tek projede koşar.')
 
   const temizlikci = await temizlikciAc()
+  // Okunmadıysa `undefined`; geri koyma finally'de olduğu için sentinel gerekiyor.
+  let oncekiTelefon: string | undefined
   try {
     const [oncekiSatir] = await temizlikci.sorgu<{ phone: string }>('SELECT phone FROM settings WHERE id = 1', [])
     if (oncekiSatir === undefined) throw new Error('settings satırı yok; `npm run db:seed` çalıştırılmalı.')
+    oncekiTelefon = oncekiSatir.phone
 
     const telefon = `+90 216 000 ${String(Date.now()).slice(-4)}`
     await girisYap(page, ADMIN)
@@ -200,11 +203,19 @@ test('ayarlar formu kaydedip geri okuduğunda değeri korur', async ({ page }, t
     // reload: değerin formda değil GERÇEKTEN sütunda durduğunun kanıtı.
     await page.reload()
     await expect(page.getByLabel('Telefon', { exact: true })).toHaveValue(telefon)
-
-    // Tohum değeri geri konuyor; test geliştirme veritabanına kalıcı iz bırakmasın.
-    await temizlikci.sil('UPDATE settings SET phone = ? WHERE id = 1', [oncekiSatir.phone])
   } finally {
-    await temizlikci.kapat()
+    // Geri koyma FINALLY'de: iddia zaman aşımına uğrarsa test telefonu geliştirme
+    // veritabanında kalır ve bir sonraki koşum onu "önceki değer" sanıp kalıcılaştırır
+    // (alt bilgi testindeki tuzağın ikizi, etkisi daha küçük).
+    try {
+      // `sil` değil `silmeyeCalis`: hata yolunda kayıt hiç yapılmamış olabilir, o zaman
+      // sütun zaten doğru değerdedir ve fırlatan bir temizlik asıl hatayı örterdi.
+      if (oncekiTelefon !== undefined) {
+        await temizlikci.silmeyeCalis('UPDATE settings SET phone = ? WHERE id = 1', [oncekiTelefon])
+      }
+    } finally {
+      await temizlikci.kapat()
+    }
   }
 })
 
