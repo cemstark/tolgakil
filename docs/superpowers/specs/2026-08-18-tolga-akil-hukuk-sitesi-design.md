@@ -76,8 +76,11 @@ Postgres/Mongo isteyen hazır CMS'ler (Payload v3 dahil) elenmiştir.
 
 ## 5. Veri modeli (MySQL + Drizzle ORM)
 
-- **`users`** — `id`, `email` (tekil), `password_hash` (argon2), `role` (`admin`|`editor`),
-  `name`, `created_at`, `last_login_at`
+- **`users`** — `id`, `username` (tekil; 3-60 karakter, yalnız `a-z0-9._-`), `password_hash`
+  (argon2), `role` (`admin`|`editor`), `name`, `created_at`, `last_login_at`
+  — Giriş kimliği e-posta DEĞİL: bu alana hiç posta gönderilmiyordu ve e-posta biçimi
+    dayatmak kullanıcıyı gereksiz bir kurala bağlıyordu. Küme ASCII'ye kısıtlı, gerekçesi
+    `src/lib/username.ts` içinde.
 - **`lawyers`** — `id`, `slug` (tekil), `full_name`, `title`, `bar_association`,
   `bar_registry_no`, `tbb_registry_no`, `practice_start_date`, `university`, `languages`,
   `email`, `photo_media_id`, `bio` (HTML), `sort_order`, `is_published`
@@ -132,7 +135,11 @@ getirmez. Arşiv birkaç yüz yazıyı aşarsa harici arama gerekir. Bu bilinçl
 - **Yazı tipleri:** `next/font` ile kendi sunucumuzdan servis edilir; Google'a istek gitmez.
 - **Çalışma zamanı:** Node 22. **Dağıtım:** GitHub push → Hostinger otomatik derleme.
 - **Ortam değişkenleri:** `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `SMTP_HOST`,
-  `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `CONTACT_TO_EMAIL`, `UPLOAD_DIR`.
+  `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `CONTACT_TO_EMAIL`, `UPLOAD_DIR`,
+  `SEED_ADMIN_USERNAME`, `SEED_ADMIN_PASSWORD`, `SEED_EDITOR_USERNAME`,
+  `SEED_EDITOR_PASSWORD`.
+  — `SEED_*_USERNAME` çifti eskiden `SEED_*_EMAIL` idi. Eski adlar okunmuyor: sessiz geri
+    düşüş, panele hiç girilemeyen bir hesap oluştururdu.
 
 ## 7. Tasarım sistemi
 

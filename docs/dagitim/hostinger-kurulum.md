@@ -86,6 +86,10 @@ hPanel → Web App panosu → **Environment Variables**
 | `AUTH_SECRET` | 32 baytlık rastgele dize | Aşağıda üretiyoruz |
 | `AUTH_URL` | `https://GECICI-ALAN-ADI` | Sonunda `/` yok |
 | `UPLOAD_DIR` | `/home/UXXXXXXXX/uploads` | **Depo kökünün DIŞINDA** olmalı — gerekçesi Adım 7'de |
+| `SEED_ADMIN_USERNAME` | `buro` | Panele girilecek **kullanıcı adı** — e-posta değil. 3-60 karakter, yalnız `a-z`, `0-9`, `.`, `_`, `-` |
+| `SEED_ADMIN_PASSWORD` | en az 12 karakter | Gerçek giriş parolası |
+| `SEED_EDITOR_USERNAME` | `avukat` | Aynı kural |
+| `SEED_EDITOR_PASSWORD` | en az 12 karakter | Gerçek giriş parolası |
 | `NODE_ENV` | `production` | Hostinger genelde kendi ayarlar; yoksa ekle |
 
 `AUTH_SECRET` üretmek için kendi makinenizde şunu çalıştırın ve çıktıyı yapıştırın:
@@ -97,7 +101,12 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 > Bu değeri bana veya başka bir yere yapıştırmanıza gerek yok — doğrudan hPanel'e girin.
 > Sızarsa herkes panele giriş çerezi üretebilir.
 
-**Doğrulama:** Beş değişken de listede görünüyor; `DATABASE_URL` içinde `?charset=` yok.
+> **Eski kurulumdan geliyorsanız:** `SEED_ADMIN_EMAIL` ve `SEED_EDITOR_EMAIL` değişkenleri
+> **SİLİNMELİ**, yerlerine yukarıdaki `SEED_*_USERNAME` çifti girilmeli. Eski adlar artık
+> okunmuyor ve tohum betiği eksik değişkende **durur** — sessizce yanlış hesap oluşmaz.
+
+**Doğrulama:** Dokuz değişken de listede görünüyor; `DATABASE_URL` içinde `?charset=` yok
+ve `SEED_*_EMAIL` kalmamış.
 
 ---
 
@@ -108,7 +117,8 @@ Sırasıyla:
 
 1. Bağlantı, harmanlama ve saat dilimi doğrulanır.
 2. `npm run db:migrate` — 8 tablo + FULLTEXT indeksi kurulur.
-3. `npm run db:seed` — ilk yönetici hesabı ve başlangıç kayıtları.
+3. `npm run db:seed` — ilk yönetici hesabı ve başlangıç kayıtları. Hesabın giriş kimliği
+   `SEED_ADMIN_USERNAME` değeridir (kullanıcı adı, e-posta değil).
 4. `information_schema` sorgulanarak tabloların gerçekten `utf8mb4_unicode_ci` olduğu
    **okunarak** doğrulanır.
 

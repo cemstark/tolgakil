@@ -21,13 +21,13 @@ function seedDegeri(key: string): string {
 
 // Adlar src/db/seed.ts içindeki tohum kullanıcılarıyla birebir aynı olmak zorunda.
 export const ADMIN = {
-  email: seedDegeri('SEED_ADMIN_EMAIL'),
+  username: seedDegeri('SEED_ADMIN_USERNAME'),
   password: seedDegeri('SEED_ADMIN_PASSWORD'),
   name: 'Büro Yöneticisi',
 }
 
 export const EDITOR = {
-  email: seedDegeri('SEED_EDITOR_EMAIL'),
+  username: seedDegeri('SEED_EDITOR_USERNAME'),
   password: seedDegeri('SEED_EDITOR_PASSWORD'),
   name: 'Yazar Avukat',
 }
@@ -44,9 +44,9 @@ export async function cikisYap(page: Page) {
   await page.context().clearCookies()
 }
 
-export async function girisYap(page: Page, kullanici: { email: string; password: string }) {
+export async function girisYap(page: Page, kullanici: { username: string; password: string }) {
   await page.goto('/panel/giris')
-  await page.getByLabel('E-posta').fill(kullanici.email)
+  await page.getByLabel('Kullanıcı adı').fill(kullanici.username)
   await page.getByLabel('Parola').fill(kullanici.password)
   await page.getByRole('button', { name: 'Giriş yap' }).click()
   // Giriş sayfası deseni DIŞARIDA bırakılmak zorunda: /\/panel(\/|$)/ yazılırsa desen

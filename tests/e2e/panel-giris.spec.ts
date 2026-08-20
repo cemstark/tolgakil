@@ -4,7 +4,7 @@ import { girisYap, ADMIN } from './helpers/auth'
 import { panelGezinmesiniAc } from './helpers/panel-nav'
 import { geciciKullaniciOlustur } from './helpers/test-user'
 
-// Hız sınırı sayacı sunucu SÜRECİNDE yaşıyor, e-posta başına sayıyor ve playwright.config.ts
+// Hız sınırı sayacı sunucu SÜRECİNDE yaşıyor, kullanıcı adı başına sayıyor ve playwright.config.ts
 // yerelde reuseExistingServer kullanıyor: ayrı bir `npm run dev` açıkken süit art arda
 // koşturulursa sayaçlar koşumlar arasında taşınır. Bu yüzden başarısız deneme üreten her test
 // kendi geçici kullanıcısını kuruyor. Tohum kullanıcıları yalnız BAŞARILI girişlerde
@@ -21,12 +21,12 @@ test('yanlış parola alan bazında Türkçe hata gösterir ve oturum açmaz', a
   const kullanici = await geciciKullaniciOlustur('yanlis-parola')
   try {
     await page.goto('/panel/giris')
-    await page.getByLabel('E-posta').fill(kullanici.email)
+    await page.getByLabel('Kullanıcı adı').fill(kullanici.username)
     await page.getByLabel('Parola').fill('kesinlikle-yanlis-parola')
     await page.getByRole('button', { name: 'Giriş yap' }).click()
     // Lokatör forma daraltıldı: Next kendi rota duyurucusunu (#__next-route-announcer__) da
     // role="alert" ile basıyor, sayfa genelinde arayınca iki eşleşme çıkıyor (ölçüldü).
-    await expect(page.locator('form').getByRole('alert')).toHaveText('E-posta veya parola hatalı.')
+    await expect(page.locator('form').getByRole('alert')).toHaveText('Kullanıcı adı veya parola hatalı.')
     await expect(page).toHaveURL(/\/panel\/giris/)
   } finally {
     await kullanici.temizle()
@@ -35,19 +35,19 @@ test('yanlış parola alan bazında Türkçe hata gösterir ve oturum açmaz', a
 
 // Ölçüldü: React 19 form action tamamlanınca DENETİMSİZ alanları sıfırlıyor. Bu yüzden
 // LoginForm alanları denetimli. İki sonucu var: (1) parolayı yanlış giren kullanıcı
-// yazdığı e-postayı kaybetmiyor, (2) gönderim yanıtından sonra düşen sıfırlama, araya
+// yazdığı kullanıcı adını kaybetmiyor, (2) gönderim yanıtından sonra düşen sıfırlama, araya
 // giren bir yazmayı silip formu boş göndermiyor — "art arda başarısız denemeler hız
 // sınırına takılır" testi bu yüzden rastgele kırmızı veriyordu.
-test('başarısız girişten sonra yazılan e-posta alanda kalır', async ({ page }) => {
+test('başarısız girişten sonra yazılan kullanıcı adı alanda kalır', async ({ page }) => {
   const kullanici = await geciciKullaniciOlustur('alan-korunur')
   try {
     await page.goto('/panel/giris')
-    await page.getByLabel('E-posta').fill(kullanici.email)
+    await page.getByLabel('Kullanıcı adı').fill(kullanici.username)
     await page.getByLabel('Parola').fill('kesinlikle-yanlis-parola')
     await page.getByRole('button', { name: 'Giriş yap' }).click()
-    await expect(page.locator('form').getByRole('alert')).toHaveText('E-posta veya parola hatalı.')
+    await expect(page.locator('form').getByRole('alert')).toHaveText('Kullanıcı adı veya parola hatalı.')
 
-    await expect(page.getByLabel('E-posta')).toHaveValue(kullanici.email)
+    await expect(page.getByLabel('Kullanıcı adı')).toHaveValue(kullanici.username)
     await expect(page.getByLabel('Parola')).toHaveValue('kesinlikle-yanlis-parola')
   } finally {
     await kullanici.temizle()
@@ -58,7 +58,7 @@ test('başarısız girişten sonra yazılan e-posta alanda kalır', async ({ pag
 // ekran okuyucu kullanıcısı hiçbir şey duymazdı: açıklama ancak girdiye odaklanınca okunur.
 test('boş parola hatası canlı bölgede duyurulur ve girdiye bağlanır', async ({ page }) => {
   await page.goto('/panel/giris')
-  await page.getByLabel('E-posta').fill(ADMIN.email)
+  await page.getByLabel('Kullanıcı adı').fill(ADMIN.username)
   await page.getByRole('button', { name: 'Giriş yap' }).click()
 
   await expect(page.locator('form').getByRole('alert')).toHaveText('Parola zorunlu.')
@@ -103,14 +103,14 @@ test('oturumu açık kullanıcı giriş sayfasını görmez, panele döner', asy
 
 // Sayaç sunucu süreci boyunca yaşıyor; bu yüzden test sabit bir deneme sayısına değil,
 // "sınır mesajı çıkana kadar dene" kuralına dayanıyor: sunucu yeniden kullanılırsa da geçerli.
-// Kayıtlı olmayan bir e-posta kullanılıyor — anahtar e-posta olduğu için tohum kullanıcılarının
-// bütçesi harcanmasın.
+// Kayıtlı olmayan bir kullanıcı adı kullanılıyor — anahtar kullanıcı adı olduğu için tohum
+// kullanıcılarının bütçesi harcanmasın.
 test('art arda başarısız denemeler hız sınırına takılır', async ({ page }) => {
   await page.goto('/panel/giris')
   const uyari = page.locator('form').getByRole('alert')
 
   for (let deneme = 0; deneme < 6; deneme += 1) {
-    await page.getByLabel('E-posta').fill('hiz-siniri@ornek.test')
+    await page.getByLabel('Kullanıcı adı').fill('hiz-siniri-hesabi')
     await page.getByLabel('Parola').fill('kesinlikle-yanlis-parola')
     // Gönderim yanıtı beklenir: iki deneme arasında mesaj metni aynı kaldığı için
     // metne bakarak beklemek yarış koşulu olurdu.
@@ -123,7 +123,7 @@ test('art arda başarısız denemeler hız sınırına takılır', async ({ page
     if ((await uyari.textContent())?.startsWith('Çok fazla deneme')) break
   }
 
-  // TANI NOTU (iddia değil): bu iddia E-POSTA tavanının mesajını arıyor. Sınırın ikinci bir
+  // TANI NOTU (iddia değil): bu iddia KULLANICI ADI tavanının mesajını arıyor. Sınırın ikinci bir
   // tavanı daha var — pencere başına toplam başarısız deneme (src/lib/login-rate-limit.ts).
   // Bir süit turu ~21 başarısız giriş üretiyor ve yerelde reuseExistingServer açık olduğu
   // için sayaç turlar arasında taşınıyor; yalnız bu dosya aynı 15 dakikada onlarca kez
@@ -139,22 +139,22 @@ test('art arda başarısız denemeler hız sınırına takılır', async ({ page
 test('kimlik doğrulama ucuna doğrudan POST da hız sınırına takılır', async ({ request }, testInfo) => {
   test.skip(
     testInfo.project.name !== 'masaustu',
-    'HTTP düzeyinde kanıt, tarayıcıdan bağımsız. İki projede koşarsa aynı e-posta kovasını paylaşıp birbirinin ilk adımını bozar.',
+    'HTTP düzeyinde kanıt, tarayıcıdan bağımsız. İki projede koşarsa aynı kovayı paylaşıp birbirinin ilk adımını bozar.',
   )
 
   // Bu test bir hesabı bilerek kilitliyor; tohum kullanıcısı kullanılsaydı aynı 15 dakika
   // içinde ikinci kez koşan süitte diğer testler yanlış kırmızı verirdi.
-  const { email, password, temizle } = await geciciKullaniciOlustur('kilit-kaniti')
+  const { username, password, temizle } = await geciciKullaniciOlustur('kilit-kaniti')
 
   try {
     const { csrfToken } = await (await request.get('/api/auth/csrf')).json()
 
     // Her istek FARKLI bir x-forwarded-for taşıyor. Anahtar IP olsaydı her deneme yeni kova
-    // alır ve sınır hiç devreye girmezdi; kilitlenmesi anahtarın e-posta olduğunun kanıtı.
+    // alır ve sınır hiç devreye girmezdi; kilitlenmesi anahtarın kullanıcı adı olduğunun kanıtı.
     const dogrudanGiris = (deneneParola: string, sahteIpSonEki: number) =>
       request.post('/api/auth/callback/credentials', {
         headers: { 'x-forwarded-for': `203.0.113.${sahteIpSonEki}` },
-        form: { csrfToken, email, password: deneneParola, callbackUrl: '/panel' },
+        form: { csrfToken, username, password: deneneParola, callbackUrl: '/panel' },
         maxRedirects: 0,
       })
 
@@ -173,6 +173,29 @@ test('kimlik doğrulama ucuna doğrudan POST da hız sınırına takılır', asy
   } finally {
     await temizle()
   }
+})
+
+// Görev sözleşmesi: giriş kimliği kullanıcı adı, e-posta DEĞİL. Eski kimlikler e-posta
+// biçimindeydi ve migration onları oldukları gibi taşıdı; o değerlerle giriş denemesi
+// veritabanına hiç ulaşmadan biçim kuralında durmalı. Alanın type="email" olarak kalması
+// da bu testte yakalanır: tarayıcı o durumda kendi doğrulamasını dayatır ve gönderim
+// hiç yapılmadığı için beklenen Türkçe hata çıkmaz.
+test('e-posta biçimli bir değerle giriş yapılamaz', async ({ page }) => {
+  await page.goto('/panel/giris')
+  await expect(page.getByLabel('Kullanıcı adı')).toHaveAttribute('type', 'text')
+
+  await page.getByLabel('Kullanıcı adı').fill('admin@ornek.test')
+  await page.getByLabel('Parola').fill('kesinlikle-yanlis-parola')
+  await page.getByRole('button', { name: 'Giriş yap' }).click()
+
+  await expect(page.locator('form').getByRole('alert')).toContainText('küçük İngiliz harfleri (a-z)')
+  await expect(page).toHaveURL(/\/panel\/giris/)
+})
+
+// Tohum kullanıcı adı gerçekten kullanıcı adı biçiminde: e-posta biçimli bir tohum değeri
+// kalsaydı yukarıdaki testler yeşil kalır ama panele hiç girilemezdi.
+test('tohum kullanıcı adı kullanıcı adı biçiminde', async () => {
+  expect(ADMIN.username).toMatch(/^[a-z0-9._-]{3,60}$/)
 })
 
 test('giriş sayfasında erişilebilirlik ihlali yok', async ({ page }) => {
