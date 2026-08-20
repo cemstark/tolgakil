@@ -7,7 +7,12 @@ export type ArticleStatus = 'draft' | 'published'
 
 export const users = mysqlTable('users', {
   id: int('id').autoincrement().primaryKey(),
-  email: varchar('email', { length: 190 }).notNull().unique(),
+  // Giriş kimliği e-posta DEĞİL kullanıcı adı: bu sütuna hiçbir zaman posta gönderilmedi,
+  // yalnız kimlik olarak okundu. Biçim (3-60 karakter, yalnız a-z 0-9 . _ -) ve ASCII
+  // kısıtının gerekçesi src/lib/validation.ts içindeki USERNAME_PATTERN notunda.
+  // Sütun genişliği 190'da bırakıldı: migration RENAME ile yürüdü, daraltmak üretimdeki
+  // e-posta biçimli eski değerleri kesip veri kaybettirirdi.
+  username: varchar('username', { length: 190 }).notNull().unique(),
   passwordHash: varchar('password_hash', { length: 255 }).notNull(),
   role: mysqlEnum('role', ['admin', 'editor']).notNull().default('editor'),
   name: varchar('name', { length: 120 }).notNull(),

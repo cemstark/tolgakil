@@ -4,7 +4,7 @@ import { users, type User, type UserRole } from '@/db/schema'
 
 export type UserListItem = {
   id: number
-  email: string
+  username: string
   name: string
   role: UserRole
   isActive: boolean
@@ -17,7 +17,7 @@ export async function listUsers(): Promise<UserListItem[]> {
   return db
     .select({
       id: users.id,
-      email: users.email,
+      username: users.username,
       name: users.name,
       role: users.role,
       isActive: users.isActive,
@@ -42,12 +42,14 @@ export async function listActiveAdminIds(): Promise<number[]> {
   return satirlar.map((s) => s.id)
 }
 
-// users.email UNIQUE; kısıt hatası kullanıcıya 500 olarak dönmesin diye önceden bakılıyor.
-// exceptId düzenleme yolu için ayrıldı — bugün e-posta düzenlemede değiştirilemiyor ama
+// users.username UNIQUE; kısıt hatası kullanıcıya 500 olarak dönmesin diye önceden bakılıyor.
+// exceptId düzenleme yolu için ayrıldı — bugün kullanıcı adı düzenlemede değiştirilemiyor ama
 // çağıranın kendi satırını çakışma sayması, ileride o alan açıldığında sessiz bir hata olurdu.
-export async function isEmailTaken(email: string, exceptId?: number): Promise<boolean> {
+export async function isUsernameTaken(username: string, exceptId?: number): Promise<boolean> {
   const predicate =
-    exceptId === undefined ? eq(users.email, email) : and(eq(users.email, email), ne(users.id, exceptId))
+    exceptId === undefined
+      ? eq(users.username, username)
+      : and(eq(users.username, username), ne(users.id, exceptId))
 
   const [row] = await db.select({ id: users.id }).from(users).where(predicate).limit(1)
   return row !== undefined

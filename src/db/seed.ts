@@ -5,6 +5,7 @@ import { db } from './client.ts'
 import { categories, pages, practiceAreas, settings, users } from './schema.ts'
 import { hashPassword } from '../lib/password.ts'
 import { SETTINGS_ID } from '../lib/settings-id.ts'
+import { USERNAME_ERROR, USERNAME_PATTERN } from '../lib/username.ts'
 
 const SEED_CATEGORIES = [
   { slug: 'aile-hukuku', name: 'Aile Hukuku' },
@@ -38,21 +39,37 @@ function requiredEnv(key: string): string {
   return value
 }
 
+// Ortamdan gelen kullanıcı adını giriş formuyla AYNI kurala sokar.
+//
+// Doğrulama olmadan `SEED_ADMIN_USERNAME="Büro@ornek.com"` gibi bir değer sessizce
+// kaydedilir, sonra giriş formu aynı değeri biçim hatası diye reddederdi: hesap var,
+// ama hiç kimse o hesapla giremez. Sessiz geri düşüş yerine burada duruluyor.
+// Kural zod şemasıyla ORTAK bir modülden geliyor (lib/username.ts); kopyalanan bir
+// desen, bir tarafta gevşetildiğinde tam olarak bu sessiz uyuşmazlığı üretirdi.
+function requiredUsername(key: string): string {
+  const value = requiredEnv(key).trim()
+  if (!USERNAME_PATTERN.test(value)) throw new Error(`${key} geçersiz. ${USERNAME_ERROR}`)
+  return value
+}
+
 // Idempotent: var olan kullanıcının parolasını veya rolünü EZMEZ, yalnız eksikse ekler.
 // Aksi hâlde tohumu ikinci kez koşturmak panelden değiştirilmiş parolayı geri alırdı.
-async function addUser(email: string, password: string, name: string, role: 'admin' | 'editor') {
-  const existing = await db.select().from(users).where(eq(users.email, email))
+async function addUser(username: string, password: string, name: string, role: 'admin' | 'editor') {
+  const existing = await db.select().from(users).where(eq(users.username, username))
   if (existing.length > 0) return
   await db.insert(users).values({
-    email, name, role, isActive: true,
+    username, name, role, isActive: true,
     // Tek kaynak: sahte özet de dahil bütün argon2 parametreleri lib/password.ts'te.
     passwordHash: await hashPassword(password),
   })
 }
 
 export async function seed(): Promise<void> {
-  await addUser(requiredEnv('SEED_ADMIN_EMAIL'), requiredEnv('SEED_ADMIN_PASSWORD'), 'Büro Yöneticisi', 'admin')
-  await addUser(requiredEnv('SEED_EDITOR_EMAIL'), requiredEnv('SEED_EDITOR_PASSWORD'), 'Yazar Avukat', 'editor')
+  // Eski SEED_*_EMAIL adları BİLİNÇLİ olarak okunmuyor: sessiz geri düşüş, ortam değişkeni
+  // güncellenmemiş bir dağıtımda giriş yapılamayan bir hesap oluştururdu. requiredEnv yoksa
+  // fırlatıyor, yani eksik yeniden adlandırma dağıtımda görünür bir hata olarak çıkıyor.
+  await addUser(requiredUsername('SEED_ADMIN_USERNAME'), requiredEnv('SEED_ADMIN_PASSWORD'), 'Büro Yöneticisi', 'admin')
+  await addUser(requiredUsername('SEED_EDITOR_USERNAME'), requiredEnv('SEED_EDITOR_PASSWORD'), 'Yazar Avukat', 'editor')
 
   for (const category of SEED_CATEGORIES) {
     const existing = await db.select().from(categories).where(eq(categories.slug, category.slug))
