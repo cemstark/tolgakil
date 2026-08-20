@@ -356,6 +356,34 @@ değerlerle** doldur. Boş bırakılan bir hücre görevi tamamlanmamış sayar.
 | f | `cacheTag()` Next çalışma zamanı dışında (Vitest) ne yapıyor? | | `cachetag-sonuc.txt` |
 ```
 
+#### ÖLÇÜM SONUCU (uygulayıcı doldurdu — tarih: 2026-08-20)
+
+> **SONUÇ: OLUMSUZ. Bayrak geri kapatıldı; Görev 1 `BLOCKED` durumunda Aborjina'ya
+> döndü.** Ham komut çıktıları ve kök sebep çözümlemesi için:
+> `.superpowers/sdd/2026-08-20-plan-3-baglama-ve-yayin/gorev-1-rapor.md`.
+> Ölçüm ortamı: Node v22.23.2, Next 16.3.0 (Turbopack), Vitest 4.1.11.
+
+| # | Soru | Ölçüm | Kanıt dosyası |
+|---|---|---|---|
+| a | Hangi rotalar statik, hangileri dinamik işaretleniyor? Next'in bastığı gösterge satırı nedir? | **Bayrak açıkken rota tablosu HİÇ BASILMADI** — derleme dışa aktarma aşamasında düştü. Taban (bayrak kapalı) tablosunda 9 halka açık rota `○`, 18 panel rotası + `/api/auth/[...nextauth]` + `/medya/[...path]` `ƒ`. Next'in bastığı gösterge satırları: `○  (Static)   prerendered as static content` / `ƒ  (Dynamic)  server-rendered on demand` (ayrıca `ƒ Proxy (Middleware)`) | `build-taban.txt`, `build-cachecomponents.txt` |
+| a2 | Taban ile fark: hangi rotanın işareti DEĞİŞTİ? | **Hiçbirinin işareti değişmedi — kıyaslanacak tablo oluşmadı.** Fark tablo satırlarında değil sonuçta: taban `✓ Generating static pages (25/25)` ile bitiyor, bayrak açıkken `Export encountered errors on 19 paths` ve çıkış kodu 1 | `build-fark.txt` |
+| b | `searchParams` okuyan sayfa derlemeyi kırıyor mu, uyarı mı veriyor, sorunsuz mu? | **KIRIYOR** (uyarı değil, hata). `await searchParams` doğrudan sayfa gövdesinde, `<Suspense>` dışında → `Error: Route "/olcum-sonda": Next.js encountered uncached or runtime data during prerendering`. Aynı sayfa `next dev` altında HTTP 200 döndü ve `?q=deneme` değerini bastı: sorun **çalışma zamanı değil, ön işleme (prerender) zamanı** | `build-debug-prerender.txt`, `dev-server.log` |
+| c | `/panel/**` (cookies() okuyan) sayfalar hâlâ çalışıyor mu? | **Derlemede HAYIR; dev çalışma zamanında açılıyorlar ama tur kırmızı.** 18 panel rotasının **tamamı** dışa aktarımda düştü. Kök sebep tek noktada: `src/app/panel/layout.tsx:15` → `getPanelUser()` → `auth()` (`src/lib/auth-guards.ts:21`), `<Suspense>` dışında. Dev'de sayfalar yanıt veriyor (`/panel/giris` 200, `/panel` 307) ama her istek aynı hatayı üretip Next dev hata katmanını (`<nextjs-portal>`) açıyor; katman tıklamaları yuttuğu için panel e2e turu düştü | `build-debug-prerender.txt`, `e2e-panel.txt`, `dev-server.log` |
+| d1 | Birim testleri: taban **182** / sonra **182** | Değişmedi (17 dosya, 182 test yeşil). Vitest `next.config.ts` okumadığı için bayraktan etkilenmiyor. Not: görev tanımındaki "178" iddiası ile fark tam olarak bu görevde eklenen 4 testtir (178 + 4 = 182) | `vitest-taban.txt`, `vitest-cachecomponents.txt` |
+| d2 | e2e testleri: taban **271** / sonra **266** | Taban: dev 271 ✓ / 47 atlandı; `CI=1` 271 ✓ / 47 atlandı (iddia edilen 271 birebir doğrulandı). Bayrak açıkken dev: **266 ✓, 1 ✘, 4 hiç koşmadı**; yalnız panel turunda **2 ✘, 4 hiç koşmadı**. `CI=1` kipinde **0 test koştu** — `webServer` komutu `npm run build && npm run start` olduğundan sunucu hiç ayağa kalkmadı (`Process from config.webServer was not able to start. Exit code: 1`), yani CI'da 271 testin tamamı kayıp | `e2e-taban.txt`, `e2e-taban-ci.txt`, `e2e-cachecomponents.txt`, `e2e-cachecomponents-ci.txt` |
+| e | `Date` taşıyan dönüş değeri `'use cache'` sınırından geçiyor mu? | **EVET, bozulmadan geçiyor.** Brief'in tek sondası `searchParams`'a takılıp düştüğü için bu soru cevapsız kalıyordu; `searchParams` okumayan ikinci bir sonda (`/olcum-sonda-tarih`) yazıldı: HTTP 200 ve `data-alan="damga">1970-01-01T00:00:00.000Z`. Dönüş değeri sınırın öbür tarafında hâlâ `Date`. **Uyarı:** üretim derlemesi tamamlanmadığı için `next dev` ile ölçüldü | `dev-server.log` |
+| f | `cacheTag()` Next çalışma zamanı dışında (Vitest) ne yapıyor? | **FIRLATIYOR:** `` `cacheTag()` is only available with the `cacheComponents` config. `` — ve bu ölçüm bayrak **AÇIKKEN** alındı; Vitest `next.config.ts` okumadığı için bayrağın açık olması durumu değiştirmiyor. "Sorgu katmanına `'use cache'` KONMAZ" kararı ölçümle doğrulandı | `cachetag-sonuc.txt` |
+
+**Bayrağın geri kapatılması doğrulandı:** `git checkout -- next.config.ts` sonrası
+`npm run build` taban tablosunun aynısını basıyor (25/25 statik sayfa, aynı 29 rota, aynı
+işaretler); `npx tsc --noEmit`, `npm run lint` temiz; `npm test` 182/182; `npm run test:e2e`
+ve `CI=1 npm run test:e2e` 271/271. Depoda `cacheComponents` **yok**.
+
+**Görev 4+ için bağlayıcı uyarı:** brief'in "olumluysa bağlayıcı olur" dediği
+`'use cache'` + `cacheTag` + `cacheLife` kalıbı **şu an bağlayıcı DEĞİLDİR** — bayrak
+kapalıyken `cacheTag()` fırlatır. Kalıbın devreye girmesi, panel sarmalayıcısının veri
+okuma sınırı hakkında verilecek mimari karara bağlıdır (bkz. rapor §7).
+
 - [ ] **Adım 10: KARAR — olumsuzsa DUR**
 
 **Olumsuz sayılan sonuçlar** (herhangi biri yeterli):
