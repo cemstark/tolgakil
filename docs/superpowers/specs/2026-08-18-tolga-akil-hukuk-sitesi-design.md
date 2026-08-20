@@ -94,9 +94,19 @@ Postgres/Mongo isteyen hazır CMS'ler (Payload v3 dahil) elenmiştir.
   `uploaded_by` → `users.id`, `created_at`
 - **`settings`** — tek satır: büro adı, adres, telefon, WhatsApp numarası, e-posta, KEP,
   harita koordinatı, sosyal hesaplar, footer metni
+- **`pages`** — `id`, `slug` (tekil: `hakkimizda` | `kvkk` | `cerez-politikasi`), `title`,
+  `content` (sanitize edilmiş HTML), `updated_at`. Sabit satırlıdır: panelden yeni satır
+  oluşturulamaz ve silinemez, yalnız düzenlenir. **Plan 3'te eklendi** — §4'ün istediği üç
+  metin sayfasının içeriğini tutacak bir yer veri modelinde yoktu ve bu metinlerin kodda
+  sabit kalması "avukat kendi girer" kararına aykırıydı.
 
 **İndeksler:** `articles(status, published_at)`, `articles(category_id)`,
-`FULLTEXT articles(title, excerpt, content)`, `messages(created_at)`.
+`FULLTEXT articles(title, excerpt, search_text)`, `messages(created_at)`.
+
+**`articles.search_text` (Plan 3'te eklendi):** makale kaydedilirken `content`'in düz metne
+çevrilmiş hâliyle doldurulur. FULLTEXT indeksi önce HTML tutan `content` sütununu
+kapsıyordu; bu hâliyle `<strong>` araması makale getiriyor, etiket adları terim olarak
+indeksleniyordu. `content` artık indekslenmez.
 
 **Bilinen sınır:** MySQL `FULLTEXT` Türkçe kök bulma yapmaz — "davası" araması "dava"yı
 getirmez. Arşiv birkaç yüz yazıyı aşarsa harici arama gerekir. Bu bilinçli kabul edilmiştir.
