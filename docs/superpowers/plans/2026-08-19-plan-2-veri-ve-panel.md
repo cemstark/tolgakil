@@ -172,7 +172,7 @@ Yerel sunucu 10.11'den **yeni**. Yerelde çalışan her SQL 10.11'de de çalış
 `.env.local` (geliştirme ve `npm run dev`/`start`):
 
 ```
-DATABASE_URL="mysql://tolga_hukuk:yerel_gelistirme_2026@127.0.0.1:3306/tolga_akil_hukuk?charset=utf8mb4"
+DATABASE_URL="mysql://tolga_hukuk:yerel_gelistirme_2026@127.0.0.1:3306/tolga_akil_hukuk"
 AUTH_SECRET="<openssl rand -base64 32 çıktısı>"
 AUTH_URL="http://localhost:3000"
 AUTH_TRUST_HOST="true"
@@ -386,7 +386,10 @@ describe('şema', () => {
 > Node ESM uzantısız çözemiyor; `allowImportingTsExtensions` tam olarak bunun için eklendi.
 
 **Bu testler hangi mutasyonda kırılır:**
-1. Bağlantı dizesinden `charset=utf8mb4` düşerse veya sütun `latin1` olursa Türkçe harf testi kırılır.
+1. Sütun veya tablo harmanlaması `utf8mb4_unicode_ci` dışına çıkarsa (ör. migration'daki
+   `DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci` düşer ve veritabanı varsayılanı `latin1`
+   olursa) Türkçe harf testi kırılır. **Bağlantı dizesine `?charset=...` eklenmez** — ölçüldü,
+   bağlantı harmanlamasını MariaDB 10.11'de bulunmayan `uca1400` ailesine çekiyor.
 2. `lawyers.slug` üstündeki `.unique()` kalkarsa ikinci ekleme başarılı olur ve test kırılır.
 3. `articles.categoryId` yabancı anahtarı `restrict` yerine `set null`/`cascade` olursa silme
    başarılı olur ve test kırılır.
