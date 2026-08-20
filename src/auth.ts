@@ -13,7 +13,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
   providers: [
     Credentials({
-      credentials: { email: {}, password: {} },
+      credentials: { username: {}, password: {} },
       async authorize(credentials) {
         const parsed = loginSchema.safeParse(credentials)
         if (!parsed.success) return null
@@ -28,10 +28,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // bayat sayacı görüp hep birlikte argon2 kuyruğuna girerdi (bkz.
         // login-rate-limit.ts). Güvence kimliği doğrulanmamış denemeler için geçerli;
         // başarılı giriş kendi birimini geri veriyor.
-        const admission = loginGate.admit(parsed.data.email)
+        const admission = loginGate.admit(parsed.data.username)
         if (!admission.allowed) return null
 
-        const [user] = await db.select().from(users).where(eq(users.email, parsed.data.email))
+        const [user] = await db.select().from(users).where(eq(users.username, parsed.data.username))
         const passwordHash = user?.passwordHash ?? (await dummyPasswordHash())
         const ok = await argon2.verify(passwordHash, parsed.data.password).catch((error: unknown) => {
           // Bozuk bir özet dizesi kimlik doğrulama başarısızlığıdır. Ama argon2'nin yerel
@@ -45,7 +45,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // Hesabın kovası burada sayılıyor: eşzamanlı BAŞARILI girişler birbirinin hakkını
         // yemesin (ölçüm ve gerekçe login-rate-limit.ts'te).
         if (!user || !user.isActive || !ok) {
-          loginGate.recordFailure(parsed.data.email)
+          loginGate.recordFailure(parsed.data.username)
           return null
         }
 
@@ -53,11 +53,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // ediyor. İade, kabul makbuzundaki PENCERE KİMLİĞİYLE yapılıyor: argon2 çalışırken
         // pencere dönmüş olabilir ve o zaman iade yeni pencereye gitmemeli (gerekçesi
         // login-rate-limit.ts'te).
-        loginGate.clear(parsed.data.email, admission.budgetWindow)
+        loginGate.clear(parsed.data.username, admission.budgetWindow)
 
         await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id))
         // Parola özeti oturuma sızmasın diye yalnız gereken alanlar dönüyor.
-        return { id: String(user.id), email: user.email, name: user.name, role: user.role }
+        // `email` alanı BİLİNÇLİ olarak yok: next-auth'un varsayılan User tipinde isteğe
+        // bağlı ve artık böyle bir sütun da yok. Oturumdan okunan tek kimlik `id`
+        // (auth.config.ts), rol ve isActive her panel isteğinde satırdan tazeleniyor.
+        return { id: String(user.id), name: user.name, role: user.role }
       },
     }),
   ],

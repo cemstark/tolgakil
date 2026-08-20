@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { eq } from 'drizzle-orm'
 import { db } from '@/db/client'
 import { users } from '@/db/schema'
-import { getUserById, isEmailTaken, listActiveAdminIds } from '@/db/queries/users'
+import { getUserById, isUsernameTaken, listActiveAdminIds } from '@/db/queries/users'
 import { requireAccess } from '@/lib/auth-guards'
 import { parseFormId } from '@/lib/form-id'
 import { hashPassword } from '@/lib/password'
@@ -36,7 +36,7 @@ export async function saveUser(_prev: FormState, formData: FormData): Promise<Fo
 
 async function createUser(formData: FormData): Promise<FormState> {
   const parsed = userCreateSchema.safeParse({
-    email: formData.get('email'),
+    username: formData.get('username'),
     name: formData.get('name'),
     password: formData.get('password'),
     role: formData.get('role'),
@@ -44,15 +44,15 @@ async function createUser(formData: FormData): Promise<FormState> {
   // toFieldErrors DEĞİL: path taşımayan hatalar orada kaybolur (Görev 1-2 sözleşmesi).
   if (!parsed.success) return toFormState(parsed.error)
 
-  // users.email UNIQUE; kısıt hatası kullanıcıya 500 olarak dönmesin diye önceden bakılıyor.
+  // users.username UNIQUE; kısıt hatası kullanıcıya 500 olarak dönmesin diye önceden bakılıyor.
   // Denetimle yazma arasında dar bir yarış kalıyor ve orada hata YUTULMUYOR — kısıt hatası
   // hata sınırına düşer, sessizce ikinci bir hesap oluşmaz.
-  if (await isEmailTaken(parsed.data.email)) {
-    return { ok: false, errors: { email: ['Bu e-posta zaten kayıtlı.'] } }
+  if (await isUsernameTaken(parsed.data.username)) {
+    return { ok: false, errors: { username: ['Bu kullanıcı adı zaten kayıtlı.'] } }
   }
 
   const [result] = await db.insert(users).values({
-    email: parsed.data.email,
+    username: parsed.data.username,
     name: parsed.data.name,
     role: parsed.data.role,
     // Paylaşılan argon2 seçenekleri (lib/password.ts); parametreler elle yazılmıyor.
@@ -64,7 +64,7 @@ async function createUser(formData: FormData): Promise<FormState> {
 
   // Yönlendirme bilinçli ve diğer beş oluşturma akışıyla aynı: aksi hâlde form dolu
   // kalıyordu ve ikinci kez "Kaydet"e basan yönetici, kaydın gerçekten yapıldığını
-  // düşünürken "Bu e-posta zaten kayıtlı." hatası alıyordu. Bildirim adres üzerinden
+  // düşünürken "Bu kullanıcı adı zaten kayıtlı." hatası alıyordu. Bildirim adres üzerinden
   // taşınıyor (bkz. lib/panel-notice.ts).
   redirect(`/panel/kullanicilar/${result.insertId}?kaydedildi=${result.insertId}`)
 }

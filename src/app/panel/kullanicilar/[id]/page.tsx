@@ -45,7 +45,7 @@ export default async function EditUserPage({ params, searchParams }: EditUserPag
         initialMessage={savedMessage(query.kaydedildi, 'Kullanıcı kaydedildi.')}
         values={{
           id: user.id,
-          email: user.email,
+          username: user.username,
           name: user.name,
           role: user.role,
           isActive: user.isActive,

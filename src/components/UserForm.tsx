@@ -12,13 +12,13 @@ const ROLE_OPTIONS = [
 
 export type UserFormValues = {
   id: number | null
-  email: string
+  username: string
   name: string
   role: string
   isActive: boolean
 }
 
-export const EMPTY_USER: UserFormValues = { id: null, email: '', name: '', role: 'editor', isActive: true }
+export const EMPTY_USER: UserFormValues = { id: null, username: '', name: '', role: 'editor', isActive: true }
 
 type UserFormProps = {
   action: EntityAction
@@ -36,7 +36,7 @@ type UserFormProps = {
 export function UserForm({ action, values = EMPTY_USER, initialMessage }: UserFormProps) {
   const yeniKayit = values.id === null
   const { values: form, set } = useEntityValues({
-    email: values.email,
+    username: values.username,
     name: values.name,
     role: values.role,
     password: '',
@@ -49,19 +49,21 @@ export function UserForm({ action, values = EMPTY_USER, initialMessage }: UserFo
         <>
           {yeniKayit ? null : <input type="hidden" name="id" value={values.id ?? ''} readOnly />}
 
-          {/* E-posta yalnız yeni kayıtta düzenlenebilir: userUpdateSchema onu içermiyor,
+          {/* Kullanıcı adı yalnız yeni kayıtta düzenlenebilir: userUpdateSchema onu içermiyor,
               çünkü oturum açmış bir kullanıcının kimliğini değiştirmek parola sıfırlama
-              akışı olmadan güvenli bir işlem değil (Plan 3). */}
+              akışı olmadan güvenli bir işlem değil (Plan 3).
+              type="text": e-posta tipi tarayıcıya "admin" gibi geçerli bir adı reddettirirdi. */}
           {yeniKayit ? (
             <TextField
-              id="user-email" name="email" label="E-posta" type="email" autoComplete="off"
-              value={form.email} onChange={set('email')} error={fieldError('email')}
+              id="user-username" name="username" label="Kullanıcı adı" type="text" autoComplete="off"
+              value={form.username} onChange={set('username')} error={fieldError('username')}
+              hint="3-60 karakter; yalnız küçük harf (a-z), rakam, nokta, alt çizgi ve tire."
             />
           ) : (
             <TextField
-              id="user-email" name="email" label="E-posta" type="email" readOnly
-              value={form.email} onChange={set('email')}
-              hint="E-posta adresi bu ekrandan değiştirilemez."
+              id="user-username" name="username" label="Kullanıcı adı" type="text" readOnly
+              value={form.username} onChange={set('username')}
+              hint="Kullanıcı adı bu ekrandan değiştirilemez."
             />
           )}
 

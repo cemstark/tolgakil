@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { slugify } from '@/lib/slug'
+import { USERNAME_ERROR, USERNAME_PATTERN } from '@/lib/username'
 
 // Özel mesaj verilmeyen kuralların (eksik alan, yanlış tip, bilinmeyen enum) varsayılan
 // metinleri İngilizce üretiliyordu ve doğrudan kullanıcıya gidiyordu; global kısıt hata
@@ -150,8 +151,18 @@ function rejectReservedSlug(slug: string, ctx: z.RefinementCtx): void {
   }
 }
 
+/**
+ * Kullanıcı adı alanı. Biçim kuralı ve ASCII kısıtının gerekçesi lib/username.ts'te.
+ *
+ * `.trim()` var, `.toLowerCase()` YOK ve bu bilinçli: büyük harf sessizce düzeltilseydi
+ * "Admin" ile "admin" aynı hesabı gösterir, kullanıcı da kaydettiği adın ne olduğunu
+ * ekranda göremezdi. Kural yerine geçen bir sessiz dönüşüm yerine görünür bir hata
+ * veriliyor — hata metni neyin kabul edildiğini söylüyor.
+ */
+const usernameField = z.string().trim().regex(USERNAME_PATTERN, USERNAME_ERROR)
+
 export const loginSchema = z.object({
-  email: z.email('Geçerli bir e-posta adresi girin.'),
+  username: usernameField,
   password: z.string().min(1, 'Parola zorunlu.'),
 })
 
@@ -286,7 +297,7 @@ export const mediaSchema = z.object({
 })
 
 export const userCreateSchema = z.object({
-  email: z.email('Geçerli bir e-posta adresi girin.'),
+  username: usernameField,
   name: z.string().trim().min(2, 'Ad en az 2 karakter olmalı.').max(120, 'Ad en fazla 120 karakter olabilir.'),
   password: z.string().min(12, 'Parola en az 12 karakter olmalı.'),
   role: z.enum(['admin', 'editor']),

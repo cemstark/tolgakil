@@ -6,7 +6,7 @@ import { db } from '@/db/client'
 import { users, type UserRole } from '@/db/schema'
 import { canAccess, type PanelResource } from '@/lib/permissions'
 
-export type PanelUser = { id: number; email: string; name: string; role: UserRole }
+export type PanelUser = { id: number; username: string; name: string; role: UserRole }
 
 // Oturum çerezi 8 saat geçerli ve rol ile isActive o çerezde donuyor. Görev 7 kullanıcı
 // pasifleştirmeyi getirecek; pasifleştirilen kişinin 8 saat daha panelde çalışmaya devam
@@ -24,7 +24,7 @@ export const getPanelUser = cache(async function getPanelUser(): Promise<PanelUs
   const [row] = await db
     .select({
       id: users.id,
-      email: users.email,
+      username: users.username,
       name: users.name,
       role: users.role,
       isActive: users.isActive,
@@ -37,7 +37,7 @@ export const getPanelUser = cache(async function getPanelUser(): Promise<PanelUs
   // çağrılamaz. Kullanıcı giriş sayfasına düşer, yeniden giriş yapınca taze token alır.
   if (!row || !row.isActive) return null
 
-  return { id: row.id, email: row.email, name: row.name, role: row.role }
+  return { id: row.id, username: row.username, name: row.name, role: row.role }
 })
 
 // Giriş sayfası da aynı yüklemi kullanmak zorunda: "oturum var" ile "panele girebilir"

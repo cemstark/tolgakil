@@ -6,8 +6,10 @@ declare module 'next-auth' {
   interface User {
     role: UserRole
   }
+  // `email` KALDIRILDI: giriş kimliği artık kullanıcı adı ve authorize e-posta döndürmüyor.
+  // Bildirimi bırakmak, hiçbir zaman dolmayacak bir alanı `string` diye vaat ederdi.
   interface Session {
-    user: { id: string; name: string; email: string; role: UserRole }
+    user: { id: string; name: string; role: UserRole }
   }
 }
 

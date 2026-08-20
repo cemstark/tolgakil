@@ -7,7 +7,7 @@ import { loginSchema, toFormState, type FormState } from '@/lib/validation'
 
 export async function login(_prev: FormState, formData: FormData): Promise<FormState> {
   const parsed = loginSchema.safeParse({
-    email: formData.get('email'),
+    username: formData.get('username'),
     password: formData.get('password'),
   })
   // toFieldErrors DEĞİL: path taşımayan hatalar orada kaybolur ve kullanıcı "Giriş yap"a
@@ -20,7 +20,7 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
   //
   // Küresel tavan da burada okunuyor: aksi hâlde tavana takılan kullanıcı authorize'dan
   // null alır ve kendi parolasını yanlış girdiğini sanırdı.
-  const limitMessage = loginRateLimitMessage(loginGate.check(parsed.data.email))
+  const limitMessage = loginRateLimitMessage(loginGate.check(parsed.data.username))
   if (limitMessage !== null) {
     return { ok: false, errors: {}, message: limitMessage }
   }
@@ -30,7 +30,7 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
   } catch (error) {
     // signIn başarılı olduğunda redirect() fırlatıyor; onu yutmak girişi sessizce bozar.
     if (error instanceof AuthError) {
-      return { ok: false, errors: {}, message: 'E-posta veya parola hatalı.' }
+      return { ok: false, errors: {}, message: 'Kullanıcı adı veya parola hatalı.' }
     }
     throw error
   }

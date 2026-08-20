@@ -15,17 +15,17 @@ export function LoginForm() {
   const [state, formAction, isPending] = useActionState(login, INITIAL_STATE)
 
   // Alanlar DENETİMLİ. Ölçüldü: React 19 form action tamamlanınca denetimsiz alanları
-  // sıfırlıyor — parolayı yanlış giren kullanıcı yazdığı e-postayı da kaybediyor ve
+  // sıfırlıyor — parolayı yanlış giren kullanıcı yazdığı kullanıcı adını da kaybediyor ve
   // baştan yazmak zorunda kalıyordu.
   //
-  // Parola da denetimli: yalnız e-posta korunsaydı sıfırlama yarışı sürerdi. Sıfırlama,
+  // Parola da denetimli: yalnız kullanıcı adı korunsaydı sıfırlama yarışı sürerdi. Sıfırlama,
   // gönderim yanıtı geldikten SONRA düştüğü için araya giren bir yazma (kullanıcı ya da
   // otomatik test) silinip form boş gönderilebiliyor. E2E'de bu, "art arda başarısız
   // denemeler hız sınırına takılır" testini rastgele kırmızıya düşürüyordu.
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
-  const emailError = state.errors.email?.join(' ')
+  const usernameError = state.errors.username?.join(' ')
   const passwordError = state.errors.password?.join(' ')
 
   return (
@@ -37,27 +37,31 @@ export function LoginForm() {
       ) : null}
 
       <div className={styles.field}>
-        <label htmlFor="email" className={styles.label}>
-          E-posta
+        <label htmlFor="username" className={styles.label}>
+          Kullanıcı adı
         </label>
+        {/* type="text", type="email" DEĞİL: tarayıcı e-posta girdisine kendi doğrulamasını
+            dayatıyor ve "admin" gibi geçerli bir kullanıcı adını reddederdi. Biçim denetimi
+            sunucuda (lib/username.ts); noValidate zaten tarayıcı balonlarını kapatıyor ama
+            girdi tipini de doğru bırakmak mobil klavyeyi ve otomatik doldurmayı düzeltiyor. */}
         <input
-          id="email"
-          name="email"
-          type="email"
+          id="username"
+          name="username"
+          type="text"
           autoComplete="username"
           required
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          value={username}
+          onChange={(event) => setUsername(event.target.value)}
           className={styles.input}
-          aria-invalid={emailError ? true : undefined}
-          aria-describedby={emailError ? 'email-error' : undefined}
+          aria-invalid={usernameError ? true : undefined}
+          aria-describedby={usernameError ? 'username-error' : undefined}
         />
         {/* role="alert": aria-describedby hatayı yalnız girdiye odaklanınca okutur. Formu
             gönderip odağı düğmede bırakan ekran okuyucu kullanıcısı, canlı bölge olmadan
             hiçbir şey duymaz — bastığını bilir, sonucunu bilmez. axe bunu ihlal saymıyor. */}
-        {emailError ? (
-          <p id="email-error" role="alert" className={styles.fieldError}>
-            {emailError}
+        {usernameError ? (
+          <p id="username-error" role="alert" className={styles.fieldError}>
+            {usernameError}
           </p>
         ) : null}
       </div>

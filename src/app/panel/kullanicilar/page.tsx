@@ -35,14 +35,14 @@ export default async function UserListPage() {
         <PanelTable
           label="Kullanıcı listesi"
           caption="Ada göre dizili panel kullanıcıları"
-          columns={['Ad soyad', 'E-posta', 'Rol', 'Durum', 'Son giriş', 'İşlem']}
+          columns={['Ad soyad', 'Kullanıcı adı', 'Rol', 'Durum', 'Son giriş', 'İşlem']}
         >
           {users.map((user) => (
             <tr key={user.id}>
               <th scope="row" className={table.nameCell}>
                 {user.name}
               </th>
-              <td>{user.email}</td>
+              <td>{user.username}</td>
               <td>{ROLE_LABELS[user.role]}</td>
               <td>
                 {/* Durum yalnız renkle değil metinle de ayrışıyor (WCAG 1.4.1). */}

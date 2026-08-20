@@ -3,18 +3,18 @@ import { createRateLimiter, type RateLimiter, type RateLimitResult, type WindowI
 const WINDOW_MS = 15 * 60 * 1000
 
 /** Tek bir hesabın penceredeki başarısız deneme hakkı. */
-const PER_EMAIL_LIMIT = 5
+const PER_USERNAME_LIMIT = 5
 
 /**
  * Pencere başına TOPLAM başarısız deneme tavanı; anahtardan bağımsız.
  *
- * NEDEN: sınır anahtarı e-posta (aşağıdaki gerekçeye bakın) ve her istekte FARKLI bir
- * e-posta gönderen kimliği doğrulanmamış bir istemci kendi kovasına hiç dokunmuyordu.
+ * NEDEN: sınır anahtarı kullanıcı adı (aşağıdaki gerekçeye bakın) ve her istekte FARKLI bir
+ * kullanıcı adı gönderen kimliği doğrulanmamış bir istemci kendi kovasına hiç dokunmuyordu.
  * Her deneme bir veritabanı sorgusu ve bir `argon2.verify` çalıştırıyordu — kullanıcı
  * bulunmasa bile, sahte özete karşı, 64 MB bellek + timeCost 3 ile. argon2'nin N-API
  * çağrıları libuv iş havuzunda koşuyor (varsayılan 4 iş parçacığı): birkaç eşzamanlı
  * istek havuzu doldurur, sharp ve fs işleri kuyruğa girer ve paylaşımlı barındırmada
- * genel site de yavaşlar. E-posta anahtarı doğru anahtardır ama tek başına bir tavan
+ * genel site de yavaşlar. Kullanıcı adı anahtarı doğru anahtardır ama tek başına bir tavan
  * DEĞİLDİR.
  *
  * DEĞER GEREKÇESİ: hesap başına hak 5, yani 200 tavanı aynı 15 dakikada 40 AYRI hesabın
@@ -35,12 +35,12 @@ const PER_EMAIL_LIMIT = 5
  */
 const GLOBAL_LIMIT = 200
 
-// Küresel bütçenin tek anahtarı. Kendi sınırlayıcısında yaşıyor, e-posta kovalarıyla aynı
-// haritada değil: aynı haritada olsaydı 'login:' önekiyle üretilen bir e-posta anahtarı
-// (ör. kullanıcı adı "global" olan bir hesap) bütçeyle çakışabilirdi.
+// Küresel bütçenin tek anahtarı. Kendi sınırlayıcısında yaşıyor, kullanıcı adı kovalarıyla
+// aynı haritada değil: aynı haritada olsaydı 'login:' önekiyle üretilen bir kullanıcı adı
+// anahtarı (ör. kullanıcı adı "toplam" olan bir hesap) bütçeyle çakışabilirdi.
 const GLOBAL_KEY = 'toplam'
 
-export type LoginGateScope = 'email' | 'global'
+export type LoginGateScope = 'username' | 'global'
 
 /** `scope`, reddin hangi tavandan geldiğini söyler; izin verilen sonuçta `null`. */
 export type LoginGateResult = RateLimitResult & { scope: LoginGateScope | null }
@@ -56,16 +56,19 @@ export type LoginAdmission = LoginGateResult & { budgetWindow: WindowId | null }
 
 export type LoginGate = ReturnType<typeof createLoginGate>
 
-// Anahtar e-posta, IP değil. x-forwarded-for'un ilk girdisi istemcinin gönderdiği değerdir:
+// Anahtar kullanıcı adı, IP değil. x-forwarded-for'un ilk girdisi istemcinin gönderdiği değerdir:
 // her istekte farklı bir başlık yazan saldırgan her seferinde yeni kova alır ve sınırı
 // tamamen atlar (bu atlatma repoda ölçüldü). Ters vekil başlığı zincire eklediğinde de
 // split(',')[0] yanlış ucu seçer; yani iki durumda da yanlış.
 //
-// Takas açık: e-posta anahtarıyla bir saldırgan bilinen bir hesabı 15 dakika kilitleyebilir.
+// Takas açık: kullanıcı adı anahtarıyla bir saldırgan bilinen bir hesabı 15 dakika kilitleyebilir.
 // Küçük bir büro paneli için bu, brute-force savunmasının hiç olmamasından iyidir. Hostinger
 // ters vekilinin başlığı ezip ezmediği Plan 3'te ölçülünce IP anahtarı yeniden değerlendirilir.
-function loginRateLimitKey(email: string): string {
-  return `login:${email.trim().toLowerCase()}`
+// `.toLowerCase()` KORUNUYOR (`toLocaleLowerCase('tr')` DEĞİL — o 'I'yi 'ı' yapar ve iki
+// yazımı ayrı kovalara düşürürdü). Şema zaten yalnız küçük ASCII kabul ediyor, yani bu
+// çağrı bugün etkisiz; anahtar üretimini şemanın gevşemesine karşı bağımsız tutuyor.
+function loginRateLimitKey(username: string): string {
+  return `login:${username.trim().toLowerCase()}`
 }
 
 /**
@@ -74,19 +77,19 @@ function loginRateLimitKey(email: string): string {
  * Sınırlayıcılar dışarıdan veriliyor ki testler kendi taze örnekleriyle koşabilsin;
  * üretimdeki tekil örnek aşağıda kuruluyor.
  */
-export function createLoginGate(perEmail: RateLimiter, budget: RateLimiter) {
+export function createLoginGate(perUsername: RateLimiter, budget: RateLimiter) {
   /**
    * Denemeye izin verilip verilmediğini SAYACA DOKUNMADAN okur.
    *
-   * Sıra önemli: e-posta tavanı önce sorulur. Kendi hakkını tüketmiş kullanıcıya
+   * Sıra önemli: kullanıcı adı tavanı önce sorulur. Kendi hakkını tüketmiş kullanıcıya
    * "servis meşgul" demek onu yanlış yönlendirirdi.
    *
    * Giriş formunun action'ı bunu kullanıyor: gerçek sayımı `admit` yapıyor, form yalnız
    * doğru Türkçe mesajı üretebilmek için soruyor. Form da sayarsa tek deneme iki hak yerdi.
    */
-  function check(email: string, now: number = Date.now()): LoginGateResult {
-    const perEmailResult = perEmail.peek(loginRateLimitKey(email), now)
-    if (!perEmailResult.allowed) return { ...perEmailResult, scope: 'email' }
+  function check(username: string, now: number = Date.now()): LoginGateResult {
+    const perUsernameResult = perUsername.peek(loginRateLimitKey(username), now)
+    if (!perUsernameResult.allowed) return { ...perUsernameResult, scope: 'username' }
 
     const budgetResult = budget.peek(GLOBAL_KEY, now)
     if (!budgetResult.allowed) return { ...budgetResult, scope: 'global' }
@@ -115,20 +118,20 @@ export function createLoginGate(perEmail: RateLimiter, budget: RateLimiter) {
      * "kimliği doğrulanmamış deneme sayısını" sınırlıyor, "toplam argon2 işini" değil.
      * Kimliği doğrulanmış çağrılar için ayrı bir tavan Plan 3'e bırakıldı.
      *
-     * E-POSTA KOVASI BURADA SAYILMIYOR, `recordFailure`'da sayılıyor — ve bu ölçümle
+     * KULLANICI ADI KOVASI BURADA SAYILMIYOR, `recordFailure`'da sayılıyor — ve bu ölçümle
      * belirlendi. Kabul anında sayıldığında, aynı hesabın EŞZAMANLI ve BAŞARILI girişleri
      * birbirinin hakkını yiyor: her deneme argon2 dönene kadar bir slot tutuyor, altıncı
      * eşzamanlı giriş doğru parolayla reddediliyor. E2E süiti bunu belirgin biçimde
      * üretti (paralel işçiler aynı yönetici hesabıyla giriyor, iki test kırıldı).
      *
      * Bedeli açık ve kabul edildi: eşzamanlı bir patlamada tek bir hesaba karşı yapılan
-     * deneme sayısı, e-posta tavanı olan 5'i geçebilir. Üst sınır yine de küresel bütçedir
+     * deneme sayısı, kullanıcı adı tavanı olan 5'i geçebilir. Üst sınır yine de küresel bütçedir
      * (pencere başına 200 kabul), yani patlama sınırsız değil ve 12 karakterlik asgari
      * parola karşısında anlamsız kalır. Buna karşılık meşru bir kullanıcının doğru
      * parolayla kilitlenmesi her gün karşılaşılabilecek bir arıza olurdu.
      */
-    admit(email: string, now: number = Date.now()): LoginAdmission {
-      const result = check(email, now)
+    admit(username: string, now: number = Date.now()): LoginAdmission {
+      const result = check(username, now)
       if (!result.allowed) return { ...result, budgetWindow: null }
 
       // Arada await yok: kabul ile sayım arasına başka bir istek giremez.
@@ -144,8 +147,8 @@ export function createLoginGate(perEmail: RateLimiter, budget: RateLimiter) {
      * savunma zayıflamıyor; buna karşılık 15 dakikada altı kez giriş yapan meşru bir
      * kullanıcı kendi hesabını kilitlemiyor.
      */
-    recordFailure(email: string, now: number = Date.now()): void {
-      perEmail.record(loginRateLimitKey(email), now)
+    recordFailure(username: string, now: number = Date.now()): void {
+      perUsername.record(loginRateLimitKey(username), now)
     },
 
     /**
@@ -170,8 +173,8 @@ export function createLoginGate(perEmail: RateLimiter, budget: RateLimiter) {
      * hâliyle iade en fazla kendi tükettiğini geri verir, başkalarının başarısız
      * denemelerini affetmez.
      */
-    clear(email: string, budgetWindow: WindowId | null): void {
-      perEmail.reset(loginRateLimitKey(email))
+    clear(username: string, budgetWindow: WindowId | null): void {
+      perUsername.reset(loginRateLimitKey(username))
       if (budgetWindow !== null) budget.refund(GLOBAL_KEY, budgetWindow)
     },
   }
@@ -191,7 +194,7 @@ const globalCache = globalThis as typeof globalThis & { __loginGate?: LoginGate 
 export const loginGate =
   globalCache.__loginGate ??
   createLoginGate(
-    createRateLimiter({ limit: PER_EMAIL_LIMIT, windowMs: WINDOW_MS }),
+    createRateLimiter({ limit: PER_USERNAME_LIMIT, windowMs: WINDOW_MS }),
     createRateLimiter({ limit: GLOBAL_LIMIT, windowMs: WINDOW_MS }),
   )
 globalCache.__loginGate = loginGate
