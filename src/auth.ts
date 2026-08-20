@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/db/client'
 import { users } from '@/db/schema'
 import { authConfig } from '@/auth.config'
-import { loginRateLimiter, loginRateLimitKey } from '@/lib/login-rate-limit'
+import { loginGate } from '@/lib/login-rate-limit'
 import { dummyPasswordHash } from '@/lib/password'
 import { loginSchema } from '@/lib/validation'
 
@@ -21,8 +21,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // Hız sınırı buraya konmak zorunda: giriş formunun server action'ı tek giriş yolu
         // değil, saldırgan bu uca doğrudan POST atabiliyor. Formdaki kontrol yalnız Türkçe
         // mesaj üretmek için var; gerçek kapı burası.
-        const rateLimitKey = loginRateLimitKey(parsed.data.email)
-        if (!loginRateLimiter.peek(rateLimitKey).allowed) return null
+        //
+        // Kapı, aşağıdaki veritabanı sorgusu ve argon2.verify'dan ÖNCE: iki tavandan biri
+        // kapalıysa maliyetin hiçbiri ödenmiyor. Küresel tavanın varlık nedeni tam olarak
+        // bu sıra (bkz. login-rate-limit.ts).
+        if (!loginGate.check(parsed.data.email).allowed) return null
 
         const [user] = await db.select().from(users).where(eq(users.email, parsed.data.email))
         const passwordHash = user?.passwordHash ?? (await dummyPasswordHash())
@@ -36,12 +39,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // Pasifleştirilmiş kullanıcı parolası doğru olsa da giremez (Görev 7).
         if (!user || !user.isActive || !ok) {
-          // Yalnız başarısız denemeler sayılıyor. Brute-force'un her denemesi başarısızdır,
-          // yani savunma zayıflamıyor; buna karşılık 15 dakikada altı kez giriş yapan meşru
-          // bir kullanıcı kendi hesabını kilitlemiyor.
-          loginRateLimiter.record(rateLimitKey)
+          loginGate.recordFailure(parsed.data.email)
           return null
         }
+
+        // Başarı hesabın penceresini temizliyor: üç kez yanılıp dördüncüde giren avukat,
+        // aynı pencerede iki kez daha yanıldığında kilitlenmemeli. Küresel bütçeye
+        // dokunmuyor (gerekçesi login-rate-limit.ts'te).
+        loginGate.clear(parsed.data.email)
 
         await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id))
         // Parola özeti oturuma sızmasın diye yalnız gereken alanlar dönüyor.

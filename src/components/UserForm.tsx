@@ -23,6 +23,8 @@ export const EMPTY_USER: UserFormValues = { id: null, email: '', name: '', role:
 type UserFormProps = {
   action: EntityAction
   values?: UserFormValues
+  /** Yönlendirmeyle taşınan kayıt bildirimi (bkz. lib/panel-notice.ts). */
+  initialMessage?: string
 }
 
 /**
@@ -31,7 +33,7 @@ type UserFormProps = {
  * Kullanıcı SİLİNMEZ, pasifleştirilir: yüklediği medyanın `uploaded_by` bağı ve
  * `last_login_at` izi kaybolmasın. Silme düğmesi bilinçli olarak yok.
  */
-export function UserForm({ action, values = EMPTY_USER }: UserFormProps) {
+export function UserForm({ action, values = EMPTY_USER, initialMessage }: UserFormProps) {
   const yeniKayit = values.id === null
   const { values: form, set } = useEntityValues({
     email: values.email,
@@ -42,7 +44,7 @@ export function UserForm({ action, values = EMPTY_USER }: UserFormProps) {
   const [isActive, setIsActive] = useState(values.isActive)
 
   return (
-    <EntityForm action={action}>
+    <EntityForm action={action} initialMessage={initialMessage}>
       {({ fieldError }) => (
         <>
           {yeniKayit ? null : <input type="hidden" name="id" value={values.id ?? ''} readOnly />}

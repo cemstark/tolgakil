@@ -199,3 +199,31 @@ main:focus-visible { outline: none; }
 }
 .prose a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
 .prose hr { border: 0; border-top: 1px solid var(--line); }
+
+/* Temizleyici `code` ve `pre` etiketlerine İZİN VERİYOR (lib/sanitize.ts beyaz listesi),
+   yani bir mevzuat alıntısı ya da madde metni kod bloğu olarak girilebiliyor. Kural
+   yazılmasaydı blok biçimsiz çıkardı: tarayıcı varsayılanı `pre` için taşan uzun satırları
+   sarmıyor ve krem makale zemininde kod ile gövde metni birbirinden hiç ayrışmıyordu.
+   Renk yazılmıyor, yüzey sözleşmesinden okunuyor — hem koyu panel önizlemesinde hem krem
+   makale sayfasında doğru çizilsin. */
+.prose code {
+  font-size: .92em;
+  padding: .15em .4em;
+  border-radius: 6px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+}
+.prose pre {
+  padding: 1em;
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  /* Uzun satır sayfayı yatay kaydırmaya zorlamasın; taşma bloğun kendi içinde kalır. */
+  overflow-x: auto;
+}
+/* İç içe `code` kendi zeminini ve kenarlığını tekrarlamaz; blok zaten bir yüzey. */
+.prose pre code {
+  padding: 0;
+  border: 0;
+  background: none;
+}

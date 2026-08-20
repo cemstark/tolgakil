@@ -63,6 +63,41 @@ test('giriş → makale yaz → taslak kaydet → yayımla → listede yayında 
   await expect(bildirim).toBeFocused()
 })
 
+// İkinci silmede adres değişmezse bildirim öğesi yeniden kurulmaz: React aynı konumdaki
+// aynı tipteki öğeyi yeniden kurmuyor, odaklama effect'i bir daha koşmuyor ve metin de aynı
+// kaldığı için canlı bölge duyuru yapmıyor. Tetikleyen düğme satırla birlikte kalktığından
+// odak <body>'ye düşer ve kullanıcı ikinci silmenin olup olmadığını hiç öğrenemez
+// (WCAG 4.1.3; aynı hata medya listesinde ölçülüp kapatılmıştı).
+test('arka arkaya iki makale silmede de bildirim duyurulur', async ({ page }) => {
+  const basliklar = [
+    `Birinci silinecek ${hazirIcerik().damga}`,
+    `İkinci silinecek ${hazirIcerik().damga}`,
+  ]
+  await girisYap(page, EDITOR)
+
+  for (const baslik of basliklar) {
+    await page.goto('/panel/makaleler/yeni')
+    await page.getByLabel('Başlık').fill(baslik)
+    await page.getByLabel('Özet').fill('Ardışık silme bildirimini ölçmek için yazılmış özet metni.')
+    await page.locator('[contenteditable="true"]').fill('Silinecek makalenin gövdesi.')
+    await page.getByRole('button', { name: 'Taslak olarak kaydet' }).click()
+    await expect(page.getByRole('status')).toHaveText('Makale taslak olarak kaydedildi.')
+  }
+
+  await page.goto('/panel/makaleler')
+
+  for (const baslik of basliklar) {
+    const satir = page.getByRole('row', { name: new RegExp(baslik) })
+    await satir.getByRole('button', { name: 'Sil' }).click()
+    await page.getByRole('button', { name: 'Evet, sil' }).click()
+    await expect(satir).toHaveCount(0)
+
+    const bildirim = page.getByRole('status')
+    await expect(bildirim).toHaveText('Makale silindi.')
+    await expect(bildirim).toBeFocused()
+  }
+})
+
 test('kategorisiz yayımlama alan hatası verir ve kaydetmez', async ({ page }) => {
   await girisYap(page, EDITOR)
   await page.goto('/panel/makaleler/yeni')
@@ -260,22 +295,37 @@ test('makale düzenleme sayfası temizlenmiş içeriğin önizlemesini gösterir
   await expect(onizleme).not.toContainText('Kiracının dava açma süresi.')
 })
 
+// React'in hydrate uyuşmazlığı bildirimleri. Küçültülmüş üretim derlemesinde metin yerine
+// "Minified React error #418/#423/#425" düşüyor, geliştirme derlemesinde açık cümle; ikisi
+// de yakalanmak zorunda çünkü e2e her iki kipte de koşuyor (CI'da üretim derlemesi).
+const HYDRATE_UYUSMAZLIGI = /hydrat|Minified React error|server[- ]rendered|did not match/i
+
 // Tiptap'in useEditor'ı sunucuda çizilirse hydrate uyuşmazlığı üretiyor; immediatelyRender:
 // false o yüzden veriliyor. İddia bunu ölçüyor: seçenek kaldırılırsa konsola React'in
 // hydration hatası düşer ve bu test kırılır.
-test('editör sayfası konsola hata veya hydrate uyarısı düşürmez', async ({ page }) => {
-  const hatalar: string[] = []
+//
+// Kova İDDİAYA DARALTILDI. Önceki hâli console kanalındaki her error/warning mesajını
+// topluyordu ve geliştirme sunucusunun ilgisiz bir uyarısı testi ~%12 sıklıkla yanlış
+// kırmızıya çeviriyordu. Filtre dışı kalan mesajlar YUTULMUYOR, koşum çıktısına bilgi
+// olarak basılıyor: yeni bir gürültü kaynağı çıkarsa görünür kalsın.
+test('editör sayfası hydrate uyuşmazlığı düşürmez', async ({ page }) => {
+  const uyusmazliklar: string[] = []
   page.on('console', (mesaj) => {
-    if (mesaj.type() === 'error' || mesaj.type() === 'warning') hatalar.push(mesaj.text())
+    if (mesaj.type() !== 'error' && mesaj.type() !== 'warning') return
+    const metin = mesaj.text()
+    if (HYDRATE_UYUSMAZLIGI.test(metin)) uyusmazliklar.push(metin)
+    else console.info(`[konsol/${mesaj.type()}] ${metin}`)
   })
-  page.on('pageerror', (hata) => hatalar.push(hata.message))
+  // Sayfa düzeyinde fırlayan hata her durumda sayılıyor: o bir gürültü değil, çizim
+  // sırasında gerçekten patlamış bir kod.
+  page.on('pageerror', (hata) => uyusmazliklar.push(hata.message))
 
   await girisYap(page, EDITOR)
   await page.goto('/panel/makaleler/yeni')
   await expect(page.locator('[contenteditable="true"]')).toBeVisible()
   await page.locator('[contenteditable="true"]').fill('Kısa bir deneme metni.')
 
-  expect(hatalar).toEqual([])
+  expect(uyusmazliklar).toEqual([])
 })
 
 // Araç çubuğu durumu useEditorState ile izleniyor; Tiptap 3'te useEditor işlem başına

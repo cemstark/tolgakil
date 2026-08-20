@@ -167,6 +167,11 @@ export async function deleteArticle(_prev: FormState, formData: FormData): Promi
 
   // Başarı bildirimi kip pencerede basılamaz: silinen satır yeniden çizimle kalkıyor ve
   // pencereyi de beraberinde götürüyor, yani mesaj hiç görünmez, odak <body>'ye düşerdi.
-  // Bildirim listenin kendisine taşınıyor (bkz. DeleteNotice).
-  redirect('/panel/makaleler?silindi=1')
+  // Bildirim listenin kendisine taşınıyor (bkz. lib/panel-notice.ts).
+  //
+  // Silinen kaydın kimliği adreste taşınıyor, sabit bir "1" değil: ardışık silmelerde
+  // adres değişmezse bildirim öğesi yeniden kurulmaz, odaklama effect'i bir daha koşmaz ve
+  // metin de aynı kaldığı için canlı bölge duyuru yapmaz — kullanıcı ikinci silmenin olup
+  // olmadığını hiç öğrenemezdi (WCAG 4.1.3; medya ve kadro listelerinde ölçülüp kapatıldı).
+  redirect(`/panel/makaleler?silindi=${id}`)
 }

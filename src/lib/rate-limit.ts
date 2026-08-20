@@ -2,6 +2,8 @@ type Window = { count: number; startedAt: number }
 
 export type RateLimitResult = { allowed: boolean; retryAfterMs: number }
 
+export type RateLimiter = ReturnType<typeof createRateLimiter>
+
 // Bellekte tutulur: süreç yeniden başlayınca sayaç sıfırlanır ve çok süreçli bir dağıtımda
 // her sürecin kendi sayacı olur. Tek Node süreci çalıştıran Hostinger Business için yeterli;
 // yatay ölçekleme gerekirse ortak bir depoya (Redis) taşınmalı.
@@ -44,6 +46,15 @@ export function createRateLimiter(options: { limit: number; windowMs: number }) 
     // tek deneme iki hak yerdi.
     peek(key: string, now: number = Date.now()): RateLimitResult {
       return evaluate(windows.get(key), now)
+    },
+
+    // Bir anahtarın penceresini tümüyle siler: sayaç sıfırlanır, pencere yeniden başlar.
+    // Başarılı giriş bunu çağırıyor — üç kez yanılıp dördüncüde giren kullanıcı, aynı
+    // pencerede iki kez daha yanıldığında kilitlenmemeli (Görev 3'te gözden kaçmıştı).
+    // Yalnız KENDİ anahtarını sıfırlayan çağıranlar için güvenli: paylaşılan bir anahtarı
+    // sıfırlamak (ör. küresel bütçe) sınırın tümünü etkisizleştirirdi.
+    reset(key: string): void {
+      windows.delete(key)
     },
 
     // Bir denemeyi kaydeder ve o denemenin sınır içinde olup olmadığını döner.

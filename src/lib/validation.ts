@@ -8,13 +8,12 @@ z.config(z.locales.tr())
 
 export type FieldErrors = Record<string, string[]>
 export type FormState = { ok: boolean; errors: FieldErrors; message?: string; warnings?: string[] }
-export const EMPTY_FORM_STATE: FormState = { ok: false, errors: {} }
 
-// Yalnız alana bağlanabilen hataları döndürür. Server action'lar bunu DEĞİL, aşağıdaki
-// toFormState'i kullanır: path taşımayan hatalar burada görünmez.
-export function toFieldErrors(error: z.ZodError): FieldErrors {
-  return z.flattenError(error).fieldErrors as FieldErrors
-}
+// Başlangıç durumu için bir sabit DIŞA AKTARILMIYOR: istemci bileşenleri bu modülden yalnız
+// TİP alabiliyor. Değer olarak import edilen tek bir sabit bile modülü istemci paketine
+// çeker ve modül seviyesindeki z.config(z.locales.tr()) yan etkisi tree-shaking'i kapatır —
+// ölçüldü (Görev 3): zod ve bütün panel şemaları istemci paketine giriyordu (289 KB).
+// Bileşenler kendi { ok: false, errors: {} } sabitlerini tanımlıyor.
 
 // z.flattenError, path'i olmayan hataları (ör. gövdenin tümü beklenen biçimde değilse)
 // formErrors'a koyar. Yalnız fieldErrors okunursa bu hatalar yutulur: kullanıcı "Kaydet"e

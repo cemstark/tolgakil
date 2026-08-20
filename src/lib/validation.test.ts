@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   ARTICLE_CONTENT_MAX_BYTES, articleContentLengthError, articleSchema, byteLength,
-  categorySchema, lawyerSchema, loginSchema, settingsSchema, toFieldErrors, toFormState,
+  categorySchema, lawyerSchema, loginSchema, settingsSchema, toFormState,
   userCreateSchema, userUpdateSchema,
 } from '@/lib/validation'
 
@@ -64,7 +64,7 @@ describe('articleSchema', () => {
     // "!!! ???" slugify'dan boş string döner; boş slug rota üretemez (Plan 1 borcu).
     const sonuc = articleSchema.safeParse({ ...gecerliMakale, title: '!!! ???' })
     expect(sonuc.success).toBe(false)
-    expect(toFieldErrors(sonuc.error!).slug).toContain(
+    expect(toFormState(sonuc.error!).errors.slug).toContain(
       'Başlıktan adres üretilemedi; slug alanını elle doldurun.',
     )
   })
@@ -77,7 +77,7 @@ describe('articleSchema', () => {
   it('yayımlanacak makalede kategori zorunlu', () => {
     const sonuc = articleSchema.safeParse({ ...gecerliMakale, status: 'published', categoryId: '' })
     expect(sonuc.success).toBe(false)
-    expect(toFieldErrors(sonuc.error!).categoryId).toContain('Yayımlamak için kategori seçin.')
+    expect(toFormState(sonuc.error!).errors.categoryId).toContain('Yayımlamak için kategori seçin.')
   })
 
   it('taslakta kategori boş bırakılabilir', () => {
@@ -99,14 +99,14 @@ describe('articleSchema', () => {
 describe('slug üretilemediğinde gösterilen alan adı', () => {
   it('avukat formunda "ad soyad" alanını işaret eder', () => {
     const sonuc = lawyerSchema.safeParse({ slug: '', fullName: '!!! ???', title: 'Avukat' })
-    expect(toFieldErrors(sonuc.error!).slug).toContain(
+    expect(toFormState(sonuc.error!).errors.slug).toContain(
       'Ad soyad alanından adres üretilemedi; slug alanını elle doldurun.',
     )
   })
 
   it('kategori formunda "kategori adı" alanını işaret eder', () => {
     const sonuc = categorySchema.safeParse({ slug: '', name: '!!! ???' })
-    expect(toFieldErrors(sonuc.error!).slug).toContain(
+    expect(toFormState(sonuc.error!).errors.slug).toContain(
       'Kategori adından adres üretilemedi; slug alanını elle doldurun.',
     )
   })
@@ -184,12 +184,15 @@ describe('hata mesajları', () => {
     }
   })
 
-  // toFieldErrors yalnız alana bağlı hataları görür; path'siz hatalar orada kaybolur.
+  // z.flattenError path'i olmayan hataları fieldErrors'a DEĞİL formErrors'a koyuyor.
+  // Yalnız alan hatalarına bakan bir çağıran onları yutar: kullanıcı "Kaydet"e basar,
+  // hiçbir alanda uyarı çıkmaz ve hiçbir şey olmaz. toFormState mesaja taşıyor.
   it('alana bağlanamayan hata yutulmaz, mesaja taşınır', () => {
     const sonuc = articleSchema.safeParse('form verisi değil')
-    expect(toFieldErrors(sonuc.error!)).toEqual({})
-    expect(toFormState(sonuc.error!).message).toBeTruthy()
-    expect(toFormState(sonuc.error!).ok).toBe(false)
+    const durum = toFormState(sonuc.error!)
+    expect(durum.errors).toEqual({})
+    expect(durum.message).toBeTruthy()
+    expect(durum.ok).toBe(false)
   })
 })
 
@@ -219,7 +222,7 @@ describe('lawyerSchema isteğe bağlı alanları', () => {
   it('takvimde olmayan günü reddeder', () => {
     const sonuc = lawyerSchema.safeParse({ ...gecerliAvukat, practiceStartDate: '2026-02-31' })
     expect(sonuc.success).toBe(false)
-    expect(toFieldErrors(sonuc.error!).practiceStartDate).toContain('Tarihi GG.AA.YYYY takvim günü olarak seçin.')
+    expect(toFormState(sonuc.error!).errors.practiceStartDate).toContain('Tarihi GG.AA.YYYY takvim günü olarak seçin.')
   })
 
   it('geçersiz e-postayı reddeder ama boş bırakılmasına izin verir', () => {
@@ -244,31 +247,31 @@ describe('settingsSchema', () => {
 
   it('sayı olmayan koordinatı reddeder', () => {
     const sonuc = settingsSchema.safeParse({ ...gecerliAyarlar, mapLat: 'kuzey' })
-    expect(toFieldErrors(sonuc.error!).mapLat).toContain('Koordinat sayı olmalı.')
+    expect(toFormState(sonuc.error!).errors.mapLat).toContain('Koordinat sayı olmalı.')
   })
 
   it('geçersiz e-postayı Türkçe mesajla reddeder', () => {
     const sonuc = settingsSchema.safeParse({ ...gecerliAyarlar, email: 'bu-bir-eposta-degil' })
-    expect(toFieldErrors(sonuc.error!).email).toContain('Geçerli bir e-posta adresi girin.')
+    expect(toFormState(sonuc.error!).errors.email).toContain('Geçerli bir e-posta adresi girin.')
   })
 
   // Alt bilgi metni sütunu varchar(500); sınırı aşan değer STRICT_TRANS_TABLES altında
   // "Data too long" fırlatır ve kullanıcı hata sayfası görürdü.
   it('sütuna sığmayan alt bilgi metnini alan hatasıyla reddeder', () => {
     const sonuc = settingsSchema.safeParse({ ...gecerliAyarlar, footerText: 'a'.repeat(501) })
-    expect(toFieldErrors(sonuc.error!).footerText).toContain('Alt bilgi metni en fazla 500 karakter olabilir.')
+    expect(toFormState(sonuc.error!).errors.footerText).toContain('Alt bilgi metni en fazla 500 karakter olabilir.')
   })
 })
 
 describe('loginSchema', () => {
   it('geçersiz e-postayı Türkçe mesajla reddeder', () => {
     const sonuc = loginSchema.safeParse({ email: 'yok', password: 'parola-uzun-1' })
-    expect(toFieldErrors(sonuc.error!).email).toContain('Geçerli bir e-posta adresi girin.')
+    expect(toFormState(sonuc.error!).errors.email).toContain('Geçerli bir e-posta adresi girin.')
   })
 
   it('boş parolayı reddeder', () => {
     const sonuc = loginSchema.safeParse({ email: 'a@b.com', password: '' })
-    expect(toFieldErrors(sonuc.error!).password).toContain('Parola zorunlu.')
+    expect(toFormState(sonuc.error!).errors.password).toContain('Parola zorunlu.')
   })
 })
 
@@ -277,7 +280,7 @@ describe('userCreateSchema', () => {
     const sonuc = userCreateSchema.safeParse({
       email: 'yeni@ornek.test', name: 'Yeni Kullanıcı', password: 'kisa', role: 'editor',
     })
-    expect(toFieldErrors(sonuc.error!).password).toContain('Parola en az 12 karakter olmalı.')
+    expect(toFormState(sonuc.error!).errors.password).toContain('Parola en az 12 karakter olmalı.')
   })
 
   it('bilinmeyen rolü reddeder', () => {

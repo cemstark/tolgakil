@@ -3,29 +3,36 @@ import Link from 'next/link'
 import { listArticles } from '@/db/queries/articles'
 import { requireAccess } from '@/lib/auth-guards'
 import { formatDateTime } from '@/lib/date'
+import { panelNoticeState, type PanelNoticeQuery } from '@/lib/panel-notice'
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
 import { PanelActionLink, PanelEmptyState } from '@/components/PanelActionLink'
 import { PanelHeading } from '@/components/PanelHeading'
+import { PanelNotice } from '@/components/PanelNotice'
 import { PanelTable, panelTableStyles as table } from '@/components/PanelTable'
 import { deleteArticle } from './actions'
-import { DeleteNotice } from './DeleteNotice'
 
 export const metadata: Metadata = {
   title: 'Makaleler',
   robots: { index: false, follow: false },
 }
 
-type ArticleListPageProps = { searchParams: Promise<{ silindi?: string }> }
+type ArticleListPageProps = { searchParams: Promise<PanelNoticeQuery> }
 
 export default async function ArticleListPage({ searchParams }: ArticleListPageProps) {
   await requireAccess('articles')
   const [articles, query] = await Promise.all([listArticles(), searchParams])
+  // Adres çubuğundan gelen değer kullanıcı tarafından yazılabilir; panelNoticeState yalnız
+  // tanıdığı biçimde bildirim üretir ve gelen metni ekrana HİÇ basmaz.
+  const { key, message } = panelNoticeState(query, {
+    saved: 'Makale kaydedildi.',
+    deleted: 'Makale silindi.',
+  })
 
   return (
     <>
-      {/* Adres çubuğundan gelen değer kullanıcı tarafından yazılabilir; yalnız tam
-          eşleşmede bildirim çiziliyor, gelen metin ekrana basılmıyor. */}
-      {query.silindi === '1' ? <DeleteNotice /> : null}
+      {/* Anahtar her işlemde değişiyor: ardışık silmelerde bildirim yeniden kuruluyor,
+          odaklanıyor ve canlı bölge yeniden duyuruyor (bkz. lib/panel-notice.ts). */}
+      {message ? <PanelNotice key={key} message={message} /> : null}
 
       <PanelHeading
         title="Makaleler"

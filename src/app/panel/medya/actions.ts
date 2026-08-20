@@ -27,6 +27,13 @@ export async function uploadMedia(_prev: FormState, formData: FormData): Promise
   // Alt metin SUNUCUDA zorunlu. İstemcideki `required` yalnız kolaylık; formu elle POST
   // eden bir istemci alt metinsiz görsel bırakabilseydi spec §8'in erişilebilirlik
   // sözleşmesi ilk gün delinirdi.
+  //
+  // REKLAM YASAĞI TARAMASI BURADA BİLİNÇLİ OLARAK YOK, oysa alt metin sitede yayımlanıyor.
+  // Gerekçe deseni değil akışı: alt metin dosya baytlarıyla AYNI gönderimde geliyor ve
+  // onaylı uyarı ikinci bir gönderim turu gerektiriyor. Kullanıcı o turda dosyayı yeniden
+  // seçmek (ve baytları yeniden yüklemek) zorunda kalırdı — 8 MB'a kadar bir dosyada bu,
+  // uyarının koruduğu riskten büyük bir bedel. Alt metni sonradan düzenleyen ayrı bir akış
+  // açıldığında (Plan 3) tarama oraya, tek turluk bir forma konmalıdır.
   const parsed = mediaSchema.safeParse({ altText: formData.get('altText') })
   const durum: FormState = parsed.success ? { ok: false, errors: {} } : toFormState(parsed.error)
 

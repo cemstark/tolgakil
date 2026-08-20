@@ -2,7 +2,7 @@
 
 import { AuthError } from 'next-auth'
 import { signIn } from '@/auth'
-import { loginRateLimiter, loginRateLimitKey } from '@/lib/login-rate-limit'
+import { loginGate, loginRateLimitMessage } from '@/lib/login-rate-limit'
 import { loginSchema, toFormState, type FormState } from '@/lib/validation'
 
 export async function login(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -14,13 +14,15 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
   // basıp hiçbir şey olmadığını görür (Görev 1-2 sözleşmesi).
   if (!parsed.success) return toFormState(parsed.error)
 
-  // peek: sayaç authorize içinde işletiliyor, burada yalnız okunuyor. Amaç kullanıcıya
-  // "parola hatalı" yerine doğru Türkçe mesajı gösterebilmek; sınırın kendisi burada
-  // durmuyor, çünkü bu action tek giriş yolu değil.
-  const limit = loginRateLimiter.peek(loginRateLimitKey(parsed.data.email))
-  if (!limit.allowed) {
-    const minutes = Math.ceil(limit.retryAfterMs / 60_000)
-    return { ok: false, errors: {}, message: `Çok fazla deneme yapıldı. ${minutes} dakika sonra tekrar deneyin.` }
+  // check sayaca dokunmuyor: sayım authorize içinde işletiliyor, burada yalnız okunuyor.
+  // Amaç kullanıcıya "parola hatalı" yerine doğru Türkçe mesajı gösterebilmek; sınırın
+  // kendisi burada durmuyor, çünkü bu action tek giriş yolu değil.
+  //
+  // Küresel tavan da burada okunuyor: aksi hâlde tavana takılan kullanıcı authorize'dan
+  // null alır ve kendi parolasını yanlış girdiğini sanırdı.
+  const limitMessage = loginRateLimitMessage(loginGate.check(parsed.data.email))
+  if (limitMessage !== null) {
+    return { ok: false, errors: {}, message: limitMessage }
   }
 
   try {

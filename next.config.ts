@@ -25,6 +25,12 @@ const nextConfig: NextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           {
+            // Kaynak '/:path*', yani başlık BÜTÜN yollara iniyor ve tarayıcı bu izinleri
+            // sayfanın GÖMÜLÜ ÇERÇEVELERİNE de kapatıyor. Plan 3'ün harita rıza sarıcısı
+            // buna takılacak: iframe içindeki "konumumu göster" düğmesi sessizce
+            // çalışmayacak, konsola bir ihlal düşecek ama kullanıcı yalnız tepkisiz bir
+            // düğme görecek. Düzeltmek gerektiğinde doğru biçim izni tümüyle açmak değil,
+            // yalnız harita kaynağına vermektir: geolocation=("https://<harita-alan-adi>").
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()',
           },

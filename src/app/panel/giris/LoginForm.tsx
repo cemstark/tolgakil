@@ -5,7 +5,7 @@ import { login } from './actions'
 import type { FormState } from '@/lib/validation'
 import styles from './LoginForm.module.css'
 
-// EMPTY_FORM_STATE değeri değil, yalnız TİPİ alınıyor. validation.ts modül seviyesinde
+// validation.ts'ten yalnız TİP alınıyor, hiçbir değer alınmıyor. O modül seviyesinde
 // z.config(z.locales.tr()) çağırdığı için yan etkisi var ve değer olarak import edilirse
 // tree-shaking devre dışı kalıyor: ölçüldü, zod ve bütün panel şemaları istemci paketine
 // giriyordu (Türkçe doğrulama metinleri .next/static/chunks içinde çıktı).

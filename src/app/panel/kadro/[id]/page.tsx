@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getLawyerById } from '@/db/queries/lawyers'
-import { listMedia } from '@/db/queries/media'
+import { listMediaOptions } from '@/db/queries/media'
 import { requireAccess } from '@/lib/auth-guards'
 import { formatDate } from '@/lib/date'
 import { isRouteId } from '@/lib/form-id'
@@ -31,7 +31,7 @@ export default async function EditLawyerPage({ params, searchParams }: EditLawye
   const lawyer = await getLawyerById(Number(id))
   if (lawyer === null) notFound()
 
-  const [mediaOptions, query] = await Promise.all([listMedia(), searchParams])
+  const [mediaOptions, query] = await Promise.all([listMediaOptions(), searchParams])
 
   return (
     <>

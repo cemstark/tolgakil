@@ -208,6 +208,44 @@ test('ayarlar formu kaydedip geri okuduğunda değeri korur', async ({ page }, t
   }
 })
 
+// Alt bilgi metni sitenin HER sayfasında görünüyor, yani makale özetinden geniş bir
+// yayın yüzeyi. Aynı cümle makalede uyarı üretirken burada hiçbir sürtünme görmeseydi
+// tarama tutarsız olurdu.
+test('alt bilgi metnindeki yasaklı ifade onaylı uyarı üretir', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'masaustu', 'Ayarlar tek satırlık tablo; projeler arası yarışı önlemek için tek projede koşar.')
+
+  const temizlikci = await temizlikciAc()
+  try {
+    const [onceki] = await temizlikci.sorgu<{ footer_text: string | null }>(
+      'SELECT footer_text FROM settings WHERE id = 1',
+      [],
+    )
+    if (onceki === undefined) throw new Error('settings satırı yok; `npm run db:seed` çalıştırılmalı.')
+
+    await girisYap(page, ADMIN)
+    await page.goto('/panel/ayarlar')
+    await page.getByLabel('Alt bilgi metni').fill('Ücretsiz ilk görüşme için hemen arayın.')
+    await page.getByRole('button', { name: 'Kaydet' }).click()
+
+    // Panel içeriğine daraltıldı: Next kendi rota duyurucusunu body seviyesinde
+    // role="alert" ile çiziyor, daraltılmamış seçici ona da takılır.
+    const uyari = page.getByRole('main').getByRole('alert')
+    await expect(uyari).toContainText('Reklam yasağı')
+    await expect(uyari).toContainText('ücretsiz')
+    // Uyarı aşamasında kayıt YAPILMAMIŞ olmalı.
+    await expect(page.getByRole('status')).toHaveCount(0)
+
+    await page.getByLabel(/okudum, sorumluluk bende/i).check()
+    await page.getByRole('button', { name: 'Kaydet' }).click()
+    await expect(page.getByRole('status')).toHaveText('Ayarlar kaydedildi.')
+
+    // Tohum değeri geri konuyor; test geliştirme veritabanına kalıcı iz bırakmasın.
+    await temizlikci.sil('UPDATE settings SET footer_text = ? WHERE id = 1', [onceki.footer_text])
+  } finally {
+    await temizlikci.kapat()
+  }
+})
+
 test('geçersiz e-posta ayarları kaydettirmez', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'masaustu', 'Ayarlar tek satırlık tablo; projeler arası yarışı önlemek için tek projede koşar.')
 

@@ -1,8 +1,6 @@
 import { randomBytes } from 'node:crypto'
-import { readFileSync } from 'node:fs'
-import { parseEnv } from 'node:util'
-import mysql from 'mysql2/promise'
 import { hashPassword } from '../../../src/lib/password'
+import { temizlikciAc } from './db-cleanup'
 
 export type GeciciKullanici = {
   email: string
@@ -19,16 +17,13 @@ export type GeciciKullanici = {
 // E-posta her koşumda rastgele: temizlik yapılamasa bile bir sonraki koşum taze kovayla başlar.
 // Parola da rastgele: geride kalan bir hesap tahmin edilebilir parola taşımasın.
 export async function geciciKullaniciOlustur(onEk: string): Promise<GeciciKullanici> {
-  const databaseUrl = parseEnv(readFileSync('.env.local', 'utf8')).DATABASE_URL
-  if (typeof databaseUrl !== 'string' || databaseUrl === '') {
-    throw new Error('.env.local içinde DATABASE_URL yok; geçici test kullanıcısı kurulamıyor.')
-  }
-
   const email = `${onEk}-${randomBytes(6).toString('hex')}@ornek.test`
   const password = randomBytes(24).toString('hex')
-  const conn = await mysql.createConnection({ uri: databaseUrl })
+  // Bağlantı ve DATABASE_URL okuması ortak sözleşmede (db-cleanup.ts): ham execute
+  // kullanan bir temizlik, hiçbir satır silmediğinde bunu sessizce yutuyordu.
+  const temizlikci = await temizlikciAc()
 
-  await conn.execute(
+  await temizlikci.calistir(
     'INSERT INTO users (email, password_hash, role, name, is_active) VALUES (?, ?, ?, ?, 1)',
     [email, await hashPassword(password), 'editor', 'Geçici Test Kullanıcısı'],
   )
@@ -37,8 +32,15 @@ export async function geciciKullaniciOlustur(onEk: string): Promise<GeciciKullan
     email,
     password,
     async temizle() {
-      await conn.execute('DELETE FROM users WHERE email = ?', [email])
-      await conn.end()
+      try {
+        // `sil`: bu hesabı yalnız bu yardımcı kuruyor ve panelde kullanıcı silme yolu yok,
+        // yani sıfır satır sorgunun bayatladığı anlamına gelir — sessizce geçilmemeli.
+        await temizlikci.sil('DELETE FROM users WHERE email = ?', [email])
+      } finally {
+        // Bağlantı her durumda kapanmalı: silme fırlatırsa açık kalan bağlantı süiti
+        // çıkışta askıda bırakır ve asıl hatayı örter.
+        await temizlikci.kapat()
+      }
     },
   }
 }

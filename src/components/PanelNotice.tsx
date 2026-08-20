@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 import styles from './PanelNotice.module.css'
 
 // Kaydetme ve silme sonrası tek geri bildirim. Odak açıkça buraya taşınıyor ve bunun iki
-// gerekçesi var (makaleler/DeleteNotice ile aynı ölçüm):
+// gerekçesi var:
 //
 // 1. Canlı bölgeler DEĞİŞİMİ duyurur. Bu bildirim yönlendirmeden sonraki ilk çizimde
 //    zaten sayfada olduğu için ekran okuyucu onu kendiliğinden okumayabilir; odaklanan

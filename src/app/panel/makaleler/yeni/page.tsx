@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { listAuthorOptions, listCategoryOptions } from '@/db/queries/articles'
-import { listMedia } from '@/db/queries/media'
+import { listMediaOptions } from '@/db/queries/media'
 import { requireAccess } from '@/lib/auth-guards'
 import { AdBanNotice } from '@/components/AdBanNotice'
 import { ArticleForm } from '@/components/ArticleForm'
@@ -17,7 +17,7 @@ export default async function NewArticlePage() {
   const [categories, authors, mediaOptions] = await Promise.all([
     listCategoryOptions(),
     listAuthorOptions(),
-    listMedia(),
+    listMediaOptions(),
   ])
 
   return (

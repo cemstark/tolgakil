@@ -51,7 +51,7 @@ async function createUser(formData: FormData): Promise<FormState> {
     return { ok: false, errors: { email: ['Bu e-posta zaten kayıtlı.'] } }
   }
 
-  await db.insert(users).values({
+  const [result] = await db.insert(users).values({
     email: parsed.data.email,
     name: parsed.data.name,
     role: parsed.data.role,
@@ -62,7 +62,11 @@ async function createUser(formData: FormData): Promise<FormState> {
 
   revalidatePath('/panel/kullanicilar')
 
-  return { ok: true, errors: {}, message: 'Kullanıcı kaydedildi.' }
+  // Yönlendirme bilinçli ve diğer beş oluşturma akışıyla aynı: aksi hâlde form dolu
+  // kalıyordu ve ikinci kez "Kaydet"e basan yönetici, kaydın gerçekten yapıldığını
+  // düşünürken "Bu e-posta zaten kayıtlı." hatası alıyordu. Bildirim adres üzerinden
+  // taşınıyor (bkz. lib/panel-notice.ts).
+  redirect(`/panel/kullanicilar/${result.insertId}?kaydedildi=${result.insertId}`)
 }
 
 async function updateUser(id: number, currentUserId: number, formData: FormData): Promise<FormState> {

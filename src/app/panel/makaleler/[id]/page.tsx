@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getArticleById, listAuthorOptions, listCategoryOptions } from '@/db/queries/articles'
-import { listMedia } from '@/db/queries/media'
+import { listMediaOptions } from '@/db/queries/media'
 import { requireAccess } from '@/lib/auth-guards'
 import { formatDateTime } from '@/lib/date'
+import { isRouteId } from '@/lib/form-id'
 import { sanitizeArticleHtml } from '@/lib/sanitize'
 import { ArticleForm } from '@/components/ArticleForm'
 import { PanelHeading } from '@/components/PanelHeading'
@@ -25,8 +26,9 @@ export default async function EditArticlePage({ params, searchParams }: EditArti
 
   const { id } = await params
   // Adres kullanıcı verisi: "3e2" Number ile sessizce 300 olurdu, var olmayan bir kayda
-  // referans verip 500 döndürürdü. Biçim önce denetleniyor.
-  if (!/^[1-9]\d*$/.test(id)) notFound()
+  // referans verip 500 döndürürdü. Biçim önce denetleniyor — yüklem lib/form-id.ts'te,
+  // satır içi kopyası olsaydı iki denetim zamanla ayrışırdı.
+  if (!isRouteId(id)) notFound()
 
   const article = await getArticleById(Number(id))
   if (article === null) notFound()
@@ -34,7 +36,7 @@ export default async function EditArticlePage({ params, searchParams }: EditArti
   const [categories, authors, mediaOptions, query] = await Promise.all([
     listCategoryOptions(),
     listAuthorOptions(),
-    listMedia(),
+    listMediaOptions(),
     searchParams,
   ])
 

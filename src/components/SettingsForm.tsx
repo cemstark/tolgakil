@@ -1,6 +1,7 @@
 'use client'
 
 import { EntityForm, FieldRow, TextAreaField, TextField, useEntityValues, type EntityAction } from './EntityForm'
+import { PublishChecklist } from './PublishChecklist'
 
 export type SettingsFormValues = {
   officeName: string
@@ -32,7 +33,7 @@ export function SettingsForm({ action, values }: SettingsFormProps) {
 
   return (
     <EntityForm action={action}>
-      {({ fieldError }) => (
+      {({ fieldError, state }) => (
         <>
           <TextField
             id="settings-office-name" name="officeName" label="Büro adı"
@@ -89,6 +90,10 @@ export function SettingsForm({ action, values }: SettingsFormProps) {
             id="settings-footer-text" name="footerText" label="Alt bilgi metni"
             value={form.footerText} onChange={set('footerText')} error={fieldError('footerText')}
           />
+
+          {/* Büro adı ve alt bilgi metni sitenin her sayfasında görünüyor; reklam yasağı
+              taraması makale/kadro/alan formlarıyla aynı onaylı uyarı desenini kullanıyor. */}
+          <PublishChecklist warnings={state.warnings} />
         </>
       )}
     </EntityForm>

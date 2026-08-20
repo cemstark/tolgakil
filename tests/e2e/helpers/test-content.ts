@@ -1,7 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { readFileSync } from 'node:fs'
-import { parseEnv } from 'node:util'
-import mysql from 'mysql2/promise'
+import { temizlikciAc } from './db-cleanup'
 
 export type TestIcerigi = {
   /** Başlıklara eklenen benzersiz ek; temizlik bu ekle eşleşen makaleleri siler. */
@@ -16,27 +14,32 @@ export type TestIcerigi = {
 // boşaltma yarın geliştirme veritabanına da uygulanırsa, tohuma bel bağlayan bir e2e testi
 // "Kira Hukuku seçeneği yok" diye anlaşılmaz biçimde kırılırdı.
 export async function testIcerigiHazirla(): Promise<TestIcerigi> {
-  // process.loadEnvFile KULLANILMIYOR: ortamda tanımlı değişkeni ezmiyor (Görev 1-2 sözleşmesi).
-  const databaseUrl = parseEnv(readFileSync('.env.local', 'utf8')).DATABASE_URL
-  if (typeof databaseUrl !== 'string' || databaseUrl === '') {
-    throw new Error('.env.local içinde DATABASE_URL yok; makale testi kendi kategorisini kuramıyor.')
-  }
-
   const damga = `e2e${randomBytes(5).toString('hex')}`
   const kategoriAdi = `E2E Kategori ${damga}`
   const kategoriSlug = `e2e-kategori-${damga}`
-  const conn = await mysql.createConnection({ uri: databaseUrl })
+  // Bağlantı ve DATABASE_URL okuması ortak sözleşmede (db-cleanup.ts): ham execute
+  // kullanan bir temizlik, hiçbir satır silmediğinde bunu sessizce yutuyordu.
+  const temizlikci = await temizlikciAc()
 
-  await conn.execute('INSERT INTO categories (slug, name) VALUES (?, ?)', [kategoriSlug, kategoriAdi])
+  await temizlikci.calistir('INSERT INTO categories (slug, name) VALUES (?, ?)', [kategoriSlug, kategoriAdi])
 
   return {
     damga,
     kategoriAdi,
     async temizle() {
-      // Sıra zorunlu: articles.category_id kısıtı ON DELETE RESTRICT, önce makaleler gider.
-      await conn.execute('DELETE FROM articles WHERE title LIKE ?', [`%${damga}%`])
-      await conn.execute('DELETE FROM categories WHERE slug = ?', [kategoriSlug])
-      await conn.end()
+      try {
+        // Sıra zorunlu: articles.category_id kısıtı ON DELETE RESTRICT, önce makaleler gider.
+        //
+        // `silmeyeCalis`, `sil` DEĞİL: testlerin çoğu makalesini zaten arayüzden siliyor,
+        // yani sıfır satır burada normal. Kategori ise her koşumda kurulduğu için `sil`
+        // ile korunuyor — hiç eşleşmemesi sorgunun bayatladığı anlamına gelir.
+        await temizlikci.silmeyeCalis('DELETE FROM articles WHERE title LIKE ?', [`%${damga}%`])
+        await temizlikci.sil('DELETE FROM categories WHERE slug = ?', [kategoriSlug])
+      } finally {
+        // Bağlantı her durumda kapanmalı: silme fırlatırsa açık kalan bağlantı süiti
+        // çıkışta askıda bırakır ve asıl hatayı örter.
+        await temizlikci.kapat()
+      }
     },
   }
 }

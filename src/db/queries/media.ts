@@ -5,6 +5,34 @@ import { media, users, type Media } from '@/db/schema'
 /** Kapak görseli seçicisinin ihtiyaç duyduğu en küçük biçim (bkz. MediaPicker). */
 export type MediaOption = { id: number; path: string; altText: string }
 
+/**
+ * Seçiciye verilen görsel sayısının tavanı.
+ *
+ * Seçici bir radyo grubu: her seçenek bir küçük resim indiriyor ve tüm liste RSC yüküyle
+ * birlikte istemciye serileşiyor. Tavan yoksa kitaplık büyüdükçe dört form sayfasının da
+ * ilk yükü onunla birlikte büyür.
+ *
+ * BEDELİ AÇIK: kitaplıkta bu sayıdan fazla görsel varsa en eskiler seçicide görünmez
+ * (sıralama en yeniden eskiye). Büronun kullanımında kapak görselleri güncel yüklemelerden
+ * seçiliyor, yani pratikte erişilemeyen bir görsel kalmıyor. Kitaplık bu tavanı gerçekten
+ * aşarsa doğru çözüm tavanı yükseltmek değil, seçiciye arama/sayfalama koymaktır (Plan 3).
+ */
+const MEDIA_OPTION_LIMIT = 200
+
+/**
+ * Seçici için yalnız gereken üç sütun, tavanlı.
+ *
+ * `listMedia()` DEĞİL: o dokuz sütun döndürüyor (boyut, ölçüler, yükleyen adı) ve seçicinin
+ * hiçbirine ihtiyacı yok — hepsi RSC yüküne serileşiyordu.
+ */
+export async function listMediaOptions(): Promise<MediaOption[]> {
+  return db
+    .select({ id: media.id, path: media.path, altText: media.altText })
+    .from(media)
+    .orderBy(desc(media.createdAt))
+    .limit(MEDIA_OPTION_LIMIT)
+}
+
 export type MediaListItem = {
   id: number
   path: string

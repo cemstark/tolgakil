@@ -43,7 +43,7 @@ export function ConfirmDeleteDialog({
   const titleId = useId()
 
   // Başarı yolunda buraya hiç dönülmez: action listeye yönlendiriyor ve bildirim orada,
-  // odaklanan bir role="status" bölgesinde veriliyor (bkz. DeleteNotice). Bu bileşene
+  // odaklanan bir role="status" bölgesinde veriliyor (bkz. components/PanelNotice). Bu bileşene
   // yalnız HATA döner; o zaman kip pencere açık kalıp gerekçeyi gösteriyor.
   return (
     <>

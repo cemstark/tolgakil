@@ -18,7 +18,7 @@ export function MediaDeleteDialog({ mediaId, altText }: MediaDeleteDialogProps) 
   const titleId = `delete-media-dialog-${mediaId}`
 
   // Başarı yolunda buraya hiç dönülmez: deleteMedia listeye yönlendiriyor ve bildirim orada,
-  // odaklanan bir role="status" bölgesinde veriliyor (bkz. DeleteNotice). Bu bileşene yalnız
+  // odaklanan bir role="status" bölgesinde veriliyor (bkz. notices.ts). Bu bileşene yalnız
   // HATA döner; o zaman kip pencere açık kalıp gerekçeyi gösteriyor.
   return (
     <>

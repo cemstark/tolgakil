@@ -27,6 +27,14 @@ export async function createCategory(_prev: FormState, formData: FormData): Prom
   })
   if (!parsed.success) return toFormState(parsed.error)
 
+  // REKLAM YASAĞI TARAMASI BİLİNÇLİ OLARAK YOK. Tarama, avukatın yazdığı ve halkın okuduğu
+  // DÜZYAZIYA uygulanıyor (makale, özgeçmiş, çalışma alanı özeti, büro adı ve alt bilgi).
+  // Kategori adı düzyazı değil, iki-üç kelimelik bir sınıflandırma etiketi ve onu yalnız
+  // yönetici giriyor. Buna karşılık bu form tek satırlık bir hızlı ekleme kutusu: onaylı
+  // uyarı kutusunun getireceği ikinci gönderim turu, koruduğu riskten büyük bir sürtünme
+  // olurdu. Kategori adında gerçekten sorunlu bir ifade denenirse onu taşıyan makale
+  // yayımlanırken tarama zaten devreye girer.
+  //
   // spec §11: çakışma sessizce üzerine yazılmaz, kullanıcıya açıkça bildirilir.
   if (await isSlugTaken(parsed.data.slug)) {
     return { ok: false, errors: { slug: ['Bu adres başka bir kategoride kullanılıyor.'] } }

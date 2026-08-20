@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { listMedia } from '@/db/queries/media'
+import { listMediaOptions } from '@/db/queries/media'
 import { requireAccess } from '@/lib/auth-guards'
 import { LawyerForm } from '@/components/LawyerForm'
 import { PanelHeading } from '@/components/PanelHeading'
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default async function NewLawyerPage() {
   await requireAccess('lawyers')
-  const mediaOptions = await listMedia()
+  const mediaOptions = await listMediaOptions()
 
   return (
     <>

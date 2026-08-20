@@ -46,6 +46,12 @@ const ENTITIES: ReadonlyArray<readonly [RegExp, string]> = [
 // Arama, meta açıklama ve reklam yasağı taraması için düz metin; hiçbir etikete izin vermez.
 // Çıktı düz metindir, HTML DEĞİLDİR: bir sayfaya basılacaksa React'in kendi kaçışından
 // geçmek zorundadır (dangerouslySetInnerHTML ile kullanılmaz).
+//
+// JSON-LD TUZAĞI: bu çıktı `<script type="application/ld+json">` içine (ör. Article şeması)
+// konacaksa React'in kaçışı DEVREDE DEĞİLDİR — script gövdesi ham metin olarak yazılır.
+// Yazarın metnindeki bir `</script>` dizisi belgeyi orada erken kapatır ve devamı HTML
+// olarak ayrıştırılır; yani bu tuzak yalnız bozuk şema değil, doğrudan bir XSS yoludur.
+// Serileştirilmiş JSON'da "<" karakteri, JSON birim kaçışı "\u003c" ile yazılmalıdır.
 export function htmlToPlainText(html: string): string {
   const stripped = sanitizeHtml(html.replace(BLOCK_BOUNDARY, ' $&'), {
     allowedTags: [],
