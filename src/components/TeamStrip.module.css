@@ -35,3 +35,10 @@
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* Boş durum: bölüm başlığı duruyor, ızgara yerine tek satırlık açıklama geliyor.
+   Renk token'dan; --text-muted yüzeye göre (krem/koyu) kendisi değişiyor. */
+.empty {
+  margin-top: 32px;
+  color: var(--text-muted);
+}

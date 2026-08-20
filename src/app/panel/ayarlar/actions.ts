@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { updateSettings } from '@/db/queries/settings'
 import { findBannedPhrases, formatBannedMatch } from '@/lib/ad-ban'
 import { requireAccess } from '@/lib/auth-guards'
@@ -47,8 +47,10 @@ export async function saveSettings(_prev: FormState, formData: FormData): Promis
   // dokunmaz ve getSettings bir sonraki okumada zaten gürültülü biçimde fırlatır.
   await updateSettings(parsed.data)
 
-  // İki argümanlı biçim zorunlu (Next 16.3); Plan 3 okuma tarafını bağlayana kadar etkisiz.
-  revalidateTag(TAGS.settings, 'max')
+  // updateTag, revalidateTag DEĞİL: gerekçesi ve ölçümü lib/cache-tags.ts başında.
+  // Okuma tarafı Görev 4'te bağlandı (getPublicSiteIdentity), yani bu çağrı artık
+  // sitenin başlık ve alt bilgisini gerçekten tazeliyor.
+  updateTag(TAGS.settings)
   // Yönlendirme YOK: form aynı sayfada kalıyor ve girilen değerler ekranda duruyor, yani
   // kullanıcı kaydettiği şeyi görmeye devam ediyor. revalidatePath sunucu bileşenini
   // tazeliyor ki bir sonraki yükleme veritabanındaki değeri okusun.

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { TAGS, articleTag, pageTag } from '@/lib/cache-tags'
 
 describe('önbellek etiketleri', () => {
-  // Yazma tarafı revalidateTag'i, okuma tarafı cacheTag'i aynı dizeden alıyor. İki etiket
+  // Yazma tarafı updateTag'i, okuma tarafı cacheTag'i aynı dizeden alıyor. İki etiket
   // aynı değere düşerse bir bölümü tazelemek diğerini de sessizce düşürür; ters durumda
   // (elle yazılan bir dize) eşleşme hiç kurulmaz ve sayfa bayat kalır.
   it('sabit etiketlerin hepsi birbirinden farklı', () => {

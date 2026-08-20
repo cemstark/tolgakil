@@ -2,7 +2,7 @@
 
 import { unlink } from 'node:fs/promises'
 import path from 'node:path'
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { db } from '@/db/client'
 import { media } from '@/db/schema'
@@ -120,9 +120,8 @@ export async function deleteMedia(_prev: FormState, formData: FormData): Promise
   }
 
   // Kapak görseli olarak kullanılan satırlar FK ile NULL'a düştü; makale okumaları da
-  // bayat kalmasın. İki argümanlı biçim zorunlu (Next 16.3) ve Plan 3 okuma tarafını
-  // 'use cache' ile bağlayana kadar ETKİSİZ — bilinçli.
-  revalidateTag(TAGS.articles, 'max')
+  // bayat kalmasın. updateTag, revalidateTag DEĞİL: gerekçesi lib/cache-tags.ts başında.
+  updateTag(TAGS.articles)
   revalidatePath('/panel/medya')
 
   // Bildirim kip pencerede basılamaz: silinen kart yeniden çizimle kalkıyor ve pencereyi

@@ -1,25 +1,30 @@
 import Link from 'next/link'
-import type { LawyerSummary } from '@/content/sample-content'
+import type { PublicLawyerCard } from '@/db/queries/public/lawyers'
 import styles from './TeamStrip.module.css'
 
-type TeamStripProps = { lawyers: LawyerSummary[] }
+type TeamStripProps = { lawyers: PublicLawyerCard[] }
 
-// Fotoğraf yok: Plan 2'de gerçek kadro verisiyle birlikte gelecek.
+// Fotoğraf Görev 5'te ortak LawyerCard bileşeniyle geliyor; bu görev yalnız veri kaynağını
+// değiştiriyor, işaretlemeyi değil.
 export function TeamStrip({ lawyers }: TeamStripProps) {
   return (
     <section className={styles.section}>
       <div className={styles.inner}>
         <h2>Kadro</h2>
-        <ul className={styles.grid}>
-          {lawyers.map((lawyer) => (
-            <li key={lawyer.slug}>
-              <Link href={`/kadro/${lawyer.slug}`} className={`card ${styles.cardLayout}`}>
-                <h3 className={styles.name}>{lawyer.name}</h3>
-                <p className={styles.title}>{lawyer.title}</p>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {lawyers.length === 0 ? (
+          <p className={styles.empty}>Kadro bilgileri yakında yayımlanacak.</p>
+        ) : (
+          <ul className={styles.grid}>
+            {lawyers.map((lawyer) => (
+              <li key={lawyer.slug}>
+                <Link href={`/kadro/${lawyer.slug}`} className={`card ${styles.cardLayout}`}>
+                  <h3 className={styles.name}>{lawyer.fullName}</h3>
+                  <p className={styles.title}>{lawyer.title}</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </section>
   )

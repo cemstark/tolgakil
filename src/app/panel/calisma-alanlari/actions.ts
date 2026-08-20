@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { eq } from 'drizzle-orm'
 import { db } from '@/db/client'
@@ -93,8 +93,9 @@ export async function savePracticeArea(_prev: FormState, formData: FormData): Pr
     savedId = existing.id
   }
 
-  // İki argümanlı biçim zorunlu (Next 16.3); Plan 3 okuma tarafını bağlayana kadar etkisiz.
-  revalidateTag(TAGS.practiceAreas, 'max')
+  // updateTag, revalidateTag DEĞİL: gerekçesi ve ölçümü lib/cache-tags.ts başında.
+  // Okuma tarafı Görev 4'te bağlandı, yani bu çağrı artık gerçekten bir şey yapıyor.
+  updateTag(TAGS.practiceAreas)
   revalidatePath('/panel/calisma-alanlari')
 
   // Bildirim adres üzerinden taşınıyor: yönlendirme useActionState durumunu sıfırlıyor.
@@ -117,7 +118,7 @@ export async function deletePracticeArea(_prev: FormState, formData: FormData): 
   // practice_areas'a işaret eden yabancı anahtar yok (schema.ts); kısıt yakalaması gereksiz.
   await deletePracticeAreaRow(id)
 
-  revalidateTag(TAGS.practiceAreas, 'max')
+  updateTag(TAGS.practiceAreas)
   revalidatePath('/panel/calisma-alanlari')
 
   // Silinen kaydın kimliği adreste taşınıyor ki ardışık silmelerde bildirim yeniden

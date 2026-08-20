@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { getPageBySlug, updatePageContent } from '@/db/queries/pages'
 import { isPageSlug } from '@/db/schema'
 import { findBannedPhrases, formatBannedMatch } from '@/lib/ad-ban'
@@ -57,9 +57,9 @@ export async function savePage(_prev: FormState, formData: FormData): Promise<Fo
 
   await updatePageContent(rawSlug, { title: parsed.data.title, content })
 
-  // İki argümanlı biçim zorunlu (Next 16.3, sözleşme §4.1).
-  revalidateTag(TAGS.pages, 'max')
-  revalidateTag(pageTag(rawSlug), 'max')
+  // updateTag, revalidateTag DEĞİL: gerekçesi ve ölçümü lib/cache-tags.ts başında.
+  updateTag(TAGS.pages)
+  updateTag(pageTag(rawSlug))
   revalidatePath('/panel/sayfalar')
 
   // Yönlendirme YOK: yeni kayıt oluşmuyor, kalınacak adres zaten burası. Bildirim

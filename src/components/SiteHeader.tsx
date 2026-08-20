@@ -6,7 +6,11 @@ import { usePathname } from 'next/navigation'
 import { NAV_LINKS, CTA_LINK, isCurrentPath } from '@/lib/navigation'
 import styles from './SiteHeader.module.css'
 
-export function SiteHeader() {
+type SiteHeaderProps = { officeName: string }
+
+// Büro adı prop: bileşen 'use client' ve veriyi kendisi okuyamaz. Elle yazılmış marka
+// metni kaldırıldı — ad panelden değişince başlıkta eskisi kalmasın.
+export function SiteHeader({ officeName }: SiteHeaderProps) {
   const [open, setOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const pathname = usePathname()
@@ -25,7 +29,7 @@ export function SiteHeader() {
     <header className={styles.header}>
       <div className={styles.pill} onKeyDown={handleKeyDown}>
         <Link href="/" className={styles.brand}>
-          AKIL <span aria-hidden="true">·</span> HUKUK
+          {officeName}
         </Link>
 
         <button

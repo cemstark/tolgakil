@@ -1,15 +1,23 @@
 import Link from 'next/link'
 import { CTA_LINK } from '@/lib/navigation'
-import { SITE } from '@/content/site'
+import { getPublicSiteIdentity } from '@/db/queries/public/site-identity'
 import styles from './Hero.module.css'
 
-// Statik tanıtım metni; Plan 2'ye kadar `settings` tablosu yok, sabit içerik yeterli.
-export function Hero() {
+// async sunucu bileşeni: prop imzası (<Hero />) değişmeden veriye bağlanmanın tek yolu bu.
+// Kurulu @types/react 19 bunu destekliyor (JSXElementConstructor: `(props: P): ReactNode |
+// Promise<ReactNode>`), yani ayrıca bir tip hilesi gerekmiyor.
+//
+// Tanıtım metni (h1 ve lead) veritabanında karşılığı olmayan sabit metindir; TBB reklam
+// yasağına uygun (iddia, üstünlük ve başarı ifadesi içermez) ve `settings` tablosunda
+// böyle bir alan yok. Yalnız büro adı veriden geliyor.
+export async function Hero() {
+  const { officeName } = await getPublicSiteIdentity()
+
   return (
     <section className={styles.hero}>
       <div className={styles.inner}>
         <div className={styles.copy}>
-          <p className={styles.eyebrow}>{SITE.name}</p>
+          <p className={styles.eyebrow}>{officeName}</p>
           <h1 className={styles.title}>
             Hukuki süreçlerde
             <br />
@@ -27,7 +35,7 @@ export function Hero() {
             </Link>
           </div>
         </div>
-        {/* Gerçek fotoğraf Plan 2'de gelecek; şimdilik token zeminli yer tutucu. */}
+        {/* Dekoratif zemin; içerik taşımadığı için erişilebilirlik ağacından çıkarılıyor. */}
         <div className={styles.visual} aria-hidden="true" />
       </div>
     </section>

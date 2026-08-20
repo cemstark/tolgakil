@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { db } from '@/db/client'
 import { categories } from '@/db/schema'
@@ -47,7 +47,7 @@ export async function createCategory(_prev: FormState, formData: FormData): Prom
 
   const [result] = await db.insert(categories).values({ slug: parsed.data.slug, name: parsed.data.name })
 
-  revalidateTag(TAGS.categories, 'max')
+  updateTag(TAGS.categories)
   // Makale formundaki kategori seçicisi bu listeden besleniyor.
   revalidatePath('/panel/makaleler')
 
@@ -80,7 +80,7 @@ export async function deleteCategory(_prev: FormState, formData: FormData): Prom
     throw cause
   }
 
-  revalidateTag(TAGS.categories, 'max')
+  updateTag(TAGS.categories)
   revalidatePath('/panel/makaleler')
 
   // Silinen kaydın kimliği adreste taşınıyor: ardışık silmelerde bildirim yeniden kurulup

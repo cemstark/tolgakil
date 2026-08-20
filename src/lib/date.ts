@@ -24,3 +24,11 @@ export function formatDate(iso: string): string {
 export function formatDateTime(value: Date): string {
   return WITH_TIME.format(value)
 }
+
+// <time dateTime> özniteliği için gün. Yerel saat yöntemleriyle (getFullYear/getMonth/
+// getDate) üretilseydi negatif ofsetli bir sunucuda gün bir geriye kayar ve öznitelik,
+// formatDate'in UTC'ye sabitli çıktısıyla çelişirdi — anasayfa-veri.spec.ts tam olarak bu
+// iki değerin aynı günü göstermesini ölçüyor.
+export function isoDate(value: Date): string {
+  return value.toISOString().slice(0, 10)
+}

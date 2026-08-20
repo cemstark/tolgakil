@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { eq } from 'drizzle-orm'
 import { db } from '@/db/client'
@@ -132,9 +132,9 @@ export async function saveLawyer(_prev: FormState, formData: FormData): Promise<
     savedId = existing.id
   }
 
-  // İki argümanlı biçim zorunlu: tek argümanlı çağrı Next 16.3'te kaldırıldı. Bu çağrılar
-  // Plan 3 okuma tarafını 'use cache' + cacheTag ile bağlayana kadar ETKİSİZ — bilinçli.
-  revalidateTag(TAGS.lawyers, 'max')
+  // updateTag, revalidateTag DEĞİL: gerekçesi ve ölçümü lib/cache-tags.ts başında.
+  // Okuma tarafı Görev 4'te bağlandı, yani bu çağrı artık gerçekten bir şey yapıyor.
+  updateTag(TAGS.lawyers)
   revalidatePath('/panel/kadro')
   // Makale formundaki yazar seçicisi bu adlardan besleniyor.
   revalidatePath('/panel/makaleler')
@@ -172,7 +172,7 @@ export async function deleteLawyer(_prev: FormState, formData: FormData): Promis
     throw cause
   }
 
-  revalidateTag(TAGS.lawyers, 'max')
+  updateTag(TAGS.lawyers)
   revalidatePath('/panel/kadro')
   revalidatePath('/panel/makaleler')
 

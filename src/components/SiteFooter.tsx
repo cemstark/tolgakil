@@ -1,22 +1,28 @@
 import Link from 'next/link'
 import { NAV_LINKS } from '@/lib/navigation'
-import { SITE } from '@/content/site'
+import type { PublicSiteIdentity } from '@/db/queries/public/site-identity'
 import styles from './SiteFooter.module.css'
 
-// İçerik şimdilik sabit yer tutucu; Plan 2'de `settings` tablosundan gelecek.
-export function SiteFooter() {
+type SiteFooterProps = { identity: PublicSiteIdentity }
+
+export function SiteFooter({ identity }: SiteFooterProps) {
   return (
     <footer className={styles.footer}>
       <div className={styles.inner}>
         <div>
-          <p className={styles.brand}>{SITE.name}</p>
+          <p className={styles.brand}>{identity.officeName}</p>
           <address className={styles.address}>
-            {SITE.address}
+            {identity.address}
             <br />
-            <a href={SITE.phoneHref} className="textLink">{SITE.phone}</a>
+            <a href={identity.phoneHref} className="textLink">{identity.phone}</a>
             <br />
-            <a href={SITE.emailHref} className="textLink">{SITE.email}</a>
+            <a href={identity.emailHref} className="textLink">{identity.email}</a>
           </address>
+          {/* Alt bilgi metni boş bırakılabilir; boşken paragraf hiç çizilmez ki
+              alt bilgide anlamsız bir boşluk kalmasın. */}
+          {identity.footerText !== null && identity.footerText.trim() !== '' ? (
+            <p className={styles.note}>{identity.footerText}</p>
+          ) : null}
         </div>
 
         <nav aria-label="Alt bilgi gezinmesi" className={styles.links}>

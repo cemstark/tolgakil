@@ -7,6 +7,9 @@
 
 .pill {
   position: relative;
+  /* Flex öğelerinin varsayılan min-width:auto'su, uzun bir büro adında hapın taşmasına
+     yol açar; marka bağlantısının kısalabilmesi için kapsayıcının da daralması gerekiyor. */
+  min-width: 0;
   max-width: var(--max);
   margin: 0 auto;
   display: flex;
@@ -25,7 +28,13 @@
   font-family: var(--font-display), Georgia, serif;
   font-size: 18px;
   letter-spacing: 1px;
+  /* Ad artık veriden geliyor ve uzunluğu bilinmiyor: nowrap tek başına kalsaydı uzun bir
+     ad hapı yatay taşırırdı. Kırpma tercih edildi çünkü iki satıra sarılan marka, sabit
+     yükseklikli hapın dikey hizasını bozuyor. */
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .menuButton {

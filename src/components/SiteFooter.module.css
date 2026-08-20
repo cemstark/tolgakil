@@ -29,6 +29,11 @@
   gap: 8px;
 }
 
+.note {
+  margin-top: 16px;
+  font-size: 15px;
+}
+
 @media (min-width: 768px) {
   .inner {
     grid-template-columns: 2fr 1fr 1fr;

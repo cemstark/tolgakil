@@ -1,9 +1,9 @@
 import Link from 'next/link'
-import type { ArticleSummary } from '@/content/sample-content'
-import { formatDate } from '@/lib/date'
+import type { PublicArticleCard } from '@/db/queries/public/articles'
+import { formatDate, isoDate } from '@/lib/date'
 import styles from './ArticleStrip.module.css'
 
-type ArticleStripProps = { articles: ArticleSummary[] }
+type ArticleStripProps = { articles: PublicArticleCard[] }
 
 export function ArticleStrip({ articles }: ArticleStripProps) {
   return (
@@ -20,19 +20,32 @@ export function ArticleStrip({ articles }: ArticleStripProps) {
             Tümünü gör
           </Link>
         </div>
-        <ul className={styles.list}>
-          {articles.map((article) => (
-            <li key={article.slug} className={styles.item}>
-              <Link href={`/makaleler/${article.slug}`} className={styles.itemLink}>
-                <span className={styles.category}>{article.category}</span>
-                <h3 className={styles.itemTitle}>{article.title}</h3>
-                <time dateTime={article.date} className={styles.date}>
-                  {formatDate(article.date)}
-                </time>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {articles.length === 0 ? (
+          <p className={styles.empty}>Henüz yayımlanmış makale yok.</p>
+        ) : (
+          <ul className={styles.list}>
+            {articles.map((article) => {
+              // Gün ISO gövdesinden kesiliyor; formatDate de UTC'ye sabitli, böylece
+              // görünen tarih ile dateTime özniteliği asla ayrışmıyor.
+              const gun = isoDate(article.publishedAt)
+              return (
+                <li key={article.slug} className={styles.item}>
+                  <Link href={`/makaleler/${article.slug}`} className={styles.itemLink}>
+                    {/* Kategori zorunlu değil (ON DELETE RESTRICT olsa da sütun nullable);
+                        yoksa boş bir etiket kutusu çizmek yerine hiç çizilmiyor. */}
+                    {article.categoryName !== null ? (
+                      <span className={styles.category}>{article.categoryName}</span>
+                    ) : null}
+                    <h3 className={styles.itemTitle}>{article.title}</h3>
+                    <time dateTime={gun} className={styles.date}>
+                      {formatDate(gun)}
+                    </time>
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </section>
     </div>
   )

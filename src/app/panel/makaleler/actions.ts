@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { eq } from 'drizzle-orm'
 import { db } from '@/db/client'
@@ -135,13 +135,13 @@ export async function saveArticle(_prev: FormState, formData: FormData): Promise
     savedId = existing.id
   }
 
-  // İki argümanlı biçim zorunlu: tek argümanlı çağrı Next 16.3'te kaldırıldı. Bu çağrılar
-  // Plan 3 okuma tarafını 'use cache' + cacheTag ile bağlayana kadar ETKİSİZ — bilinçli.
-  revalidateTag(TAGS.articles, 'max')
-  revalidateTag(articleTag(parsed.data.slug), 'max')
+  // updateTag, revalidateTag DEĞİL: gerekçesi ve ölçümü lib/cache-tags.ts başında.
+  // Okuma tarafı Görev 4'te bağlandı, yani bu çağrı artık gerçekten bir şey yapıyor.
+  updateTag(TAGS.articles)
+  updateTag(articleTag(parsed.data.slug))
   // Adres değiştiyse eski etiket de düşmeli, yoksa eski adres bayat içerikle asılı kalır.
   if (existing !== null && existing.slug !== parsed.data.slug) {
-    revalidateTag(articleTag(existing.slug), 'max')
+    updateTag(articleTag(existing.slug))
   }
   // Yalnız LİSTE yolu tazeleniyor. /panel/makaleler/[id] için ek bir çağrı gerekmiyor:
   // ölçüldü, server action yanıtı bulunulan rotanın sunucu bileşenlerini zaten yeniden
@@ -169,8 +169,8 @@ export async function deleteArticle(_prev: FormState, formData: FormData): Promi
 
   await db.delete(articles).where(eq(articles.id, id))
 
-  revalidateTag(TAGS.articles, 'max')
-  revalidateTag(articleTag(existing.slug), 'max')
+  updateTag(TAGS.articles)
+  updateTag(articleTag(existing.slug))
   revalidatePath('/panel/makaleler')
 
   // Başarı bildirimi kip pencerede basılamaz: silinen satır yeniden çizimle kalkıyor ve
