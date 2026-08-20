@@ -19,15 +19,28 @@ test('etkin sayfanın gezinme bağlantısı aria-current=page taşır', async ({
   await expect(nav.getByRole('link', { name: 'Hakkımızda' })).not.toHaveAttribute('aria-current', 'page')
 })
 
-// Tam eşleşme üst bölümü alt sayfalarda işaretsiz bırakıyordu (Plan 1'den devreden borç).
-// Adres şu an 404 veriyor — Plan 3 /kadro/[slug] rotasını getirecek — ama 404 sınırı da
-// kabuğun altında çizildiği için gezinme yine var ve önek eşleşmesi burada ölçülebiliyor.
-test('alt sayfada üst bölümün bağlantısı aria-current taşır', async ({ page }, testInfo) => {
+// Bu test önce "alt sayfada üst bölümün bağlantısı aria-current taşır" diyordu ve 404
+// üzerinden önek eşleşmesini ölçtüğünü varsayıyordu. Varsayım YANLIŞ çıktı: CI=1 (üretim
+// derlemesi) altında ölçüldü — "Kadro" bağlantısı aria-current ALMIYOR, 5 saniye boyunca
+// 14 kez bakıldı, hidrasyondan sonra da gelmiyor. Nedeni: üretimde 404 sayfası derleme
+// anında statik üretiliyor ve istemci yönlendiricisi o sayfanın RSC yükünü hidre ediyor,
+// yani usePathname() İSTENEN adresi değil ön-üretilmiş yolu döndürüyor. Geliştirme kipinde
+// sayfa istek başına çizildiği için sorun görünmüyordu.
+//
+// Kapsam bu yüzden dürüstçe daraltıldı. Önek yükleminin kendisi src/lib/navigation.test.ts'te;
+// GERÇEK bir alt rotayla ölçümü panel-kabuk.spec.ts'in "/panel/makaleler/yeni" testinde
+// (panel rotaları dinamik olduğu için orada üretimde de doğru çalışıyor). Genel sitenin
+// gerçek alt sayfaları (/kadro/[slug]) Plan 3'te gelince ölçüm oraya taşınacak.
+//
+// Burada kalan iddia iki kipte de doğru ve boş değil: 404 sayfasında YANLIŞ bir bölüm
+// etkin işaretlenmez. Gezinmeye taşma yapan bir önek yüklemi bu testi kırar.
+test('404 sayfasında yanlış bölüm etkin işaretlenmez', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'masaustu', 'mobilde panel kapalı başlar')
   await page.goto('/kadro/olmayan-avukat')
   const nav = page.getByRole('navigation', { name: 'Ana gezinme' })
-  await expect(nav.getByRole('link', { name: 'Kadro' })).toHaveAttribute('aria-current', 'page')
-  await expect(nav.getByRole('link', { name: 'Makaleler' })).not.toHaveAttribute('aria-current', 'page')
+  for (const etiket of ['Hakkımızda', 'Makaleler', 'Çalışma Alanları', 'İletişim']) {
+    await expect(nav.getByRole('link', { name: etiket })).not.toHaveAttribute('aria-current', 'page')
+  }
 })
 
 test('atlama bağlantısı klavyeyle çalışır', async ({ page }) => {

@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { girisYap, ADMIN, EDITOR } from './helpers/auth'
+import { panelGezinmesiniAc } from './helpers/panel-nav'
 
 test('panelde genel site başlığı ve alt bilgisi görünmez', async ({ page }) => {
   await girisYap(page, ADMIN)
@@ -19,8 +20,11 @@ test('giriş sayfasında panel gezinmesi çizilmez', async ({ page }) => {
   await expect(page.getByRole('navigation', { name: 'Panel gezinmesi' })).toHaveCount(0)
 })
 
+// Görev 8'de gezinme mobilde açılır panele döndü; bağlantı ölçen testler önce paneli
+// açıyor. İddialar değişmedi — yalnız ölçüm mobilde de mümkün hâle getirildi.
 test('admin panel gezinmesinde bütün bölümleri görür', async ({ page }) => {
   await girisYap(page, ADMIN)
+  await panelGezinmesiniAc(page)
   const nav = page.getByRole('navigation', { name: 'Panel gezinmesi' })
   for (const ad of ['Makaleler', 'Medya', 'Kadro', 'Çalışma Alanları', 'Kategoriler', 'Mesajlar', 'Kullanıcılar', 'Ayarlar']) {
     await expect(nav.getByRole('link', { name: ad })).toBeVisible()
@@ -29,6 +33,7 @@ test('admin panel gezinmesinde bütün bölümleri görür', async ({ page }) =>
 
 test('editor panel gezinmesinde yalnız makale ve medya görür', async ({ page }) => {
   await girisYap(page, EDITOR)
+  await panelGezinmesiniAc(page)
   const nav = page.getByRole('navigation', { name: 'Panel gezinmesi' })
   await expect(nav.getByRole('link', { name: 'Makaleler' })).toBeVisible()
   await expect(nav.getByRole('link', { name: 'Medya' })).toBeVisible()
@@ -42,6 +47,7 @@ test('editor panel gezinmesinde yalnız makale ve medya görür', async ({ page 
 // navigation.test.ts'te; buradaki iş bağlanışın gerçekten kurulduğunu göstermek.
 test('bulunulan panel bölümü aria-current ile işaretlenir', async ({ page }) => {
   await girisYap(page, ADMIN)
+  await panelGezinmesiniAc(page)
   const nav = page.getByRole('navigation', { name: 'Panel gezinmesi' })
   await expect(nav.getByRole('link', { name: 'Panel' })).toHaveAttribute('aria-current', 'page')
   await expect(nav.getByRole('link', { name: 'Makaleler' })).not.toHaveAttribute('aria-current', 'page')
@@ -53,6 +59,7 @@ test('bulunulan panel bölümü aria-current ile işaretlenir', async ({ page })
 test('makaleler bölümünde yalnız Makaleler bağlantısı aria-current taşır', async ({ page }) => {
   await girisYap(page, ADMIN)
   await page.goto('/panel/makaleler')
+  await panelGezinmesiniAc(page)
   const nav = page.getByRole('navigation', { name: 'Panel gezinmesi' })
   await expect(nav.getByRole('link', { name: 'Makaleler' })).toHaveAttribute('aria-current', 'page')
   await expect(nav.getByRole('link', { name: 'Medya' })).not.toHaveAttribute('aria-current', 'page')
@@ -64,6 +71,7 @@ test('makaleler bölümünde yalnız Makaleler bağlantısı aria-current taşı
 test('yeni makale sayfasında Makaleler bölümü işaretli kalır', async ({ page }) => {
   await girisYap(page, ADMIN)
   await page.goto('/panel/makaleler/yeni')
+  await panelGezinmesiniAc(page)
   const nav = page.getByRole('navigation', { name: 'Panel gezinmesi' })
   await expect(nav.getByRole('link', { name: 'Makaleler' })).toHaveAttribute('aria-current', 'page')
 })

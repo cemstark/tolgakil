@@ -1,5 +1,5 @@
 .wrapper {
-  border: 1px solid var(--field-border, var(--line));
+  border: 1px solid var(--field-border);
   border-radius: var(--radius-card);
   overflow: hidden;
 }
@@ -19,9 +19,13 @@
   cursor: pointer;
   color: var(--text);
   background: transparent;
-  border: 1px solid var(--field-border, var(--line));
+  border: 1px solid var(--field-border);
   border-radius: var(--radius-pill);
   padding: 6px 14px;
+  /* Dokunma hedefi: 14 pikselik metin + 6 piksel dolgu 39 pikselde kalıyordu (ölçüldü).
+     Panel dokunmatik ekranda da kullanılıyor; araç çubuğu düğmeleri de 44 pikseli tutar. */
+  min-height: 44px;
+  min-width: 44px;
 }
 
 /* Etkin biçim yalnız renkle değil dolu zeminle de ayrışıyor; aria-pressed zaten

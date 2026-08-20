@@ -15,6 +15,20 @@
   --line-ink: rgba(243, 241, 234, .12);
   --line-paper: #d5d1c4;
 
+  /* Panelin hata rengi ve form kenarlığı. Yedi ayrı .module.css dosyasında elle
+     yazılıyordu; global kısıt bileşenlerin renk sabiti yazmasını yasakladığı için değerler
+     DEĞİŞMEDEN buraya toplandı. Ölçümler Görev 3'ten:
+       #f0a6a0 → --ink-2 (#1f2732) zemininde 7.4:1, --ink (#161d27) zemininde 8.8:1;
+                 metin için gereken 4.5:1'in üstünde.
+       #6b7688 → girdi zemini --ink üzerinde 3.7:1; WCAG 1.4.11 kullanıcı arayüzü
+                 bileşenleri için 3:1 istiyor, düz --line-ink (0.12 saydamlık) bunu
+                 karşılamıyordu.
+     İkisi de KOYU panel yüzeyine göre ölçüldü. Krem yüzey (`[data-surface="paper"]`) için
+     ayrı bir karşılık tanımlanmadı çünkü panel tek zeminle çalışıyor; krem bir yüzeyde
+     hata metni gerekirse ölçüm oradan yeniden yapılmalı. */
+  --danger: #f0a6a0;
+  --field-border: #6b7688;
+
   --radius-pill: 999px;
   --radius-block: 26px;
   --radius-card: 20px;

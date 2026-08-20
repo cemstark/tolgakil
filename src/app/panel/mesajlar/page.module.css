@@ -1,3 +1,12 @@
+/* Liste kesildiğinde çıkan bilgi satırı. Hata değil, bu yüzden --danger kullanılmıyor;
+   yalnız renkle de taşınmıyor, metnin kendisi durumu söylüyor (WCAG 1.4.1). */
+.limitNotice {
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
 .dateCell {
   white-space: nowrap;
   color: var(--text-muted);

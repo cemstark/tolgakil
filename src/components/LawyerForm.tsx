@@ -61,7 +61,6 @@ export function LawyerForm({ action, values = EMPTY_LAWYER, mediaOptions, initia
     photoMediaId: values.photoMediaId,
   })
   const [isPublished, setIsPublished] = useState(values.isPublished)
-  const [acknowledged, setAcknowledged] = useState(false)
 
   return (
     <EntityForm action={action} initialMessage={initialMessage}>
@@ -170,11 +169,7 @@ export function LawyerForm({ action, values = EMPTY_LAWYER, mediaOptions, initia
 
           {/* Reklam yasağı taraması kadro formunda da çalışıyor: avukat özgeçmişi bu
               yasağın en hassas alanı. İlk gönderimde kayıt YAPILMAZ. */}
-          <PublishChecklist
-            warnings={state.warnings ?? []}
-            acknowledged={acknowledged}
-            onAcknowledgedChange={setAcknowledged}
-          />
+          <PublishChecklist warnings={state.warnings} />
         </>
       )}
     </EntityForm>

@@ -15,10 +15,14 @@ type PanelTableProps = {
  *
  * Geniş tabloyu dar ekranda yatay kaydırılabilir tutan sarmalayıcı; `tabIndex` ile klavye
  * kullanıcısı da kaydırabiliyor (WCAG 2.1.1 — fare olmadan da kaydırılabilmeli).
+ *
+ * `role="region"`, `role="group"` değil: odaklanan sarmalayıcı bir yer imi olmalı ki ekran
+ * okuyucu kullanıcısı odağın nereye düştüğünü duysun ve bölge listesinden doğrudan buraya
+ * atlayabilsin. `group` erişilebilir adı taşır ama yer imi listesine girmez.
  */
 export function PanelTable({ label, caption, columns, children }: PanelTableProps) {
   return (
-    <div className={styles.tableWrap} tabIndex={0} role="group" aria-label={label}>
+    <div className={styles.tableWrap} tabIndex={0} role="region" aria-label={label}>
       <table className={styles.table}>
         <caption className={styles.caption}>{caption}</caption>
         <thead>

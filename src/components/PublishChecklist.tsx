@@ -1,19 +1,38 @@
 'use client'
 
+import { useState } from 'react'
 import styles from './PublishChecklist.module.css'
 
 type PublishChecklistProps = {
-  /** formatBannedMatch çıktıları: ifade + karakter konumu + bağlam. */
-  warnings: string[]
-  acknowledged: boolean
-  onAcknowledgedChange: (value: boolean) => void
+  /**
+   * formatBannedMatch çıktıları: ifade + karakter konumu + bağlam. Doğrudan
+   * `state.warnings` geçilir, `state.warnings ?? []` DEĞİL: aşağıdaki sıfırlama dizi
+   * kimliğine bakıyor ve `?? []` her çizimde yeni bir boş dizi üretip sonsuz döngü açardı.
+   */
+  warnings?: string[]
 }
 
 // Reklam yasağı taraması ENGEL DEĞİL, onaylı uyarıdır (global kısıt): meşru bir hukuk
 // makalesi "ücret" veya "uzman görüşü" kelimesini teknik anlamda geçirebilir, yazarı
 // kilitlemek işi sabote eder. Kutu yalnız bulgu varken çizilir.
-export function PublishChecklist({ warnings, acknowledged, onAcknowledgedChange }: PublishChecklistProps) {
-  if (warnings.length === 0) return null
+//
+// Onay kutusunun durumu BU bileşende duruyor, çağıran formda değil: kutunun tek tüketicisi
+// FormData ve onu sunucu okuyor, yani forma taşımanın kazancı yoktu; bedeli ise Görev 8'de
+// ölçüldü — kutu bir kez işaretlendikten sonra İŞARETLİ KALIYORDU. Aynı sayfada
+// ikinci kez yayımlayan kullanıcı, metne yeni bir yasaklı ifade eklemiş olsa bile uyarıyı bir
+// daha görmüyordu: sunucu gönderilen onayı görüp taramayı hiç göstermiyordu.
+//
+// `return null` bileşeni SÖKMEZ (React fiber'ı ve durumu duruyor), o yüzden sıfırlama
+// açıkça yazılıyor: her yeni tarama sonucu onayı düşürür.
+export function PublishChecklist({ warnings }: PublishChecklistProps) {
+  const [acknowledged, setAcknowledged] = useState(false)
+  const [previousWarnings, setPreviousWarnings] = useState(warnings)
+  if (previousWarnings !== warnings) {
+    setPreviousWarnings(warnings)
+    setAcknowledged(false)
+  }
+
+  if (warnings === undefined || warnings.length === 0) return null
 
   return (
     <div className={styles.box}>
@@ -42,7 +61,7 @@ export function PublishChecklist({ warnings, acknowledged, onAcknowledgedChange 
           name="adBanAcknowledged"
           value="evet"
           checked={acknowledged}
-          onChange={(event) => onAcknowledgedChange(event.target.checked)}
+          onChange={(event) => setAcknowledged(event.target.checked)}
         />
         Bu metni okudum, sorumluluk bende — yayımla
       </label>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useCallback, useState, type ReactNode } from 'react'
+import { createContext, useActionState, useCallback, useContext, useState, type ReactNode } from 'react'
 import type { FormState } from '@/lib/validation'
 import styles from './EntityForm.module.css'
 
@@ -9,6 +9,57 @@ import styles from './EntityForm.module.css'
 const INITIAL_STATE: FormState = { ok: false, errors: {} }
 
 export type EntityAction = (prev: FormState, formData: FormData) => Promise<FormState>
+
+/**
+ * Action'ın kaç kez sonuç döndürdüğünü sayar.
+ *
+ * Ardışık iki kaydetme aynı metni üretiyor ("Kullanıcı kaydedildi."). Aynı DOM düğümünde
+ * metin hiç değişmediği için canlı bölge duyuru yapmaz ve kullanıcı ikinci kaydın olup
+ * olmadığını öğrenemez (WCAG 4.1.3; Görev 6'da liste bildirimlerinde ölçüldü).
+ * `useActionState` her sonuçta YENİ bir nesne döndürüyor; kimlik değişimi burada sayaca
+ * çevriliyor ve bildirim öğesinin anahtarı yapılıyor, böylece öğe her sonuçta yeniden
+ * kuruluyor.
+ *
+ * Render sırasında durum ayarlamak React'in belgelediği "önceki render'dan bilgi tutma"
+ * deseni; effect kullanmak araya fazladan bir çizim sokardı.
+ */
+export function useResultCount(state: FormState): number {
+  const [previousState, setPreviousState] = useState(state)
+  const [count, setCount] = useState(0)
+  if (previousState !== state) {
+    setPreviousState(state)
+    setCount(count + 1)
+  }
+  return count
+}
+
+const FormResultContext = createContext(0)
+
+/**
+ * Sonuç sayacını form alanlarına taşır.
+ *
+ * NEDEN: React 19 form action'ı bittiğinde formu SIFIRLIYOR (requestFormReset). Metin
+ * alanları bundan etkilenmiyor — React denetimli girdinin `defaultValue`'sunu değere eşit
+ * tutuyor, yani sıfırlama aynı değeri geri koyuyor. `<select>` ve onay kutusunda böyle bir
+ * eşleme YOK; ölçüldü (Görev 8):
+ *   - kategori seçildi → yayımla → reklam yasağı uyarısı → seçim "Seçilmedi"e döndü;
+ *   - "Yayında" işaretlendi → alan hatası → kutu boşaldı.
+ * İkincisi sessiz ve tehlikeli: kullanıcı hatayı düzeltip kaydediyor ve yayımladığını
+ * sandığı kayıt TASLAK olarak yazılıyor.
+ *
+ * Çözüm, alanları denetimsiz bırakıp (`defaultValue`/`defaultChecked`) her sonuçta yeniden
+ * kurmak: yeniden kurulan düğümün varsayılanı kullanıcının GÜNCEL seçimi olur, sıfırlama da
+ * onu geri koyar. Yalnız `key` ile yeniden kurmak yetmiyor (denendi) — sıfırlama commit'ten
+ * SONRA çalışıyor ve denetimli değeri eziyor.
+ */
+export function FormResultProvider({ value, children }: { value: number; children: ReactNode }) {
+  return <FormResultContext value={value}>{children}</FormResultContext>
+}
+
+/** Yeniden kurulması gereken alanların `key` olarak kullandığı sayaç. */
+export function useFormResult(): number {
+  return useContext(FormResultContext)
+}
 
 export type EntityFormRender = {
   /** Sunucunun o alan için döndürdüğü hata; yoksa undefined. */
@@ -55,19 +106,8 @@ export function EntityForm({
   const formError = actionRan && !state.ok ? state.message : undefined
   const fieldError = (field: string): string | undefined => state.errors[field]?.join(' ')
 
-  // Ardışık iki kaydetme aynı metni üretiyor ("Kullanıcı kaydedildi."). Aynı DOM düğümünde
-  // metin hiç değişmediği için canlı bölge duyuru yapmaz ve kullanıcı ikinci kaydın olup
-  // olmadığını öğrenemez — Görev 6'da liste bildirimlerinde ölçülen durumun formdaki eşi.
-  // useActionState her sonuçta YENİ bir nesne döndürüyor; kimlik değişimi sayaca çevrilip
-  // bildirim öğesinin anahtarı yapılıyor, böylece öğe her sonuçta yeniden kuruluyor.
-  // Render sırasında durum ayarlamak React'in belgelediği "önceki render'dan bilgi tutma"
-  // deseni; effect kullanmak araya fazladan bir çizim sokardı.
-  const [previousState, setPreviousState] = useState(state)
-  const [noticeKey, setNoticeKey] = useState(0)
-  if (previousState !== state) {
-    setPreviousState(state)
-    setNoticeKey(noticeKey + 1)
-  }
+  // Her sonuçta değişen anahtar; gerekçesi useResultCount'un başında.
+  const noticeKey = useResultCount(state)
 
   return (
     <form action={formAction} className={styles.form} noValidate>
@@ -83,7 +123,7 @@ export function EntityForm({
         </p>
       ) : null}
 
-      {children({ fieldError, state, isPending })}
+      <FormResultProvider value={noticeKey}>{children({ fieldError, state, isPending })}</FormResultProvider>
 
       <div className={styles.actions}>
         <button type="submit" className={styles.primary} disabled={isPending}>
@@ -204,15 +244,18 @@ export function TextAreaField({ id, name, label, value, onChange, error, hint, r
 export function SelectField({
   id, name, label, value, onChange, error, hint, options,
 }: FieldProps & { options: ReadonlyArray<{ value: string; label: string }> }) {
+  // Denetimsiz + her sonuçta yeniden kurulan alan; gerekçesi FormResultProvider'da.
+  const resultKey = useFormResult()
   return (
     <div className={styles.field}>
       <label htmlFor={id} className={styles.label}>
         {label}
       </label>
       <select
+        key={resultKey}
         id={id}
         name={name}
-        value={value}
+        defaultValue={value}
         onChange={(event) => onChange(event.target.value)}
         className={styles.select}
         aria-invalid={error ? true : undefined}
@@ -242,15 +285,18 @@ type CheckboxFieldProps = {
 // varsayılan 'on' değerini kabul ediyor, ama gönderilen değeri açıkça yazmak formun
 // ne ilettiğini okunur bırakıyor.
 export function CheckboxField({ id, name, label, checked, onChange, hint }: CheckboxFieldProps) {
+  // Denetimsiz + her sonuçta yeniden kurulan alan; gerekçesi FormResultProvider'da.
+  const resultKey = useFormResult()
   return (
     <div className={styles.field}>
       <label htmlFor={id} className={styles.checkboxLabel}>
         <input
+          key={resultKey}
           id={id}
           name={name}
           type="checkbox"
           value="evet"
-          checked={checked}
+          defaultChecked={checked}
           onChange={(event) => onChange(event.target.checked)}
           aria-describedby={hint ? `${id}-hint` : undefined}
         />

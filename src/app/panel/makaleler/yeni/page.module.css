@@ -1,0 +1,38 @@
+/* Mobile-first: hatırlatma formun ÜSTÜNDE akar — dar ekranda yan sütun diye bir şey yok
+   ve kutuyu formun altına atmak "yazdıktan sonra oku" demek olurdu. */
+.layout {
+  display: grid;
+  gap: 24px;
+  align-items: start;
+}
+
+/* Izgara öğesinin varsayılan `min-width: auto`'su onu içeriğinin min-content genişliğinin
+   altına indirmez. Ölçüldü: sarmasız çok uzun bir metin (70.000 karakterlik tek "kelime")
+   editörü taşırıyor, sütun devasa oluyor ve gönderme düğmesinin üstüne biniyordu. */
+.aside,
+.form {
+  min-width: 0;
+}
+
+/* Eşik viewport genişliğini ölçüyor: 900px'te gezinme 260 pikselik yan sütuna geçiyor,
+   yani iki sütunlu içerik ancak ondan sonra sığmaya başlıyor. 1180 pikselde form ~530,
+   hatırlatma 280 piksel alıyor — ikisi de okunur kalıyor. */
+@media (min-width: 1180px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 280px;
+  }
+
+  /* Kaynak sırası korunuyor (hatırlatma formdan önce okunuyor); geniş ekranda görsel
+     olarak sağa geçiyor. Sıralamayı bozmuyor: iki sütun arasında tek yön var. */
+  .aside {
+    grid-column: 2;
+    grid-row: 1;
+    position: sticky;
+    top: 24px;
+  }
+
+  .form {
+    grid-column: 1;
+    grid-row: 1;
+  }
+}

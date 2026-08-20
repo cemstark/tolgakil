@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { girisYap, ADMIN } from './helpers/auth'
+import { panelGezinmesiniAc } from './helpers/panel-nav'
 import { geciciKullaniciOlustur } from './helpers/test-user'
 
 // Hız sınırı sayacı sunucu SÜRECİNDE yaşıyor, e-posta başına sayıyor ve playwright.config.ts
@@ -65,15 +66,28 @@ test('boş parola hatası canlı bölgede duyurulur ve girdiye bağlanır', asyn
   await expect(page.getByLabel('Parola')).toHaveAttribute('aria-describedby', 'password-error')
 })
 
+// Kullanıcı adı ve çıkış düğmesi gezinmenin açılır bölümünde; mobilde önce panel açılıyor
+// (Görev 8). İddialar değişmedi.
 test('doğru bilgiyle giriş panele düşürür ve kullanıcı adını gösterir', async ({ page }) => {
   await girisYap(page, ADMIN)
   await expect(page).toHaveURL(/\/panel$/)
+  await panelGezinmesiniAc(page)
   await expect(page.getByText(ADMIN.name)).toBeVisible()
 })
 
 test('çıkış yapınca panel yeniden korumaya girer', async ({ page }) => {
   await girisYap(page, ADMIN)
+  await panelGezinmesiniAc(page)
   await page.getByRole('button', { name: 'Çıkış yap' }).click()
+  // Yönlendirmenin TAMAMLANMASI bekleniyor; giriş başlığının çizilmesi çıkış yanıtının
+  // işlendiğinin kanıtı (panel-kullanicilar.spec.ts'te aynı ölçüm).
+  //
+  // Bu iddia üretim derlemesinde tam süit altında kırmızı veriyordu ve nedeni ölçüldü:
+  // giriş sayfası çizildikten SONRA bile authjs.session-token çerezi duruyordu. Uçuştaki
+  // bir panel ön yüklemesi çıkıştan sonra dönüp çerezi geri yazıyordu (next-auth JWT'yi
+  // her istekte tazeliyor). PanelNav artık prefetch={false} kullanıyor; hata HEAD'de de
+  // vardı, yani bu testin kendisi değil ürün tarafı düzeldi.
+  await expect(page.getByRole('heading', { name: 'Panel Girişi' })).toBeVisible()
   await expect(page).toHaveURL(/\/panel\/giris/)
   await page.goto('/panel')
   await expect(page).toHaveURL(/\/panel\/giris/)

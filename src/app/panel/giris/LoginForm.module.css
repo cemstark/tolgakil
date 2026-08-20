@@ -1,11 +1,6 @@
-/* Panel formlarının hata rengi. Ölçüldü: #f0a6a0 üzerinde --ink-2 (#1f2732) zeminde 7.4:1,
-   metin için gereken 4.5:1'in üstünde. Girdi kenarlığı #6b7688, girdi zemini (--ink) üzerinde
-   3.7:1 — WCAG 1.4.11 kullanıcı arayüzü bileşenleri için 3:1 istiyor, düz --line-ink (0.12
-   saydamlık) bunu karşılamıyordu. */
+/* Hata rengi (--danger) ve form kenarlığı (--field-border) globals.css'te; ölçümleri de
+   orada. Bileşen renk sabiti yazmaz, token okur (global kısıt). */
 .form {
-  --danger: #f0a6a0;
-  --field-border: #6b7688;
-
   display: flex;
   flex-direction: column;
   gap: 20px;

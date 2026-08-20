@@ -5,6 +5,7 @@ import { saveArticle } from '@/app/panel/makaleler/actions'
 import type { SelectOption } from '@/db/queries/articles'
 import type { MediaOption } from '@/db/queries/media'
 import type { FormState } from '@/lib/validation'
+import { FormResultProvider, useResultCount } from './EntityForm'
 import { MediaPicker } from './MediaPicker'
 import { PublishChecklist } from './PublishChecklist'
 import { RichTextEditor } from './RichTextEditor'
@@ -58,7 +59,10 @@ export function ArticleForm({
   const [categoryId, setCategoryId] = useState(values.categoryId)
   const [authorId, setAuthorId] = useState(values.authorId)
   const [coverMediaId, setCoverMediaId] = useState(values.coverMediaId)
-  const [acknowledged, setAcknowledged] = useState(false)
+
+  // Her sonuçta değişen anahtar: ardışık iki kaydetme aynı metni üretiyor ve canlı bölge
+  // aynı DOM düğümünde değişmeyen metni duyurmuyor (gerekçe useResultCount'un başında).
+  const noticeKey = useResultCount(state)
 
   // INITIAL_STATE bir modül sabiti; useActionState action çözülene kadar tam o nesneyi
   // geri veriyor. Referans karşılaştırması "action henüz koşmadı" bilgisini veriyor:
@@ -82,13 +86,13 @@ export function ArticleForm({
       {values.id === null ? null : <input type="hidden" name="id" value={values.id} readOnly />}
 
       {notice ? (
-        <p role="status" className={styles.notice}>
+        <p key={`bildirim-${noticeKey}`} role="status" className={styles.notice}>
           {notice}
         </p>
       ) : null}
 
       {formError ? (
-        <p role="alert" className={styles.alert}>
+        <p key={`hata-${noticeKey}`} role="alert" className={styles.alert}>
           {formError}
         </p>
       ) : null}
@@ -180,10 +184,14 @@ export function ArticleForm({
           <label htmlFor="article-category" className={styles.label}>
             Kategori
           </label>
+          {/* Denetimsiz + her sonuçta yeniden kurulan alan; gerekçesi FormResultProvider'da.
+              Denetimli bırakıldığında ölçüldü: reklam yasağı uyarısından sonra seçim
+              "Seçilmedi"e dönüyor ve kullanıcı ikinci gönderimde kategori hatası alıyordu. */}
           <select
+            key={noticeKey}
             id="article-category"
             name="categoryId"
-            value={categoryId}
+            defaultValue={categoryId}
             onChange={(event) => setCategoryId(event.target.value)}
             className={styles.select}
             aria-invalid={categoryError ? true : undefined}
@@ -207,10 +215,12 @@ export function ArticleForm({
           <label htmlFor="article-author" className={styles.label}>
             Yazar
           </label>
+          {/* Denetimsiz + her sonuçta yeniden kurulan alan; gerekçesi FormResultProvider'da. */}
           <select
+            key={noticeKey}
             id="article-author"
             name="authorId"
-            value={authorId}
+            defaultValue={authorId}
             onChange={(event) => setAuthorId(event.target.value)}
             className={styles.select}
             aria-invalid={authorError ? true : undefined}
@@ -237,13 +247,17 @@ export function ArticleForm({
       </div>
 
       <div className={styles.field}>
-        <MediaPicker
-          name="coverMediaId"
-          options={mediaOptions}
-          value={coverMediaId}
-          onChange={setCoverMediaId}
-          describedBy={coverError ? 'article-cover-error' : undefined}
-        />
+        {/* Seçici de sonuç sayacına ihtiyaç duyuyor (radyolar sıfırlanıyor); ArticleForm
+            EntityForm kabuğunu kullanmadığı için sağlayıcı burada, tek alanın çevresinde. */}
+        <FormResultProvider value={noticeKey}>
+          <MediaPicker
+            name="coverMediaId"
+            options={mediaOptions}
+            value={coverMediaId}
+            onChange={setCoverMediaId}
+            describedBy={coverError ? 'article-cover-error' : undefined}
+          />
+        </FormResultProvider>
         {coverError ? (
           <p id="article-cover-error" role="alert" className={styles.fieldError}>
             {coverError}
@@ -251,11 +265,7 @@ export function ArticleForm({
         ) : null}
       </div>
 
-      <PublishChecklist
-        warnings={state.warnings ?? []}
-        acknowledged={acknowledged}
-        onAcknowledgedChange={setAcknowledged}
-      />
+      <PublishChecklist warnings={state.warnings} />
 
       {/* İki gönderme düğmesi: basılan düğmenin name/value çifti FormData'ya girer ve
           durumu belirler. Gönderim sırasında ikisi de kilitleniyor. */}

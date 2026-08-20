@@ -54,6 +54,72 @@ test('admin çalışma alanı ekler, düzenler ve siler', async ({ page }) => {
   await expect(bildirim).toBeFocused()
 })
 
+// Reklam yasağı taraması makale ve özgeçmişte vardı, çalışma alanında YOKTU (Görev 8'e
+// devreden borç). Oysa "en yüksek başarı oranı" cümlesinin gireceği en olası kutu burası.
+// Sözleşme diğer ikisiyle aynı: engel değil sürtünme, ilk gönderimde kayıt YAPILMAZ.
+test('yayına alınan çalışma alanında yasaklı ifade önce uyarı üretir', async ({ page }) => {
+  const ad = `Boşanma Alanı ${damga}`
+  await girisYap(page, ADMIN)
+  await page.goto('/panel/calisma-alanlari/yeni')
+  await page.getByLabel('Alan adı').fill(ad)
+  await page.getByLabel('Özet').fill('Boşanma davalarında en yüksek başarı oranına sahibiz.')
+  await page.getByLabel('Yayında').check()
+  await page.getByRole('button', { name: 'Kaydet' }).click()
+
+  // Panel içeriğine daraltıldı: Next kendi rota duyurucusunu body seviyesinde role="alert"
+  // ile çiziyor (panel-makale.spec.ts ölçümü).
+  const uyari = page.getByRole('main').getByRole('alert')
+  await expect(uyari).toContainText('Reklam yasağı')
+  await expect(uyari).toContainText('başarı oran')
+  // Konum bilgisi de gösterilmeli; yalnız kelime listesi yeterli değil.
+  await expect(uyari).toContainText('karakter')
+  // Uyarı aşamasında kayıt YAPILMAMIŞ olmalı.
+  await expect(page.getByRole('status')).toHaveCount(0)
+  await expect(page).toHaveURL(/\/panel\/calisma-alanlari\/yeni$/)
+
+  await page.getByLabel(/okudum, sorumluluk bende/i).check()
+  await page.getByRole('button', { name: 'Kaydet' }).click()
+  await expect(page.getByRole('status')).toHaveText('Çalışma alanı kaydedildi.')
+})
+
+// Yayına alınmayan kayıt taranmıyor: taslak sitede görünmüyor, yazarı taslak aşamasında
+// durdurmak sürtünmeyi yanlış yere koyardı.
+test('taslak çalışma alanı taramaya takılmadan kaydedilir', async ({ page }) => {
+  const ad = `Taslak Alan ${damga}`
+  await girisYap(page, ADMIN)
+  await page.goto('/panel/calisma-alanlari/yeni')
+  await page.getByLabel('Alan adı').fill(ad)
+  await page.getByLabel('Özet').fill('Boşanma davalarında en yüksek başarı oranına sahibiz.')
+  await page.getByRole('button', { name: 'Kaydet' }).click()
+
+  await expect(page.getByRole('status')).toHaveText('Çalışma alanı kaydedildi.')
+})
+
+// Görev 8'de ölçülen SESSİZ hata: React 19 form action'dan sonra formu sıfırlıyor ve
+// denetimli onay kutusunun işareti geri gelmiyordu. Kullanıcı "Yayında"yı işaretleyip alan
+// hatası alıyor, hatayı düzeltip kaydediyor ve yayımladığını sandığı kayıt TASLAK olarak
+// yazılıyordu. Hiçbir uyarı yoktu; kayıt sitede görünmediğinde bile nedeni anlaşılmıyordu.
+test('başarısız gönderimden sonra "Yayında" işareti düşmez', async ({ page }) => {
+  const ad = `İşaret Alanı ${damga}`
+  await girisYap(page, ADMIN)
+  await page.goto('/panel/calisma-alanlari/yeni')
+  await page.getByLabel('Alan adı').fill(ad)
+  await page.getByLabel('Özet').fill('Kısa')
+  await page.getByLabel('Yayında').check()
+  await page.getByRole('button', { name: 'Kaydet' }).click()
+  await expect(page.getByText('Özet en az 20 karakter olmalı.')).toBeVisible()
+
+  await expect(page.getByLabel('Yayında')).toBeChecked()
+
+  // Asıl iddia kutunun görüntüsü değil SONUCU: düzeltilen form gerçekten yayında kaydetmeli.
+  await page.getByLabel('Özet').fill('Bu alanda yürütülen süreçleri anlatan yeterince uzun bir özet metni.')
+  await page.getByRole('button', { name: 'Kaydet' }).click()
+  await expect(page.getByRole('status')).toHaveText('Çalışma alanı kaydedildi.')
+
+  await page.goto('/panel/calisma-alanlari')
+  await expect(page.getByRole('row', { name: new RegExp(ad) }).getByText('Yayında')).toBeVisible()
+})
+
 test('kısa özet alan hatası verir ve kayıt yapılmaz', async ({ page }) => {
   const ad = `Kısa Özet ${damga}`
   await girisYap(page, ADMIN)

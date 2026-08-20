@@ -10,16 +10,10 @@ import { getMediaById } from '@/db/queries/media'
 import { findBannedPhrases, formatBannedMatch } from '@/lib/ad-ban'
 import { requireAccess } from '@/lib/auth-guards'
 import { TAGS, articleTag } from '@/lib/cache-tags'
+import { parseFormId } from '@/lib/form-id'
 import { htmlToPlainText, sanitizeArticleHtml } from '@/lib/sanitize'
 import { articleContentLengthError, articleSchema, toFormState, type FormState } from '@/lib/validation'
 import { SAVE_MESSAGES } from './save-messages'
-
-// Gizli alandan gelen kimlik de kullanıcı verisi: boş ise yeni kayıt, doludur ama pozitif
-// tam sayı değilse istek bozuk demektir. Number('3e2') sessizce 300 üretirdi.
-function parseId(value: FormDataEntryValue | null): number | null | 'invalid' {
-  if (typeof value !== 'string' || value.trim() === '') return null
-  return /^[1-9]\d*$/.test(value.trim()) ? Number(value) : 'invalid'
-}
 
 const INVALID_ID: FormState = {
   ok: false,
@@ -32,13 +26,13 @@ export async function saveArticle(_prev: FormState, formData: FormData): Promise
   // gider ve matcher değişirse koruma sessizce kalkar (global kısıt).
   await requireAccess('articles')
 
-  const id = parseId(formData.get('id'))
+  const id = parseFormId(formData.get('id'))
   if (id === 'invalid') return INVALID_ID
 
   // Kapak görseli articleSchema'ya EKLENMEDİ: şema alanın FormData'da bulunmasını şart
   // koşardı ve kapak seçicisi olmayan bir çağrı (ör. eski bir sekme) anlaşılmaz bir
   // "beklenen dize" hatası alırdı. Kimlik alanıyla aynı yerel ayrıştırıcıdan geçiyor.
-  const coverMediaId = parseId(formData.get('coverMediaId'))
+  const coverMediaId = parseFormId(formData.get('coverMediaId'))
   if (coverMediaId === 'invalid') {
     return { ok: false, errors: { coverMediaId: ['Geçersiz kapak görseli seçildi.'] } }
   }
@@ -157,7 +151,7 @@ export async function saveArticle(_prev: FormState, formData: FormData): Promise
 export async function deleteArticle(_prev: FormState, formData: FormData): Promise<FormState> {
   await requireAccess('articles')
 
-  const id = parseId(formData.get('id'))
+  const id = parseFormId(formData.get('id'))
   if (id === 'invalid' || id === null) return INVALID_ID
 
   const existing = await getArticleById(id)

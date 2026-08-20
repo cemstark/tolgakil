@@ -1,18 +1,53 @@
-/* Mobile-first: gezinme içeriğin üstünde tek sütun akar. Genişlik yettiğinde (900px)
-   panel layout'u onu yan sütuna alır, burada yalnız yapışkanlık ve dikey ritim değişir. */
+/* Mobile-first: dar ekranda yalnız marka satırı ve menü düğmesi durur, bağlantılar
+   açılır panelde. Genişlik yettiğinde (768px) panel kalıcı olarak açılır, 900px'te de
+   panel layout'u gezinmeyi yan sütuna alır. */
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 20px var(--pad);
+  gap: 16px;
+  padding: 16px var(--pad);
   background: var(--surface-raised);
   border-bottom: 1px solid var(--line);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .brand {
   font-family: var(--font-display), Georgia, serif;
   font-size: 20px;
   letter-spacing: 1px;
+}
+
+.menuButton {
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text);
+  background: transparent;
+  /* Düz --line (0.12 saydamlık) düğme kenarlığı için 3:1'i geçmiyor; --text-muted
+     --ink-2 üzerinde 7.2:1 ile WCAG 1.4.11'i rahatça karşılıyor. */
+  border: 1px solid var(--text-muted);
+  border-radius: var(--radius-pill);
+  padding: 8px 16px;
+  /* Dokunma hedefi: 14 pikselik metin + 8 piksel dolgu 43 pikselde kalıyordu. */
+  min-height: 44px;
+}
+
+/* Kapalıyken display:none: bağlantılar klavye sırasına hiç girmez ve erişilebilirlik
+   ağacından da düşer (SiteHeader ile aynı ölçüm). */
+.menu {
+  display: none;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.menu[data-open='true'] {
+  display: flex;
 }
 
 .links {
@@ -22,6 +57,8 @@
 }
 
 .link {
+  display: inline-flex;
+  align-items: center;
   padding: 8px 14px;
   border-radius: var(--radius-pill);
   font-size: 15px;
@@ -57,15 +94,28 @@
   cursor: pointer;
   background: transparent;
   color: var(--text);
-  /* Düz --line (0.12 saydamlık) düğme kenarlığı için 3:1'i geçmiyor; --text-muted
-     (#aab1bc) --ink-2 üzerinde 7.2:1 ile WCAG 1.4.11'i rahatça karşılıyor. */
   border: 1px solid var(--text-muted);
   border-radius: var(--radius-pill);
   padding: 8px 18px;
 }
 
+/* Menü düğmesi burada kayboluyor, SiteHeader ile aynı kırılım noktasında: iki kabuk
+   arasında farklı eşik kullanmak, aynı cihazda birinin açılır birinin sabit olmasına
+   yol açardı. */
+@media (min-width: 768px) {
+  .menuButton {
+    display: none;
+  }
+
+  .menu {
+    display: flex;
+  }
+}
+
 @media (min-width: 900px) {
   .nav {
+    gap: 20px;
+    padding: 20px var(--pad);
     height: 100dvh;
     position: sticky;
     top: 0;
@@ -78,13 +128,17 @@
     border-right: 1px solid var(--line);
   }
 
+  /* Hesap bloğunun sütun dibine oturabilmesi için menü kalan yüksekliği doldurmalı. */
+  .menu {
+    flex: 1;
+  }
+
   .links {
     flex-direction: column;
     flex-wrap: nowrap;
     gap: 2px;
   }
 
-  /* Hesap bloğu sütunun dibine oturur; aradaki boşluğu bağlantı listesi doldurur. */
   .account {
     margin-top: auto;
     flex-direction: column;

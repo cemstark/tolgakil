@@ -8,6 +8,7 @@ import { practiceAreas } from '@/db/schema'
 import {
   deletePracticeArea as deletePracticeAreaRow, getPracticeAreaById, isSlugTaken,
 } from '@/db/queries/practice-areas'
+import { findBannedPhrases, formatBannedMatch } from '@/lib/ad-ban'
 import { requireAccess } from '@/lib/auth-guards'
 import { TAGS } from '@/lib/cache-tags'
 import { parseFormId } from '@/lib/form-id'
@@ -40,7 +41,9 @@ export async function savePracticeArea(_prev: FormState, formData: FormData): Pr
   const rawContent = formData.get('content')
   const content = typeof rawContent === 'string' ? sanitizeArticleHtml(rawContent) : ''
   // Boş <p></p> hâlâ HTML olarak dolu; sütuna boş kabuk yazmamak için düz metne bakılıyor.
-  const storedContent = htmlToPlainText(content) === '' ? null : content
+  // Düz metin ayrıca reklam yasağı taramasına giriyor, bu yüzden bir kez üretiliyor.
+  const plainContent = htmlToPlainText(content)
+  const storedContent = plainContent === '' ? null : content
 
   if (storedContent !== null) {
     // Sütun TEXT = 65.535 bayt; denetim TEMİZLENMİŞ dize üzerinde (bkz. makaleler/actions.ts).
@@ -51,6 +54,20 @@ export async function savePracticeArea(_prev: FormState, formData: FormData): Pr
   // spec §11: çakışma sessizce üzerine yazılmaz.
   if (await isSlugTaken(parsed.data.slug, id ?? undefined)) {
     return { ok: false, errors: { slug: ['Bu adres başka bir çalışma alanında kullanılıyor.'] } }
+  }
+
+  if (parsed.data.isPublished) {
+    // Tarama makale ve özgeçmişte vardı, burada YOKTU (Görev 8'e devreden borç). Oysa
+    // "boşanma davalarında en yüksek başarı oranı" cümlesinin gireceği en olası kutu tam
+    // olarak çalışma alanı tanıtımı: özet listede kart altına, içerik alan sayfasına basılıyor.
+    const scanned = [parsed.data.name, parsed.data.summary, plainContent].join(' ')
+    const matches = findBannedPhrases(scanned)
+    const acknowledged = formData.get('adBanAcknowledged') === 'evet'
+    if (matches.length > 0 && !acknowledged) {
+      // Engel değil sürtünme: kayıt yapılmaz, kullanıcı bulguları konumuyla görür ve
+      // sorumluluğu üstlenen kutuyu işaretleyip yeniden gönderirse kayıt tamamlanır.
+      return { ok: false, errors: {}, warnings: matches.map(formatBannedMatch) }
+    }
   }
 
   const existing = id === null ? null : await getPracticeAreaById(id)

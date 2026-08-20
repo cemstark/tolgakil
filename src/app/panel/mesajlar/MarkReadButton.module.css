@@ -21,9 +21,8 @@
   cursor: not-allowed;
 }
 
-/* Ölçüm Görev 3'ten: #f0a6a0 --ink zemininde 4.5:1'in üstünde. */
 .error {
-  color: #f0a6a0;
+  color: var(--danger);
   font-size: 15px;
   line-height: 1.5;
 }

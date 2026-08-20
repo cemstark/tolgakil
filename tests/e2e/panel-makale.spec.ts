@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { girisYap, EDITOR } from './helpers/auth'
+import { panelGezinmesiniAc } from './helpers/panel-nav'
 import { testIcerigiHazirla, type TestIcerigi } from './helpers/test-content'
 
 // Her koşu kendi kategorisini ve makalelerini üretip siler; testler geliştirme veritabanına
@@ -28,6 +29,8 @@ function hazirIcerik(): TestIcerigi {
 test('giriş → makale yaz → taslak kaydet → yayımla → listede yayında görünür', async ({ page }) => {
   const baslik = `Kira tespit notu ${hazirIcerik().damga}`
   await girisYap(page, EDITOR)
+  // Gezinme mobilde açılır panel (Görev 8); bağlantıya basmadan önce açılıyor.
+  await panelGezinmesiniAc(page)
   await page.getByRole('link', { name: 'Makaleler' }).click()
   await page.getByRole('link', { name: 'Yeni makale' }).click()
 
@@ -43,6 +46,7 @@ test('giriş → makale yaz → taslak kaydet → yayımla → listede yayında 
   await page.getByRole('button', { name: 'Yayımla' }).click()
   await expect(page.getByRole('status')).toHaveText('Makale yayımlandı.')
 
+  await panelGezinmesiniAc(page)
   await page.getByRole('link', { name: 'Makaleler' }).click()
   const satir = page.getByRole('row', { name: new RegExp(baslik) })
   await expect(satir.getByText('Yayında')).toBeVisible()
@@ -117,6 +121,95 @@ test('yasaklı ifade önce uyarı üretir, onaylanınca yayın tamamlanır', asy
   await page.goto('/panel/makaleler')
   const satir = page.getByRole('row', { name: new RegExp(baslik) })
   await satir.getByRole('button', { name: 'Sil' }).click()
+  await page.getByRole('button', { name: 'Evet, sil' }).click()
+  await expect(page.getByRole('row', { name: new RegExp(baslik) })).toHaveCount(0)
+})
+
+// Onay kutusu bir kez işaretlendikten sonra İŞARETLİ KALIYORDU (Görev 8'e devreden borç):
+// aynı sayfada ikinci kez yayımlayan kullanıcı, metne YENİ bir yasaklı ifade eklemiş olsa
+// bile uyarıyı bir daha görmüyordu — sunucu gönderilen onayı görüp taramayı hiç
+// göstermiyordu. Bu, taramayı ikinci düzenlemeden sonra sessizce devre dışı bırakıyordu.
+test('ikinci düzenlemede yeni yasaklı ifade uyarıyı yeniden çıkarır', async ({ page }) => {
+  const baslik = `Onay sıfırlama ${hazirIcerik().damga}`
+  await girisYap(page, EDITOR)
+  await page.goto('/panel/makaleler/yeni')
+  await page.getByLabel('Başlık').fill(baslik)
+  await page.getByLabel('Özet').fill('Bu alanda uzman kadromuzla hizmet veriyoruz ifadesini içeren özet.')
+  await page.locator('[contenteditable="true"]').fill('Gövde')
+  await page.getByRole('button', { name: 'Taslak olarak kaydet' }).click()
+  // Yönlendirmeden sonra DÜZENLEME sayfasındayız; buradan sonra kaydetmeler yönlendirmiyor,
+  // yani form sökülmüyor. Borç tam olarak bu koşulda görünüyordu.
+  await expect(page).toHaveURL(/\/panel\/makaleler\/\d+/)
+
+  const uyari = page.getByRole('main').getByRole('alert')
+  const onay = page.getByLabel(/okudum, sorumluluk bende/i)
+
+  await page.getByLabel('Kategori').selectOption({ label: hazirIcerik().kategoriAdi })
+  await page.getByRole('button', { name: 'Yayımla' }).click()
+  await expect(uyari).toContainText('uzman')
+  await expect(onay).not.toBeChecked()
+
+  await onay.check()
+  await page.getByRole('button', { name: 'Yayımla' }).click()
+  await expect(page.getByRole('status')).toHaveText('Makale yayımlandı.')
+
+  // Metne BAŞKA bir yasaklı ifade ekleniyor. Tarama yeniden çalışmalı ve onay taşınmamalı.
+  await page.getByLabel('Özet').fill('Ücretsiz ilk görüşme sunduğumuzu duyuran yeni özet metni.')
+  await page.getByRole('button', { name: 'Yayımla' }).click()
+  await expect(uyari).toContainText('ücretsiz')
+  await expect(page.getByLabel(/okudum, sorumluluk bende/i)).not.toBeChecked()
+
+  await page.goto('/panel/makaleler')
+  await page.getByRole('row', { name: new RegExp(baslik) }).getByRole('button', { name: 'Sil' }).click()
+  await page.getByRole('button', { name: 'Evet, sil' }).click()
+  await expect(page.getByRole('row', { name: new RegExp(baslik) })).toHaveCount(0)
+})
+
+// Ardışık iki kaydetme AYNI metni üretiyor. Metin aynı DOM düğümünde değişmeden kalırsa
+// canlı bölge duyuru yapmaz ve ekran okuyucu kullanıcısı ikinci kaydın olup olmadığını
+// öğrenemez (WCAG 4.1.3). EntityForm'da çözülmüştü, ArticleForm kendi eski kopyasını
+// taşıyordu (Görev 8'e devreden borç).
+test('ardışık aynı kaydetmede bildirim düğümü yeniden kurulur', async ({ page }) => {
+  const baslik = `Bildirim yenileme ${hazirIcerik().damga}`
+  await girisYap(page, EDITOR)
+  await page.goto('/panel/makaleler/yeni')
+  await page.getByLabel('Başlık').fill(baslik)
+  await page.getByLabel('Özet').fill('Bildirimin ikinci kayıtta yeniden duyurulduğunu ölçen özet metni.')
+  await page.locator('[contenteditable="true"]').fill('Gövde')
+  await page.getByRole('button', { name: 'Taslak olarak kaydet' }).click()
+  await expect(page).toHaveURL(/\/panel\/makaleler\/\d+/)
+
+  await page.getByRole('button', { name: 'Taslak olarak kaydet' }).click()
+  await expect(page.getByRole('status')).toHaveText('Makale taslak olarak kaydedildi.')
+
+  // Gözlemci İKİNCİ kaydetmeden sonra kuruluyor: bundan sonraki ekleme, üçüncü kaydetmenin
+  // bildirimi. Metin değişmediği için tek kanıt düğümün DOM'dan çıkıp yeniden eklenmesi.
+  await page.evaluate(() => {
+    const pencere = window as unknown as { bildirimYenilendi?: boolean }
+    pencere.bildirimYenilendi = false
+    // #panel-content ile daraltılıyor: sayfadaki İLK <form> gezinmedeki "Çıkış yap"
+    // formu ve gözlemci oraya bağlansaydı hiçbir şey görmezdi (ölçüldü).
+    const form = document.querySelector('#panel-content form')
+    if (form === null) throw new Error('Makale formu bulunamadı; gözlemci kurulamıyor.')
+    new MutationObserver((kayitlar) => {
+      for (const kayit of kayitlar) {
+        for (const eklenen of kayit.addedNodes) {
+          if (eklenen instanceof HTMLElement && eklenen.getAttribute('role') === 'status') {
+            pencere.bildirimYenilendi = true
+          }
+        }
+      }
+    }).observe(form, { childList: true, subtree: true })
+  })
+
+  await page.getByRole('button', { name: 'Taslak olarak kaydet' }).click()
+  await expect(page.getByRole('status')).toHaveText('Makale taslak olarak kaydedildi.')
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { bildirimYenilendi?: boolean }).bildirimYenilendi))
+    .toBe(true)
+
+  await page.goto('/panel/makaleler')
+  await page.getByRole('row', { name: new RegExp(baslik) }).getByRole('button', { name: 'Sil' }).click()
   await page.getByRole('button', { name: 'Evet, sil' }).click()
   await expect(page.getByRole('row', { name: new RegExp(baslik) })).toHaveCount(0)
 })

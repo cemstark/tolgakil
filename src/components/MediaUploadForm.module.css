@@ -1,9 +1,6 @@
-/* Hata ve kenarlık renkleri ArticleForm'daki ölçümle aynı: #f0a6a0, --ink-2 zemininde
-   7.4:1; #6b7688 kenarlık --ink zemininde 3.7:1 (WCAG 1.4.11'in istediği 3:1'in üstünde). */
+/* Hata rengi (--danger) ve form kenarlığı (--field-border) globals.css'te; ölçümleri de
+   orada. Bileşen renk sabiti yazmaz, token okur (global kısıt). */
 .form {
-  --danger: #f0a6a0;
-  --field-border: #6b7688;
-
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -59,9 +56,8 @@
 }
 
 /* Yarım kalan işlem (kayıt gitti, dosya kalmadı) sıradan bir başarı bildirimi gibi
-   görünmemeli. #f0a6a0, panel zemini --ink (#161d27) üzerinde 8.8:1 — metin için gereken
-   4.5:1'in çok üstünde. Durum yalnız renkle taşınmıyor, metnin kendisi ne olduğunu
-   söylüyor (WCAG 1.4.1). */
+   görünmemeli. Durum yalnız renkle taşınmıyor, metnin kendisi ne olduğunu söylüyor
+   (WCAG 1.4.1). */
 .warning {
   composes: notice;
   color: var(--danger);

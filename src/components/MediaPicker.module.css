@@ -1,6 +1,4 @@
-/* --field-border ve --danger, seçicinin içinde durduğu ArticleForm'un .form kuralında
-   tanımlı ve miras alınıyor (PublishChecklist ile aynı düzen); renk burada yeniden
-   yazılmıyor ki iki form birbirinden ayrışmasın. */
+/* --field-border globals.css'te tanımlı; bileşen renk sabiti yazmaz, token okur. */
 .group {
   display: flex;
   flex-direction: column;
@@ -38,6 +36,10 @@
   border-radius: var(--radius-card);
   padding: 8px;
   min-width: 0;
+  /* Dokunma hedefi: küçük resimli seçenekler zaten 48 pikselden uzun, ama "Kapak yok"
+     seçeneğinde yalnız radyo düğmesi (24 px) var ve 40 pikselde kalıyordu. Etiketin
+     tamamı tıklanabilir olduğu için ölçü buraya konuyor. */
+  min-height: 44px;
 }
 
 /* Seçili seçenek yalnız radyo düğmesinin küçük noktasıyla değil, kartın kendisiyle de
@@ -68,6 +70,23 @@
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid var(--line);
+}
+
+/* Kırık görselin yerini tutan kutu: küçük resimle aynı ölçüyü kaplar ki seçenek satırı
+   dosya kaybolduğunda zıplamasın. */
+.thumbFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 48px;
+  height: 48px;
+  flex: none;
+  border-radius: 8px;
+  border: 1px dashed var(--field-border);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.2;
 }
 
 .optionText {

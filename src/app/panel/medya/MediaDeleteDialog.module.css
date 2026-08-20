@@ -1,6 +1,5 @@
 /* Makale silme onayıyla aynı görsel dil: kullanıcı iki farklı yıkıcı eylemde iki farklı
-   pencere görmemeli. Renk ölçümü Görev 3'ten: #f0a6a0, --surface-raised (--ink-2, #1f2732)
-   zemininde 7.4:1 — metin için gereken 4.5:1'in üstünde. */
+   pencere görmemeli. */
 .trigger {
   font: inherit;
   font-size: 15px;
@@ -13,8 +12,6 @@
 }
 
 .dialog {
-  --danger: #f0a6a0;
-
   color: var(--text);
   background: var(--surface-raised);
   border: 1px solid var(--line);

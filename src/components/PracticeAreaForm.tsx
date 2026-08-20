@@ -5,6 +5,7 @@ import {
   CheckboxField, EntityForm, FieldBlock, FieldError, FieldLabel, FieldRow, TextAreaField,
   TextField, useEntityValues, type EntityAction,
 } from './EntityForm'
+import { PublishChecklist } from './PublishChecklist'
 import { RichTextEditor } from './RichTextEditor'
 
 export type PracticeAreaFormValues = {
@@ -38,7 +39,7 @@ export function PracticeAreaForm({ action, values = EMPTY_PRACTICE_AREA, initial
 
   return (
     <EntityForm action={action} initialMessage={initialMessage}>
-      {({ fieldError }) => (
+      {({ fieldError, state }) => (
         <>
           {values.id === null ? null : <input type="hidden" name="id" value={values.id} readOnly />}
 
@@ -84,6 +85,11 @@ export function PracticeAreaForm({ action, values = EMPTY_PRACTICE_AREA, initial
             checked={isPublished} onChange={setIsPublished}
             hint="İşaretlenmeyen kayıt sitede görünmez."
           />
+
+          {/* Çalışma alanı metni reklam yasağının en olası girdiği kutu: "boşanma
+              davalarında en yüksek başarı oranı" cümlesi tam olarak buraya yazılır.
+              Makale ve özgeçmişle aynı sözleşme: ilk gönderimde kayıt YAPILMAZ. */}
+          <PublishChecklist warnings={state.warnings} />
         </>
       )}
     </EntityForm>

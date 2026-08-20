@@ -4,6 +4,7 @@ import { db } from '@/db/client'
 import { articles, messages } from '@/db/schema'
 import { requireUser } from '@/lib/auth-guards'
 import { canAccess } from '@/lib/permissions'
+import { AdBanNotice } from '@/components/AdBanNotice'
 import { PanelHeading } from '@/components/PanelHeading'
 import styles from './page.module.css'
 
@@ -48,6 +49,12 @@ export default async function PanelHomePage() {
           </li>
         ))}
       </ul>
+
+      {/* Hatırlatma göstergede duruyor çünkü panele her giriş buradan başlıyor; yazarken
+          de görünmesi için aynı kutu /panel/makaleler/yeni sayfasında tekrarlanıyor. */}
+      <div className={styles.notice}>
+        <AdBanNotice />
+      </div>
     </>
   )
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { listMessages } from '@/db/queries/messages'
+import { MESSAGE_LIST_LIMIT, listMessages } from '@/db/queries/messages'
 import { requireAccess } from '@/lib/auth-guards'
 import { formatDateTime } from '@/lib/date'
 import { panelNoticeState, type PanelNoticeQuery } from '@/lib/panel-notice'
@@ -35,6 +35,14 @@ export default async function MessagePage({ searchParams }: MessagePageProps) {
         title="Mesajlar"
         description="İletişim formundan gelen başvurular. Bu ekrandan yanıt gönderilmez."
       />
+
+      {/* Kesilme SESSİZ olmamalı: kullanıcı listeyi eksiksiz sanıp eski bir başvuruyu
+          gözden kaçırabilir. Eşitlik yeterli — sorgu sınırdan fazlasını hiç getirmiyor. */}
+      {messages.length === MESSAGE_LIST_LIMIT ? (
+        <p className={styles.limitNotice}>
+          En yeni {MESSAGE_LIST_LIMIT} mesaj listeleniyor; daha eskileri bu ekranda görünmez.
+        </p>
+      ) : null}
 
       {messages.length === 0 ? (
         <PanelEmptyState>Henüz mesaj yok.</PanelEmptyState>

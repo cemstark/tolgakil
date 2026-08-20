@@ -32,6 +32,12 @@ test('alt metin olmadan yükleme reddedilir', async ({ page }) => {
 })
 
 test('alt metinle yüklenen görsel listede ve servis adresinde erişilebilir', async ({ page }) => {
+  // Bu test yeni yüklenen bir dosyayı next/image iyileştiricisinden geçiriyor: geliştirme
+  // sunucusunda hem rota derlemesi hem sharp dönüşümü ilk istekte yapılıyor. Ölçüldü
+  // (Görev 8): dosya tek başına 19 saniyede geçiyor, tam süit altında (argon2 girişleri +
+  // istek başına derleme) 30 saniyelik varsayılan bütçeyi aşıyordu. Üretim derlemesinde
+  // (CI=1) sorun yok. İddialar değişmedi, yalnız bütçe gerçeğe uyduruldu.
+  test.slow()
   const alt = `Kırmızı nokta ${damga}`
   await girisYap(page, EDITOR)
   await page.goto('/panel/medya')
@@ -309,4 +315,43 @@ test('medya sayfasında ve silme onayında erişilebilirlik ihlali yok', async (
   await expect(page.getByRole('dialog')).toBeVisible()
   const kipSonucu = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
   expect(kipSonucu.violations).toEqual([])
+})
+
+// Editör A kapak seçicisini açıkken B aynı görseli kitaplıktan siliyor: dosya gitti ama
+// seçenek A'nın sayfasında duruyor. Yedek olmadan kırık bir görsel simgesi çiziliyordu ve
+// kullanıcı neyi seçtiğini anlamıyordu (Görev 8'e devreden borç).
+//
+// Kayıt gerçekten silinmiyor, YALNIZ bu görselin isteği 404'e çevriliyor: aynı sonucu
+// üretir, veritabanına eş zamanlı koşan başka testlerin göreceği kırık bir satır bırakmaz
+// ve sayfadaki diğer görselleri (başka koşumların kitaplık kayıtları) etkilemez.
+test('yüklenemeyen küçük resmin yerine anlamlı bir yedek çizilir', async ({ page }) => {
+  const alt = `Kaybolan görsel ${damga}`
+  await girisYap(page, EDITOR)
+  await page.goto('/panel/medya')
+  await page
+    .getByLabel('Görsel dosyası')
+    .setInputFiles({ name: 'kayip.png', mimeType: 'image/png', buffer: await benzersizGorsel() })
+  await page.getByLabel('Alt metin').fill(alt)
+  await page.getByRole('button', { name: 'Yükle' }).click()
+  const yuklenen = page.getByRole('img', { name: alt })
+  await expect(yuklenen).toBeVisible()
+
+  // İyileştirici adresi ham yolu `url` parametresinde taşıyor; süzgeç ona bakıyor.
+  const hamYol = new URL(await yuklenen.getAttribute('src') ?? '', 'http://localhost:3000')
+    .searchParams.get('url')
+  if (hamYol === null) throw new Error('Yüklenen görselin ham yolu okunamadı.')
+
+  await page.route('**/_next/image**', async (route) => {
+    if (route.request().url().includes(encodeURIComponent(hamYol))) {
+      await route.fulfill({ status: 404, body: '' })
+      return
+    }
+    await route.continue()
+  })
+  await page.goto('/panel/makaleler/yeni')
+
+  // Seçenek hâlâ seçilebilir olmalı: kullanıcı çıkmaza sokulmuyor, yalnız durumu görüyor.
+  const secenek = page.getByRole('radio', { name: alt })
+  await expect(secenek).toBeVisible()
+  await expect(page.locator('label').filter({ has: secenek })).toContainText('Görsel yok')
 })

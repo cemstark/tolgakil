@@ -9,11 +9,9 @@
   padding: 8px 18px;
 }
 
-/* Ölçüm Görev 3'ten: #f0a6a0 --ink-2 (#1f2732) zemininde 7.4:1, metin için gereken
-   4.5:1'in üstünde. Kip pencere zemini de --surface-raised, yani aynı ölçüm geçerli. */
+/* Kip pencere zemini --surface-raised; --danger'ın globals.css'teki ölçümü tam olarak o
+   zemine göre yapıldı, yani burada aynen geçerli. */
 .dialog {
-  --danger: #f0a6a0;
-
   color: var(--text);
   background: var(--surface-raised);
   border: 1px solid var(--line);
