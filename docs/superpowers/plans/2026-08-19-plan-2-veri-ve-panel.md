@@ -172,7 +172,7 @@ Yerel sunucu 10.11'den **yeni**. Yerelde çalışan her SQL 10.11'de de çalış
 `.env.local` (geliştirme ve `npm run dev`/`start`):
 
 ```
-DATABASE_URL="mysql://tolga_hukuk:yerel_gelistirme_2026@127.0.0.1:3306/tolga_akil_hukuk"
+DATABASE_URL="mysql://tolga_hukuk:<YEREL_DB_PAROLASI>@127.0.0.1:3306/tolga_akil_hukuk"
 AUTH_SECRET="<openssl rand -base64 32 çıktısı>"
 AUTH_URL="http://localhost:3000"
 AUTH_TRUST_HOST="true"
@@ -218,7 +218,7 @@ SEED_EDITOR_PASSWORD="<en az 12 karakter>"
 
 ```bash
 node -e "console.log(process.version, typeof process.loadEnvFile)"
-"/c/Program Files/MariaDB 12.2/bin/mysql.exe" -u tolga_hukuk -pyerel_gelistirme_2026 \
+"/c/Program Files/MariaDB 12.2/bin/mysql.exe" -u tolga_hukuk -p<YEREL_DB_PAROLASI> \
   -e "select version(); select schema_name, default_collation_name from information_schema.schemata where schema_name like 'tolga%';"
 ```
 
@@ -693,7 +693,7 @@ npm run db:migrate -- .env.test
 Sonra doğrula:
 
 ```bash
-"/c/Program Files/MariaDB 12.2/bin/mysql.exe" -u tolga_hukuk -pyerel_gelistirme_2026 \
+"/c/Program Files/MariaDB 12.2/bin/mysql.exe" -u tolga_hukuk -p<YEREL_DB_PAROLASI> \
   tolga_akil_hukuk_test -e "show tables; show index from articles where index_type='FULLTEXT';"
 ```
 
