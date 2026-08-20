@@ -384,6 +384,32 @@ ve `CI=1 npm run test:e2e` 271/271. Depoda `cacheComponents` **yok**.
 kapalıyken `cacheTag()` fırlatır. Kalıbın devreye girmesi, panel sarmalayıcısının veri
 okuma sınırı hakkında verilecek mimari karara bağlıdır (bkz. rapor §7).
 
+#### ÖLÇÜM SONUCU — GÖREV 1B (karar (A) denendi — tarih: 2026-08-20)
+
+Aborjina kararı: **(A)** panel veri sınırı yeniden konumlandırılacak, bayrak açılacak
+(gerekçe spec §6 ve §11). Uygulandı, ölçüldü, **ikinci kez düştü**. Ham çıktılar:
+`.superpowers/sdd/2026-08-20-plan-3-baglama-ve-yayin/gorev-1-rapor.md` (Görev 1B bölümü).
+
+| Konu | Ölçüm |
+|---|---|
+| **Panel statik kabuk denetimi** | **ÇÖZÜLDÜ.** `src/app/panel/layout.tsx` içine tek satır `export const instant = false`. Derlemedeki 19 yol hatası **0'a** indi, `npm run build` yeşil (29/29). Doküman doğrulaması yapıldı: `instant`, `route-segment-config/instant.md` içinde belgeli (`type InstantConfig = true \| false \| { level?: 'warning' }`, yalnız `cacheComponents` ile çalışır); "Disabling static shell validation" bölümü bu kullanımı birebir tarif ediyor. `<Suspense>` ölçümle elendi: sınır yalnız layout'ta değil, 18 sayfanın her biri gövdesinde `requireUser()`/`requireAccess()` çağırıyor |
+| **Halka açık rotalar** | **KAYIP YOK.** 9 rota `○` olarak korundu; hiçbiri dinamiğe düşmedi |
+| **Tek rota işareti değişimi** | 4 panel `[id]` rotası `ƒ` → `◐` (Partial Prerender). Sızıntı denetlendi: **panel altındaki 17 HTML kabuğunun tamamı 0 bayt**; halka açık sayfalar 15–25 KB gerçek HTML. `◐` muhasebe değişikliği, içerik değişikliği değil |
+| **`searchParams` kalıbı (Görev 7)** | **ÇALIŞIYOR.** Sayfa `async` olmaz; `searchParams` promise'i `<Suspense>` ile sarılmış çocuğa prop geçirilir, `await` orada yapılır (`migrating-to-cache-components.md:726`). Üretim derlemesiyle kanıtlandı: kabukta yedek metin, istekte `?q=deneme&sayfa=3` doğru render |
+| **`Date` önbellek sınırı** | **ÜRETİM derlemesiyle doğrulandı** (Görev 1'de yalnız dev ile ölçülebilmişti): `1970-01-01T00:00:00.000Z` hem statik kabukta hem istekte doğru |
+| **KIRILMA: `notFound()` 404 → 200** | **6 taban testi kırmızı** (`panel-yetki.spec.ts:21`, "editor /panel/X adresine erişemez"): `Expected: 404 / Received: 200`. **İçerik sızmıyor** — editor "Sayfa bulunamadı" görüyor, gezinme yalnız yetkili bağlantıları çiziyor. Bozulan yalnız HTTP durumu. **Sebep `instant` değil:** aynı kodla dev kipinde 6 test geçiyor, üretim kipinde düşüyor. Doküman kaçınılmaz ilan ediyor (`not-found.md:193`): "With Cache Components, **every dynamic route streams a static shell first**, so run that check in `proxy` instead" |
+
+**Neden burada durduk:** düzeltme, rol denetimini `src/proxy.ts`'e taşımayı gerektiriyor.
+Proxy bugün bilinçli olarak "veritabanına ve argon2'ye dokunmaz"; taşımak ya JWT rolüne
+güvenmeyi (rolü düşürülen kullanıcı 8 saat admin kalır — `auth-guards.ts:11-19` bunu açıkça
+reddediyor) ya da proxy'ye veritabanı sorgusu koymayı gerektirir. İkisi de Plan 2'nin
+güvenlik mimarisine ait kararlardır; alınmadı. **Bayrak ve `instant` geri alındı**, taban
+eksiksiz geri geldi (182 birim, 271 e2e dev + `CI=1`, build 25/25, tsc/lint temiz).
+
+**Karar bekleyen tek soru:** rol denetimi proxy'ye taşınsın mı — (A1) proxy DB okusun,
+(A2) proxy JWT rolüne baksın + `requireAccess()` ikinci hat kalsın, (A3) 404 sözleşmesinden
+bilinçli olarak vazgeçilsin ve test 200 + "Sayfa bulunamadı" içeriğini doğrulasın.
+
 - [ ] **Adım 10: KARAR — olumsuzsa DUR**
 
 **Olumsuz sayılan sonuçlar** (herhangi biri yeterli):
