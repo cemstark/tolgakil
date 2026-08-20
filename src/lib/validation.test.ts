@@ -194,7 +194,7 @@ describe('hata mesajları', () => {
   it('özel mesaj verilmeyen kurallarda da Türkçe döner', () => {
     const eksikAlan = loginSchema.safeParse({})
     const bilinmeyenRol = userCreateSchema.safeParse({
-      email: 'yeni@ornek.test', name: 'Yeni Kullanıcı', password: 'yeterince-uzun-parola', role: 'superadmin',
+      username: 'yeni-kullanici', name: 'Yeni Kullanıcı', password: 'yeterince-uzun-parola', role: 'superadmin',
     })
     const mesajlar = [...eksikAlan.error!.issues, ...bilinmeyenRol.error!.issues].map((i) => i.message)
     expect(mesajlar.length).toBeGreaterThan(0)
@@ -282,14 +282,78 @@ describe('settingsSchema', () => {
   })
 })
 
-describe('loginSchema', () => {
-  it('geçersiz e-postayı Türkçe mesajla reddeder', () => {
-    const sonuc = loginSchema.safeParse({ email: 'yok', password: 'parola-uzun-1' })
-    expect(toFormState(sonuc.error!).errors.email).toContain('Geçerli bir e-posta adresi girin.')
+// Kullanıcı adı kuralı iki şemadan da geçiyor (loginSchema, userCreateSchema); her ikisi
+// de lib/username.ts'teki tek deseni kullanıyor. Kabul edilen ve reddedilen örnekler AYRI
+// AYRI iddia ediliyor: tek bir toplu döngü, hangi sınıfın kaçtığını gizlerdi.
+describe('kullanıcı adı biçimi', () => {
+  function girisSonucu(username: unknown) {
+    return loginSchema.safeParse({ username, password: 'parola-uzun-1' })
+  }
+
+  it('sade küçük harfli adı kabul eder', () => {
+    expect(girisSonucu('admin').success).toBe(true)
   })
 
+  it('rakam, nokta, alt çizgi ve tireyi kabul eder', () => {
+    expect(girisSonucu('a.v_2-x9').success).toBe(true)
+  })
+
+  it('baştaki ve sondaki boşluğu kırpar', () => {
+    expect(girisSonucu('  admin  ').data?.username).toBe('admin')
+  })
+
+  it('büyük harfi reddeder', () => {
+    // Sessizce küçük harfe çevrilmiyor: "Admin" kaydedilip "admin" diye aranırsa
+    // kullanıcı hiçbir açıklama görmeden "parola hatalı" duvarına çarpar.
+    expect(girisSonucu('Admin').success).toBe(false)
+  })
+
+  it('Türkçe harfi reddeder', () => {
+    // Asıl gerekçe: 'I'.toLocaleLowerCase('tr') === 'ı' ve 'İ'.toLowerCase() iki kod
+    // birimine açılıyor; kümeyi ASCII'ye kısmak bu sınıfı tümüyle kapatıyor.
+    expect(girisSonucu('şükrü').success).toBe(false)
+  })
+
+  it('araya giren boşluğu reddeder', () => {
+    expect(girisSonucu('buro yonetici').success).toBe(false)
+  })
+
+  it('e-posta biçimli değeri reddeder', () => {
+    // "@" kümede yok; eski e-posta kimlikleriyle giriş denemesi burada duruyor.
+    expect(girisSonucu('admin@ornek.test').success).toBe(false)
+  })
+
+  it('çok kısa adı reddeder', () => {
+    expect(girisSonucu('ab').success).toBe(false)
+  })
+
+  it('çok uzun adı reddeder', () => {
+    expect(girisSonucu('a'.repeat(61)).success).toBe(false)
+  })
+
+  it('tam sınırdaki uzunlukları kabul eder', () => {
+    expect(girisSonucu('abc').success).toBe(true)
+    expect(girisSonucu('a'.repeat(60)).success).toBe(true)
+  })
+
+  it('neyin kabul edildiğini söyleyen Türkçe mesaj döner', () => {
+    // "Geçersiz" demekle yetinen bir mesaj kullanıcıyı çıkmaza sokar.
+    const mesaj = toFormState(girisSonucu('Admin').error!).errors.username?.join(' ')
+    expect(mesaj).toContain('3-60 karakter')
+    expect(mesaj).toContain('küçük İngiliz harfleri (a-z)')
+  })
+
+  it('aynı kural kullanıcı oluşturma şemasında da geçerli', () => {
+    const sonuc = userCreateSchema.safeParse({
+      username: 'Yeni Kullanıcı', name: 'Yeni Kullanıcı', password: 'yeterince-uzun-parola', role: 'editor',
+    })
+    expect(toFormState(sonuc.error!).errors.username?.join(' ')).toContain('3-60 karakter')
+  })
+})
+
+describe('loginSchema', () => {
   it('boş parolayı reddeder', () => {
-    const sonuc = loginSchema.safeParse({ email: 'a@b.com', password: '' })
+    const sonuc = loginSchema.safeParse({ username: 'admin', password: '' })
     expect(toFormState(sonuc.error!).errors.password).toContain('Parola zorunlu.')
   })
 })
@@ -297,14 +361,14 @@ describe('loginSchema', () => {
 describe('userCreateSchema', () => {
   it('kısa parolayı reddeder', () => {
     const sonuc = userCreateSchema.safeParse({
-      email: 'yeni@ornek.test', name: 'Yeni Kullanıcı', password: 'kisa', role: 'editor',
+      username: 'yeni-kullanici', name: 'Yeni Kullanıcı', password: 'kisa', role: 'editor',
     })
     expect(toFormState(sonuc.error!).errors.password).toContain('Parola en az 12 karakter olmalı.')
   })
 
   it('bilinmeyen rolü reddeder', () => {
     const sonuc = userCreateSchema.safeParse({
-      email: 'yeni@ornek.test', name: 'Yeni Kullanıcı', password: 'yeterince-uzun-parola', role: 'superadmin',
+      username: 'yeni-kullanici', name: 'Yeni Kullanıcı', password: 'yeterince-uzun-parola', role: 'superadmin',
     })
     expect(sonuc.success).toBe(false)
   })

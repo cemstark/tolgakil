@@ -7,82 +7,84 @@ const PENCERE = 60_000
 // Sınırlayıcılar dışarıdan veriliyor: üretimdeki tekil örnek globalThis üzerinde yaşıyor ve
 // testler arasında paylaşılsaydı bir testin doldurduğu bütçe diğerini yanlış kırmızıya
 // düşürürdü.
-function kapiKur(options: { epostaSiniri: number; kureselSinir: number }) {
+function kapiKur(options: { kullaniciSiniri: number; kureselSinir: number }) {
   return createLoginGate(
-    createRateLimiter({ limit: options.epostaSiniri, windowMs: PENCERE }),
+    createRateLimiter({ limit: options.kullaniciSiniri, windowMs: PENCERE }),
     createRateLimiter({ limit: options.kureselSinir, windowMs: PENCERE }),
   )
 }
 
-describe('createLoginGate e-posta sınırı', () => {
-  it('sınıra kadar izin verir, sonrasında e-posta kapsamıyla reddeder', () => {
-    const kapi = kapiKur({ epostaSiniri: 3, kureselSinir: 1000 })
+describe('createLoginGate kullanıcı adı sınırı', () => {
+  it('sınıra kadar izin verir, sonrasında kullanıcı adı kapsamıyla reddeder', () => {
+    const kapi = kapiKur({ kullaniciSiniri: 3, kureselSinir: 1000 })
 
     for (let i = 0; i < 3; i += 1) {
-      expect(kapi.admit('kurban@ornek.test', 0).allowed).toBe(true)
-      kapi.recordFailure('kurban@ornek.test', 0)
+      expect(kapi.admit('kurban', 0).allowed).toBe(true)
+      kapi.recordFailure('kurban', 0)
     }
 
-    const sonuc = kapi.admit('kurban@ornek.test', 0)
+    const sonuc = kapi.admit('kurban', 0)
     expect(sonuc.allowed).toBe(false)
-    expect(sonuc.scope).toBe('email')
+    expect(sonuc.scope).toBe('username')
   })
 
+  // Şema yalnız küçük ASCII geçiriyor, yani bu normalleştirme bugün etkisiz; anahtar
+  // üretimini şemanın gevşemesine karşı bağımsız tutmak için yine de sınanıyor.
   it('anahtarı kırparak ve küçülterek üretir; aynı hesap iki kova almaz', () => {
-    const kapi = kapiKur({ epostaSiniri: 1, kureselSinir: 1000 })
-    kapi.recordFailure('  Kurban@Ornek.TEST  ', 0)
-    expect(kapi.check('kurban@ornek.test', 0).allowed).toBe(false)
+    const kapi = kapiKur({ kullaniciSiniri: 1, kureselSinir: 1000 })
+    kapi.recordFailure('  KurBan  ', 0)
+    expect(kapi.check('kurban', 0).allowed).toBe(false)
   })
 
   // Giriş formunun action'ı her denemede önce check çağırıyor; gerçek sayımı admit ve
   // recordFailure yapıyor. check de sayarsa kullanıcı tek denemede iki hak kaybeder.
   it('check sayacı ilerletmez', () => {
-    const kapi = kapiKur({ epostaSiniri: 1, kureselSinir: 1000 })
-    kapi.check('kurban@ornek.test', 0)
-    kapi.check('kurban@ornek.test', 0)
-    expect(kapi.check('kurban@ornek.test', 0).allowed).toBe(true)
+    const kapi = kapiKur({ kullaniciSiniri: 1, kureselSinir: 1000 })
+    kapi.check('kurban', 0)
+    kapi.check('kurban', 0)
+    expect(kapi.check('kurban', 0).allowed).toBe(true)
     // Üç check'ten sonra tek hak hâlâ harcanmamış olmalı.
-    expect(kapi.admit('kurban@ornek.test', 0).allowed).toBe(true)
+    expect(kapi.admit('kurban', 0).allowed).toBe(true)
   })
 
   /**
-   * Ölçülen regresyon: e-posta kovası KABUL anında sayıldığında, aynı hesabın eşzamanlı ve
+   * Ölçülen regresyon: kullanıcı adı kovası KABUL anında sayıldığında, aynı hesabın eşzamanlı ve
    * BAŞARILI girişleri birbirinin hakkını yiyordu — her deneme argon2 dönene kadar bir slot
    * tutuyor, altıncı eşzamanlı giriş doğru parolayla reddediliyordu. E2E süiti paralel
    * işçilerle aynı yönetici hesabına girdiği için iki testi belirgin biçimde kırdı.
    * Bu yüzden hesabın kovası yalnız BAŞARISIZLIKTA sayılıyor.
    */
   it('eşzamanlı başarılı girişler aynı hesabı kilitlemez', () => {
-    const kapi = kapiKur({ epostaSiniri: 5, kureselSinir: 1000 })
+    const kapi = kapiKur({ kullaniciSiniri: 5, kureselSinir: 1000 })
     // Sekiz oturum aynı anda kabul ediliyor; hiçbirinin sonucu daha belli değil.
     for (let i = 0; i < 8; i += 1) {
-      expect(kapi.admit('admin@ornek.test', 0).allowed).toBe(true)
+      expect(kapi.admit('admin', 0).allowed).toBe(true)
     }
   })
 
   // Reddedilen deneme sayacı İLERLETMEZ: aksi hâlde kilitli bir hesaba istek yağdıran
   // saldırgan, pencerenin bitişini sürekli öteleyebilirdi.
   it('reddedilen deneme sayaca yazılmaz', () => {
-    const kapi = kapiKur({ epostaSiniri: 1, kureselSinir: 1000 })
-    kapi.recordFailure('kurban@ornek.test', 0)
-    expect(kapi.admit('kurban@ornek.test', 30_000).retryAfterMs).toBe(PENCERE - 30_000)
-    expect(kapi.admit('kurban@ornek.test', 40_000).retryAfterMs).toBe(PENCERE - 40_000)
+    const kapi = kapiKur({ kullaniciSiniri: 1, kureselSinir: 1000 })
+    kapi.recordFailure('kurban', 0)
+    expect(kapi.admit('kurban', 30_000).retryAfterMs).toBe(PENCERE - 30_000)
+    expect(kapi.admit('kurban', 40_000).retryAfterMs).toBe(PENCERE - 40_000)
   })
 })
 
-// Denetim bulgusu: anahtar e-posta olduğu için her istekte FARKLI bir e-posta gönderen
+// Denetim bulgusu: anahtar kullanıcı adı olduğu için her istekte FARKLI bir ad gönderen
 // kimliği doğrulanmamış bir istemci sınırdan hiç etkilenmiyordu; her deneme bir veritabanı
 // sorgusu ve bir argon2.verify (64 MB, timeCost 3) çalıştırıyordu.
 describe('createLoginGate küresel bütçe', () => {
-  it('her denemede farklı e-posta gönderen istemciyi de durdurur', () => {
-    const kapi = kapiKur({ epostaSiniri: 5, kureselSinir: 3 })
+  it('her denemede farklı kullanıcı adı gönderen istemciyi de durdurur', () => {
+    const kapi = kapiKur({ kullaniciSiniri: 5, kureselSinir: 3 })
 
     for (let i = 0; i < 3; i += 1) {
-      expect(kapi.admit(`rastgele-${i}@ornek.test`, 0).allowed).toBe(true)
+      expect(kapi.admit(`rastgele-${i}`, 0).allowed).toBe(true)
     }
 
-    // Dördüncü e-posta kendi kovasına hiç dokunmadı; onu durduran yalnız küresel bütçe.
-    const sonuc = kapi.admit('rastgele-3@ornek.test', 0)
+    // Dördüncü kullanıcı adı kendi kovasına hiç dokunmadı; onu durduran yalnız küresel bütçe.
+    const sonuc = kapi.admit('rastgele-3', 0)
     expect(sonuc.allowed).toBe(false)
     expect(sonuc.scope).toBe('global')
     expect(sonuc.retryAfterMs).toBe(PENCERE)
@@ -96,60 +98,60 @@ describe('createLoginGate küresel bütçe', () => {
    * hiçbir denemenin sonucu bildirilmiyor, yalnız kabul ediliyorlar.
    */
   it('kabul anında sayar: sonuç bildirilmeden tavan dolar', () => {
-    const kapi = kapiKur({ epostaSiniri: 5, kureselSinir: 2 })
-    expect(kapi.admit('bir@ornek.test', 0).allowed).toBe(true)
-    expect(kapi.admit('iki@ornek.test', 0).allowed).toBe(true)
+    const kapi = kapiKur({ kullaniciSiniri: 5, kureselSinir: 2 })
+    expect(kapi.admit('bir', 0).allowed).toBe(true)
+    expect(kapi.admit('iki', 0).allowed).toBe(true)
     // Üçüncü istek pahalı işe HİÇ girmeden reddediliyor.
-    expect(kapi.admit('uc@ornek.test', 0).scope).toBe('global')
+    expect(kapi.admit('uc', 0).scope).toBe('global')
   })
 
   it('pencere dolunca küresel bütçe yeniden açılır', () => {
-    const kapi = kapiKur({ epostaSiniri: 5, kureselSinir: 1 })
-    kapi.admit('bir@ornek.test', 0)
-    expect(kapi.check('iki@ornek.test', PENCERE - 1).allowed).toBe(false)
-    expect(kapi.check('iki@ornek.test', PENCERE + 1).allowed).toBe(true)
+    const kapi = kapiKur({ kullaniciSiniri: 5, kureselSinir: 1 })
+    kapi.admit('bir', 0)
+    expect(kapi.check('iki', PENCERE - 1).allowed).toBe(false)
+    expect(kapi.check('iki', PENCERE + 1).allowed).toBe(true)
   })
 
-  // Bütçe dolduğunda admit kayıt yapmadan dönüyor, yani e-posta kovası haritasına da
+  // Bütçe dolduğunda admit kayıt yapmadan dönüyor, yani kullanıcı adı kovası haritasına da
   // yeni girdi eklenmiyor: küresel tavan aynı zamanda bellek tavanıdır.
-  it('e-posta sınırı küresel bütçeden ÖNCE bildirilir', () => {
-    const kapi = kapiKur({ epostaSiniri: 1, kureselSinir: 1 })
-    kapi.admit('kurban@ornek.test', 0)
-    kapi.recordFailure('kurban@ornek.test', 0)
-    expect(kapi.check('kurban@ornek.test', 0).scope).toBe('email')
+  it('kullanıcı adı sınırı küresel bütçeden ÖNCE bildirilir', () => {
+    const kapi = kapiKur({ kullaniciSiniri: 1, kureselSinir: 1 })
+    kapi.admit('kurban', 0)
+    kapi.recordFailure('kurban', 0)
+    expect(kapi.check('kurban', 0).scope).toBe('username')
   })
 })
 
 // Üç kez yanılıp dördüncüde giren avukat, aynı pencerede iki kez daha yanılırsa
 // kilitlenmemeli: başarı o hesabın penceresini temizler.
 describe('createLoginGate başarılı giriş', () => {
-  it('e-posta sayacını sıfırlar', () => {
-    const kapi = kapiKur({ epostaSiniri: 3, kureselSinir: 1000 })
-    kapi.recordFailure('avukat@ornek.test', 0)
-    kapi.recordFailure('avukat@ornek.test', 0)
-    kapi.recordFailure('avukat@ornek.test', 0)
-    expect(kapi.check('avukat@ornek.test', 0).allowed).toBe(false)
+  it('kullanıcı adı sayacını sıfırlar', () => {
+    const kapi = kapiKur({ kullaniciSiniri: 3, kureselSinir: 1000 })
+    kapi.recordFailure('avukat', 0)
+    kapi.recordFailure('avukat', 0)
+    kapi.recordFailure('avukat', 0)
+    expect(kapi.check('avukat', 0).allowed).toBe(false)
 
-    kapi.clear('avukat@ornek.test', kapi.admit('avukat@ornek.test', 0).budgetWindow)
+    kapi.clear('avukat', kapi.admit('avukat', 0).budgetWindow)
 
     // Üç yanılgı affedildi: aynı pencerede iki kez daha yanılmak kilitlemiyor.
-    kapi.recordFailure('avukat@ornek.test', 0)
-    kapi.recordFailure('avukat@ornek.test', 0)
-    expect(kapi.check('avukat@ornek.test', 0).allowed).toBe(true)
+    kapi.recordFailure('avukat', 0)
+    kapi.recordFailure('avukat', 0)
+    expect(kapi.check('avukat', 0).allowed).toBe(true)
   })
 
   // Sayım kabul anında yapıldığı için başarılı giriş de bir birim harcıyor. İade olmasaydı
   // bütçe meşru trafikle dolardı — ölçüldü: e2e süiti bir turda ~250 başarılı giriş yapıyor
   // ve 200'lük tavanı turun ortasında tüketip on bir testi kırdı.
   it('kendi birimini küresel bütçeye geri verir', () => {
-    const kapi = kapiKur({ epostaSiniri: 5, kureselSinir: 2 })
-    const kabul = kapi.admit('bir@ornek.test', 0)
-    kapi.admit('iki@ornek.test', 0)
-    expect(kapi.check('uc@ornek.test', 0).scope).toBe('global')
+    const kapi = kapiKur({ kullaniciSiniri: 5, kureselSinir: 2 })
+    const kabul = kapi.admit('bir', 0)
+    kapi.admit('iki', 0)
+    expect(kapi.check('uc', 0).scope).toBe('global')
 
-    kapi.clear('bir@ornek.test', kabul.budgetWindow)
+    kapi.clear('bir', kabul.budgetWindow)
 
-    expect(kapi.check('uc@ornek.test', 0).allowed).toBe(true)
+    expect(kapi.check('uc', 0).allowed).toBe(true)
   })
 
   /**
@@ -161,47 +163,47 @@ describe('createLoginGate başarılı giriş', () => {
    * bütçesini yeniye taşıyordu (en kötü hâlde tavanın iki katı kabul).
    */
   it('pencere dönmüşse iade yeni pencerenin bütçesini düşürmez', () => {
-    const kapi = kapiKur({ epostaSiniri: 5, kureselSinir: 2 })
-    const eskiKabul = kapi.admit('avukat@ornek.test', 0)
+    const kapi = kapiKur({ kullaniciSiniri: 5, kureselSinir: 2 })
+    const eskiKabul = kapi.admit('avukat', 0)
 
     // argon2 dönerken pencere döndü; yeni pencerede bir kabul var.
-    kapi.admit('baska@ornek.test', PENCERE + 1)
+    kapi.admit('baska', PENCERE + 1)
 
-    kapi.clear('avukat@ornek.test', eskiKabul.budgetWindow)
+    kapi.clear('avukat', eskiKabul.budgetWindow)
 
     // Yeni pencerenin sayacı 1'de kalmalı: bir kabul daha alınca doluyor.
-    expect(kapi.admit('ucuncu@ornek.test', PENCERE + 1).allowed).toBe(true)
-    expect(kapi.check('dorduncu@ornek.test', PENCERE + 1).scope).toBe('global')
+    expect(kapi.admit('ucuncu', PENCERE + 1).allowed).toBe(true)
+    expect(kapi.check('dorduncu', PENCERE + 1).scope).toBe('global')
   })
 
   // İade en fazla kendi tükettiğini geri verir. Sıfırlama olsaydı geçerli tek bir hesabı
   // olan saldırgan her girişten sonra tavanı tamamen etkisizleştirirdi.
   it('başkalarının başarısız denemelerini affetmez', () => {
-    const kapi = kapiKur({ epostaSiniri: 5, kureselSinir: 3 })
-    const saldirgan = kapi.admit('saldirgan@ornek.test', 0)
-    kapi.admit('kurban-bir@ornek.test', 0)
-    kapi.admit('kurban-iki@ornek.test', 0)
-    expect(kapi.check('yeni@ornek.test', 0).scope).toBe('global')
+    const kapi = kapiKur({ kullaniciSiniri: 5, kureselSinir: 3 })
+    const saldirgan = kapi.admit('saldirgan', 0)
+    kapi.admit('kurban-bir', 0)
+    kapi.admit('kurban-iki', 0)
+    expect(kapi.check('yeni', 0).scope).toBe('global')
 
     // Saldırganın elindeki geçerli hesap yalnız KENDİ birimini geri alıyor.
-    kapi.clear('saldirgan@ornek.test', saldirgan.budgetWindow)
+    kapi.clear('saldirgan', saldirgan.budgetWindow)
 
-    expect(kapi.admit('yeni@ornek.test', 0).allowed).toBe(true)
-    expect(kapi.check('yeni@ornek.test', 0).scope).toBe('global')
+    expect(kapi.admit('yeni', 0).allowed).toBe(true)
+    expect(kapi.check('yeni', 0).scope).toBe('global')
   })
 
   // Reddedilen deneme sayılmadığı için iade edilecek birimi de yok; makbuz bunu `null` ile
   // söylüyor ve clear bütçeye hiç dokunmuyor.
   it('reddedilen deneme iade makbuzu üretmez', () => {
-    const kapi = kapiKur({ epostaSiniri: 5, kureselSinir: 1 })
-    kapi.admit('bir@ornek.test', 0)
-    const reddedilen = kapi.admit('iki@ornek.test', 0)
+    const kapi = kapiKur({ kullaniciSiniri: 5, kureselSinir: 1 })
+    kapi.admit('bir', 0)
+    const reddedilen = kapi.admit('iki', 0)
     expect(reddedilen.budgetWindow).toBeNull()
 
-    kapi.clear('iki@ornek.test', reddedilen.budgetWindow)
+    kapi.clear('iki', reddedilen.budgetWindow)
 
     // Bütçe hâlâ dolu: reddedilen deneme kimsenin birimini geri vermedi.
-    expect(kapi.check('uc@ornek.test', 0).scope).toBe('global')
+    expect(kapi.check('uc', 0).scope).toBe('global')
   })
 })
 
@@ -210,8 +212,8 @@ describe('loginRateLimitMessage', () => {
     expect(loginRateLimitMessage({ allowed: true, retryAfterMs: 0, scope: null })).toBeNull()
   })
 
-  it('e-posta sınırında kalan süreyi dakika olarak yazar', () => {
-    expect(loginRateLimitMessage({ allowed: false, retryAfterMs: 610_000, scope: 'email' })).toBe(
+  it('kullanıcı adı sınırında kalan süreyi dakika olarak yazar', () => {
+    expect(loginRateLimitMessage({ allowed: false, retryAfterMs: 610_000, scope: 'username' })).toBe(
       'Çok fazla deneme yapıldı. 11 dakika sonra tekrar deneyin.',
     )
   })
