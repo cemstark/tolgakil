@@ -29,7 +29,7 @@ const PER_EMAIL_LIMIT = 5
  * Kullanıcı bu durumda hata sayfası değil, ne olduğunu söyleyen Türkçe bir mesaj görüyor.
  *
  * YAN KAZANÇ: sayaç haritasında kapasite tavanı bilinçli olarak yok (bkz. rate-limit.ts —
- * tavan + tahliye, kurbanın penceresini attırmanın yolu olurdu). Bütçe dolduğunda authorize
+ * tavan + tahliye, kurbanın penceresini attırmanın yolu olurdu). Bütçe dolduğunda `admit`
  * kayıt yapmadan döndüğü için haritaya yeni girdi de girmiyor: küresel tavan aynı zamanda
  * bellek tavanıdır (pencere başına en çok 200 girdi).
  */
@@ -66,25 +66,63 @@ function loginRateLimitKey(email: string): string {
  * üretimdeki tekil örnek aşağıda kuruluyor.
  */
 export function createLoginGate(perEmail: RateLimiter, budget: RateLimiter) {
+  /**
+   * Denemeye izin verilip verilmediğini SAYACA DOKUNMADAN okur.
+   *
+   * Sıra önemli: e-posta tavanı önce sorulur. Kendi hakkını tüketmiş kullanıcıya
+   * "servis meşgul" demek onu yanlış yönlendirirdi.
+   *
+   * Giriş formunun action'ı bunu kullanıyor: gerçek sayımı `admit` yapıyor, form yalnız
+   * doğru Türkçe mesajı üretebilmek için soruyor. Form da sayarsa tek deneme iki hak yerdi.
+   */
+  function check(email: string, now: number = Date.now()): LoginGateResult {
+    const perEmailResult = perEmail.peek(loginRateLimitKey(email), now)
+    if (!perEmailResult.allowed) return { ...perEmailResult, scope: 'email' }
+
+    const budgetResult = budget.peek(GLOBAL_KEY, now)
+    if (!budgetResult.allowed) return { ...budgetResult, scope: 'global' }
+
+    return { allowed: true, retryAfterMs: 0, scope: null }
+  }
+
   return {
+    check,
+
     /**
-     * Denemeye izin verilip verilmediğini SAYACA DOKUNMADAN okur.
+     * Denemeyi kabul eder ve KÜRESEL BÜTÇEYİ kabul anında sayar.
      *
-     * Sıra önemli: e-posta tavanı önce sorulur. Kendi hakkını tüketmiş kullanıcıya
-     * "servis meşgul" demek onu yanlış yönlendirirdi.
+     * Küresel sayım neden burada, denemenin SONUCUNDA değil: bütçe yalnız başarısızlıktan
+     * sonra artsaydı, aradaki bütün pahalı iş (bir veritabanı sorgusu + bir
+     * `argon2.verify`) bayat bir sayaca bakarak başlatılırdı. Bin eşzamanlı istek geldiğinde
+     * hepsi "izinli" yanıtını alır, hepsi argon2 kuyruğuna girer ve tavan ancak ~200
+     * başarısızlık kaydedildikten sonra kapanırdı: sürdürülebilir hız sınırlanır ama
+     * saldırgan pencere başına bir PATLAMA hakkı kazanırdı. `record` senkron ve Node tek iş
+     * parçacıklı olduğu için, kabul burada sayıldığında pencerede kabul edilen istek sayısı
+     * gerçekten tavanda durur.
+     *
+     * E-POSTA KOVASI BURADA SAYILMIYOR, `recordFailure`'da sayılıyor — ve bu ölçümle
+     * belirlendi. Kabul anında sayıldığında, aynı hesabın EŞZAMANLI ve BAŞARILI girişleri
+     * birbirinin hakkını yiyor: her deneme argon2 dönene kadar bir slot tutuyor, altıncı
+     * eşzamanlı giriş doğru parolayla reddediliyor. E2E süiti bunu belirgin biçimde
+     * üretti (paralel işçiler aynı yönetici hesabıyla giriyor, iki test kırıldı).
+     *
+     * Bedeli açık ve kabul edildi: eşzamanlı bir patlamada tek bir hesaba karşı yapılan
+     * deneme sayısı, e-posta tavanı olan 5'i geçebilir. Üst sınır yine de küresel bütçedir
+     * (pencere başına 200 kabul), yani patlama sınırsız değil ve 12 karakterlik asgari
+     * parola karşısında anlamsız kalır. Buna karşılık meşru bir kullanıcının doğru
+     * parolayla kilitlenmesi her gün karşılaşılabilecek bir arıza olurdu.
      */
-    check(email: string, now: number = Date.now()): LoginGateResult {
-      const perEmailResult = perEmail.peek(loginRateLimitKey(email), now)
-      if (!perEmailResult.allowed) return { ...perEmailResult, scope: 'email' }
+    admit(email: string, now: number = Date.now()): LoginGateResult {
+      const result = check(email, now)
+      if (!result.allowed) return result
 
-      const budgetResult = budget.peek(GLOBAL_KEY, now)
-      if (!budgetResult.allowed) return { ...budgetResult, scope: 'global' }
-
-      return { allowed: true, retryAfterMs: 0, scope: null }
+      // Arada await yok: kabul ile sayım arasına başka bir istek giremez.
+      budget.record(GLOBAL_KEY, now)
+      return result
     },
 
     /**
-     * Başarısız denemeyi iki tavana da işler.
+     * Başarısız denemeyi hesabın kovasına işler.
      *
      * Yalnız BAŞARISIZ denemeler sayılıyor. Brute-force'un her denemesi başarısızdır, yani
      * savunma zayıflamıyor; buna karşılık 15 dakikada altı kez giriş yapan meşru bir
@@ -92,25 +130,36 @@ export function createLoginGate(perEmail: RateLimiter, budget: RateLimiter) {
      */
     recordFailure(email: string, now: number = Date.now()): void {
       perEmail.record(loginRateLimitKey(email), now)
-      budget.record(GLOBAL_KEY, now)
     },
 
     /**
-     * Başarılı girişte o hesabın penceresini temizler.
+     * Başarılı girişi işler: hesabın penceresi sıfırlanır, küresel bütçeye o denemenin
+     * BİR birimi iade edilir.
      *
-     * Küresel bütçeye DOKUNMAZ: geçerli tek bir hesabı olan saldırgan her girişten sonra
-     * bütçeyi sıfırlayabilseydi küresel tavan tümüyle etkisiz kalırdı.
+     * Pencerenin sıfırlanması: üç kez yanılıp dördüncüde giren avukat, aynı pencerede iki
+     * kez daha yanıldığında kilitlenmemeli.
+     *
+     * İade: küresel bütçe kabul anında sayıldığı için başarılı giriş de bir birim harcıyor.
+     * İade olmasaydı bütçe meşru trafikle dolardı — ölçüldü: e2e süiti bir turda ~250
+     * başarılı giriş yapıyor ve 200'lük tavanı turun ortasında tüketip on bir testi kırdı.
+     * Aynı şey gerçek kullanımda da olabilirdi (yoğun bir gün, art arda açılan oturumlar).
+     *
+     * Bütçe SIFIRLANMIYOR, yalnız bir birim iade ediliyor. Sıfırlama olsaydı geçerli tek
+     * bir hesabı olan saldırgan her girişten sonra tavanı tamamen etkisizleştirirdi; bu
+     * hâliyle iade en fazla kendi tükettiğini geri verir, başkalarının başarısız
+     * denemelerini affetmez.
      */
-    clear(email: string): void {
+    clear(email: string, now: number = Date.now()): void {
       perEmail.reset(loginRateLimitKey(email))
+      budget.refund(GLOBAL_KEY, now)
     },
   }
 }
 
 // Sınır iki yerden görülüyor: giriş sayfasının server action'ı (yalnız Türkçe mesaj üretmek
-// için, check) ve auth.ts'teki authorize (gerçek kapı, recordFailure). Gerçek kapının orada
-// olması şart: /api/auth/callback/credentials'a CSRF token'ıyla doğrudan POST atan bir
-// saldırgan action'dan hiç geçmiyor, yani sınır yalnız formda dursaydı hiç devreye girmezdi.
+// için, check) ve auth.ts'teki authorize (gerçek kapı, admit). Gerçek kapının orada olması
+// şart: /api/auth/callback/credentials'a CSRF token'ıyla doğrudan POST atan bir saldırgan
+// action'dan hiç geçmiyor, yani sınır yalnız formda dursaydı hiç devreye girmezdi.
 //
 // Örnek globalThis üzerinde önbelleğe alınıyor. İki tüketici farklı rota paketlerine
 // derlenebiliyor (action /panel/giris, authorize ayrıca /api/auth/[...nextauth]) ve her paket

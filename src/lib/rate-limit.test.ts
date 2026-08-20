@@ -53,6 +53,42 @@ describe('createRateLimiter', () => {
     expect(limiter.peek('1.2.3.4', 60_001).allowed).toBe(true)
   })
 
+  // Kabul anında sayan çağıran için gerekli: deneme sonucu bilinmeden sayılıyor ve sonuç
+  // "bu sayılmamalıydı" çıkarsa tek yol geri vermek.
+  it('refund tek denemeyi geri alır, sayacı sıfırlamaz', () => {
+    const limiter = createRateLimiter({ limit: 2, windowMs: 60_000 })
+    limiter.record('kova', 0)
+    limiter.record('kova', 0)
+    expect(limiter.peek('kova', 0).allowed).toBe(false)
+
+    limiter.refund('kova', 0)
+
+    // Bir hak geri geldi, ikisi birden değil.
+    expect(limiter.record('kova', 0).allowed).toBe(true)
+    expect(limiter.peek('kova', 0).allowed).toBe(false)
+  })
+
+  // Aksi hâlde harcanmamış birimler iade edilerek tavan sessizce yükseltilebilirdi.
+  it('refund sayacı eksiye düşürmez', () => {
+    const limiter = createRateLimiter({ limit: 1, windowMs: 60_000 })
+    limiter.refund('kova', 0)
+    limiter.refund('kova', 0)
+    expect(limiter.size()).toBe(0)
+
+    expect(limiter.record('kova', 0).allowed).toBe(true)
+    expect(limiter.peek('kova', 0).allowed).toBe(false)
+  })
+
+  // Pencere döndükten sonra gelen iade YENİ pencerenin sayacını düşürmemeli; düşürseydi
+  // sayaç gerçekte olandan az görünürdü.
+  it('refund pencere döndükten sonra dokunmaz', () => {
+    const limiter = createRateLimiter({ limit: 1, windowMs: 60_000 })
+    limiter.record('kova', 0)
+    limiter.record('kova', 60_001)
+    limiter.refund('kova', 0)
+    expect(limiter.peek('kova', 60_001).allowed).toBe(false)
+  })
+
   // Süpürme süresi dolmuş pencereleri siler ama yürürlüktekine dokunmaz; dokunsaydı saldırgan
   // bol anahtar üretip kurbanın sayacını sıfırlatabilirdi.
   //

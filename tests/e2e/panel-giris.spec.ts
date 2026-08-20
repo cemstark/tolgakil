@@ -123,6 +123,13 @@ test('art arda başarısız denemeler hız sınırına takılır', async ({ page
     if ((await uyari.textContent())?.startsWith('Çok fazla deneme')) break
   }
 
+  // TANI NOTU (iddia değil): bu iddia E-POSTA tavanının mesajını arıyor. Sınırın ikinci bir
+  // tavanı daha var — pencere başına toplam başarısız deneme (src/lib/login-rate-limit.ts).
+  // Bir süit turu ~21 başarısız giriş üretiyor ve yerelde reuseExistingServer açık olduğu
+  // için sayaç turlar arasında taşınıyor; yalnız bu dosya aynı 15 dakikada onlarca kez
+  // koşturulursa küresel tavan devreye girer ve buradaki metin
+  // "Giriş servisi şu anda çok fazla başarısız deneme alıyor…" olur. O durumda kırılan şey
+  // uygulama değil, koşum düzenidir: sunucuyu yeniden başlatmak sayacı sıfırlar.
   await expect(uyari).toHaveText(/^Çok fazla deneme yapıldı\. \d+ dakika sonra tekrar deneyin\.$/)
 })
 

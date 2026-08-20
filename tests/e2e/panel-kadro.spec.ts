@@ -215,12 +215,15 @@ test('alt bilgi metnindeki yasaklı ifade onaylı uyarı üretir', async ({ page
   test.skip(testInfo.project.name !== 'masaustu', 'Ayarlar tek satırlık tablo; projeler arası yarışı önlemek için tek projede koşar.')
 
   const temizlikci = await temizlikciAc()
+  // Okunmadıysa `undefined`; `null` sentinel olamaz çünkü sütunun kendisi NULL olabilir.
+  let oncekiAltBilgi: string | null | undefined
   try {
     const [onceki] = await temizlikci.sorgu<{ footer_text: string | null }>(
       'SELECT footer_text FROM settings WHERE id = 1',
       [],
     )
     if (onceki === undefined) throw new Error('settings satırı yok; `npm run db:seed` çalıştırılmalı.')
+    oncekiAltBilgi = onceki.footer_text
 
     await girisYap(page, ADMIN)
     await page.goto('/panel/ayarlar')
@@ -238,11 +241,22 @@ test('alt bilgi metnindeki yasaklı ifade onaylı uyarı üretir', async ({ page
     await page.getByLabel(/okudum, sorumluluk bende/i).check()
     await page.getByRole('button', { name: 'Kaydet' }).click()
     await expect(page.getByRole('status')).toHaveText('Ayarlar kaydedildi.')
-
-    // Tohum değeri geri konuyor; test geliştirme veritabanına kalıcı iz bırakmasın.
-    await temizlikci.sil('UPDATE settings SET footer_text = ? WHERE id = 1', [onceki.footer_text])
   } finally {
-    await temizlikci.kapat()
+    // Geri koyma FINALLY'de olmak ZORUNDA. try içinde kalsaydı yukarıdaki iddialardan biri
+    // zaman aşımına uğradığında yasaklı metin geliştirme veritabanında kalırdı; bundan
+    // sonra ayarları kaydeden HER test uyarı alıp "Ayarlar kaydedildi." göremez ve üç
+    // ilgisiz test, nedeni hiçbirinde yazmadan kırmızıya döner. Üstelik bir sonraki koşum
+    // yasaklı metni "önceki değer" sanıp geri yazacağı için durum kendini kalıcılaştırır.
+    try {
+      // `sil` DEĞİL `silmeyeCalis`: hata yolunda kayıt hiç yapılmamış olabilir, o zaman
+      // sütun zaten doğru değerdedir ve sıfır satır normaldir. Fırlatan bir temizlik
+      // burada asıl hatayı örterdi.
+      if (oncekiAltBilgi !== undefined) {
+        await temizlikci.silmeyeCalis('UPDATE settings SET footer_text = ? WHERE id = 1', [oncekiAltBilgi])
+      }
+    } finally {
+      await temizlikci.kapat()
+    }
   }
 })
 

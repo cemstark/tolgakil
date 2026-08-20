@@ -23,9 +23,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // mesaj üretmek için var; gerçek kapı burası.
         //
         // Kapı, aşağıdaki veritabanı sorgusu ve argon2.verify'dan ÖNCE: iki tavandan biri
-        // kapalıysa maliyetin hiçbiri ödenmiyor. Küresel tavanın varlık nedeni tam olarak
-        // bu sıra (bkz. login-rate-limit.ts).
-        if (!loginGate.check(parsed.data.email).allowed) return null
+        // kapalıysa maliyetin hiçbiri ödenmiyor. `admit`, `check` DEĞİL — küresel bütçe
+        // kabul ANINDA sayılıyor. Sayım denemenin sonucuna bırakılsaydı eşzamanlı bin istek
+        // bayat sayacı görüp hep birlikte argon2 kuyruğuna girerdi (bkz.
+        // login-rate-limit.ts).
+        if (!loginGate.admit(parsed.data.email).allowed) return null
 
         const [user] = await db.select().from(users).where(eq(users.email, parsed.data.email))
         const passwordHash = user?.passwordHash ?? (await dummyPasswordHash())
@@ -38,14 +40,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         })
 
         // Pasifleştirilmiş kullanıcı parolası doğru olsa da giremez (Görev 7).
+        // Hesabın kovası burada sayılıyor: eşzamanlı BAŞARILI girişler birbirinin hakkını
+        // yemesin (ölçüm ve gerekçe login-rate-limit.ts'te).
         if (!user || !user.isActive || !ok) {
           loginGate.recordFailure(parsed.data.email)
           return null
         }
 
-        // Başarı hesabın penceresini temizliyor: üç kez yanılıp dördüncüde giren avukat,
-        // aynı pencerede iki kez daha yanıldığında kilitlenmemeli. Küresel bütçeye
-        // dokunmuyor (gerekçesi login-rate-limit.ts'te).
+        // Başarı hesabın penceresini temizliyor ve küresel bütçeye kendi birimini iade
+        // ediyor (gerekçesi login-rate-limit.ts'te).
         loginGate.clear(parsed.data.email)
 
         await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id))

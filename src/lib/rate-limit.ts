@@ -48,6 +48,23 @@ export function createRateLimiter(options: { limit: number; windowMs: number }) 
       return evaluate(windows.get(key), now)
     },
 
+    // Tek bir denemeyi sayaçtan geri alır.
+    //
+    // Kabul anında sayan bir çağıran için gerekli: deneme, sonucu bilinmeden sayılıyor ve
+    // sonuç "bu istek zaten sayılmamalıydı" çıkarsa tek yol geri vermek. Sayacın tümünü
+    // sıfırlamaz — paylaşılan bir anahtarda o, başkalarının denemelerini de affederdi.
+    //
+    // Yürürlükteki pencere, denemenin sayıldığı pencere DEĞİLSE dokunmuyor: iade ya
+    // süresi dolmuş bir pencereye (`now` çok ileride) ya da denemeden sonra açılmış yeni
+    // bir pencereye (`now` başlangıcın gerisinde) düşüyorsa, düşülecek bir birim yok ve
+    // düşmek sayacı gerçekte olandan az gösterirdi.
+    refund(key: string, now: number = Date.now()): void {
+      const current = windows.get(key)
+      if (!current || now < current.startedAt || now - current.startedAt >= options.windowMs) return
+      current.count -= 1
+      if (current.count <= 0) windows.delete(key)
+    },
+
     // Bir anahtarın penceresini tümüyle siler: sayaç sıfırlanır, pencere yeniden başlar.
     // Başarılı giriş bunu çağırıyor — üç kez yanılıp dördüncüde giren kullanıcı, aynı
     // pencerede iki kez daha yanıldığında kilitlenmemeli (Görev 3'te gözden kaçmıştı).

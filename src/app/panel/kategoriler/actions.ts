@@ -32,8 +32,13 @@ export async function createCategory(_prev: FormState, formData: FormData): Prom
   // Kategori adı düzyazı değil, iki-üç kelimelik bir sınıflandırma etiketi ve onu yalnız
   // yönetici giriyor. Buna karşılık bu form tek satırlık bir hızlı ekleme kutusu: onaylı
   // uyarı kutusunun getireceği ikinci gönderim turu, koruduğu riskten büyük bir sürtünme
-  // olurdu. Kategori adında gerçekten sorunlu bir ifade denenirse onu taşıyan makale
-  // yayımlanırken tarama zaten devreye girer.
+  // olurdu.
+  //
+  // BAŞKA BİR YERDEN GELEN GÜVENCE YOK: makale taraması makalenin BAŞLIK, ÖZET ve
+  // GÖVDESİNİ okuyor, bağlı olduğu kategorinin adını değil. Bugün kategori adı yalnız
+  // panelde ve makale üstbilgisinde görünüyor. Plan 3'ün kategori arşiv sayfası
+  // (/makaleler/kategori/[slug]) geldiğinde ad, makaleden bağımsız bir sayfa başlığı
+  // olarak yayımlanacak; karar o noktada yeniden değerlendirilmelidir.
   //
   // spec §11: çakışma sessizce üzerine yazılmaz, kullanıcıya açıkça bildirilir.
   if (await isSlugTaken(parsed.data.slug)) {
