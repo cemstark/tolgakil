@@ -1,11 +1,9 @@
-import Link from 'next/link'
 import type { PublicLawyerCard } from '@/db/queries/public/lawyers'
+import { LawyerCard } from '@/components/LawyerCard'
 import styles from './TeamStrip.module.css'
 
 type TeamStripProps = { lawyers: PublicLawyerCard[] }
 
-// Fotoğraf Görev 5'te ortak LawyerCard bileşeniyle geliyor; bu görev yalnız veri kaynağını
-// değiştiriyor, işaretlemeyi değil.
 export function TeamStrip({ lawyers }: TeamStripProps) {
   return (
     <section className={styles.section}>
@@ -17,10 +15,7 @@ export function TeamStrip({ lawyers }: TeamStripProps) {
           <ul className={styles.grid}>
             {lawyers.map((lawyer) => (
               <li key={lawyer.slug}>
-                <Link href={`/kadro/${lawyer.slug}`} className={`card ${styles.cardLayout}`}>
-                  <h3 className={styles.name}>{lawyer.fullName}</h3>
-                  <p className={styles.title}>{lawyer.title}</p>
-                </Link>
+                <LawyerCard lawyer={lawyer} />
               </li>
             ))}
           </ul>

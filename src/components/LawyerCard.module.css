@@ -1,0 +1,32 @@
+.card {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  height: 100%;
+}
+
+/* next/image `fill` konumlandırma için ölçülü ve position:relative bir kap ister.
+   Oran sabit: farklı en-boy oranındaki portreler ızgarayı zıplatmasın. */
+.photoFrame {
+  position: relative;
+  display: block;
+  aspect-ratio: 3 / 4;
+  margin-bottom: 12px;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.photo {
+  object-fit: cover;
+}
+
+.name {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.title {
+  color: var(--text-muted);
+}
