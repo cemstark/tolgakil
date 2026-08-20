@@ -3,6 +3,8 @@ import { getPanelUser } from '@/lib/auth-guards'
 import { PanelNav } from '@/components/PanelNav'
 import styles from './layout.module.css'
 
+export const instant = false
+
 export default async function PanelLayout({ children }: { children: ReactNode }) {
   // Koruma burada DEĞİL: /panel/giris de bu layout'un altında ve requireUser() burada
   // çağrılsa sonsuz yönlendirme olurdu. Alt rota grubu da çözmez, grup üstteki layout'u

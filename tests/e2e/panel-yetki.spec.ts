@@ -2,13 +2,15 @@ import { test, expect } from '@playwright/test'
 import { cikisYap, girisYap, ADMIN, EDITOR } from './helpers/auth'
 import { temizlikciAc } from './helpers/db-cleanup'
 
+// Her yolun yanında o sayfanın KENDİ başlığı duruyor: yetkisiz kullanıcının HTML'inde bu
+// dizenin hiç geçmediğini doğrulamak, "reddedildi mi" sorusunu içerik düzeyinde cevaplıyor.
 const ADMIN_YOLLARI = [
-  '/panel/kadro',
-  '/panel/calisma-alanlari',
-  '/panel/kategoriler',
-  '/panel/ayarlar',
-  '/panel/mesajlar',
-  '/panel/kullanicilar',
+  { yol: '/panel/kadro', baslik: 'Kadro' },
+  { yol: '/panel/calisma-alanlari', baslik: 'Çalışma Alanları' },
+  { yol: '/panel/kategoriler', baslik: 'Kategoriler' },
+  { yol: '/panel/ayarlar', baslik: 'Ayarlar' },
+  { yol: '/panel/mesajlar', baslik: 'Mesajlar' },
+  { yol: '/panel/kullanicilar', baslik: 'Kullanıcılar' },
 ]
 
 // Yetki kararı `requireAccess` ile SUNUCUDA veriliyor; tarayıcı genişliği onu değiştiremez.
@@ -17,12 +19,48 @@ const ADMIN_YOLLARI = [
 // çalışma alanları, kategoriler, mesajlar) iki projede de koşmaya devam ediyor.
 const TEK_PROJE = 'masaustu'
 
-for (const yol of ADMIN_YOLLARI) {
+/**
+ * Bu tur DURUM KODUNU doğrulamıyor; sebebi bilinçli bir sözleşme değişikliği:
+ *
+ * `cacheComponents` açıkken üretimde her dinamik rota ÖNCE statik kabuğu yayımlıyor. Yanıt
+ * 200 ile akmaya başladığı an durum kodu artık değiştirilemiyor, dolayısıyla `requireAccess`
+ * içindeki `notFound()` panelde gerçek bir 404 üretemiyor (ölçüldü: aynı kod dev kipinde 404,
+ * üretim kipinde 200 döndürüyor). Next bunu kaçınılmaz ilan ediyor ve tek çözüm olarak
+ * denetimin `proxy`'ye taşınmasını gösteriyor:
+ * node_modules/next/dist/docs/01-app/03-api-reference/04-functions/not-found.md:193
+ *
+ * Denetimi `proxy`'ye taşımak ya JWT'deki bayat role güvenmeyi (rolü düşürülen kullanıcı
+ * 8 saat admin kalırdı) ya da proxy'ye veritabanı sorgusu koymayı gerektirirdi; ikisi de
+ * durum kodu için ağır bedeller. Panel `noindex` ve kimlik doğrulaması arkasında olduğu için
+ * durum kodunun gerçek bir tüketicisi yok — bu yüzden 404 sözleşmesinden vazgeçildi.
+ *
+ * Vazgeçilmeyen şey KORUMANIN KENDİSİ. Aşağıdaki üç iddia durum kodundan daha güçlü:
+ * kullanıcı reddi görüyor, korunan sayfanın verisi HTML'e hiç girmiyor ve gezinme yetkisiz
+ * bağlantı çizmiyor. Halka açık tarafta 404 hâlâ gerçek (ölçüldü) — orada tüketicisi var.
+ */
+for (const { yol, baslik } of ADMIN_YOLLARI) {
   test(`editor ${yol} adresine erişemez`, async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== TEK_PROJE, 'Yetki kararı sunucuda verilir; görünüm alanından bağımsız.')
     await girisYap(page, EDITOR)
-    const yanit = await page.goto(yol)
-    expect(yanit?.status()).toBe(404)
+    await page.goto(yol)
+    const anaBolum = page.getByRole('main')
+
+    // (a) Reddedildiğini GÖRÜYOR: sessiz boş sayfa değil, açık bir ret ekranı.
+    await expect(anaBolum.getByRole('heading', { name: 'Sayfa bulunamadı', level: 1 })).toBeVisible()
+
+    // (b) Sızıntı testi. Kapsam kasten `main`: sayfanın <title> etiketi bölüm adını taşıyor
+    // (bu bayraktan ÖNCE de böyleydi, ölçüldü) ve "Kadro" gibi adlar halka açık alt bilgi
+    // bağlantılarında da geçiyor — ham HTML'de dize aramak bu ikisine takılıp gerçek soruyu
+    // sormayı bırakırdı. Gerçek soru: korunan sayfanın ARAYÜZÜ çizildi mi?
+    await expect(anaBolum.getByRole('heading', { name: baslik })).toHaveCount(0)
+
+    // Veri taşıyan hiçbir arayüz yok: liste sayfaları tablo, ayarlar/düzenleme sayfaları form
+    // çiziyor. Ret ekranında ikisi de bulunmamalı — bir kayıt sızsa buradan görünürdü.
+    await expect(anaBolum.locator('table')).toHaveCount(0)
+    await expect(anaBolum.locator('form')).toHaveCount(0)
+
+    // (c) Gezinme yetkisiz bölüme bağlantı çizmiyor.
+    await expect(page.locator(`nav a[href="${yol}"]`)).toHaveCount(0)
   })
 
   test(`admin ${yol} adresini görür`, async ({ page }, testInfo) => {
@@ -31,6 +69,10 @@ for (const yol of ADMIN_YOLLARI) {
     const yanit = await page.goto(yol)
     expect(yanit?.status()).toBe(200)
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+
+    // Editörün göremediği başlığı yöneticinin GERÇEKTEN gördüğü doğrulanıyor; yoksa yukarıdaki
+    // sızıntı testi, sayfa bomboş olsa bile yeşil kalırdı.
+    await expect(page.getByRole('heading', { name: baslik, level: 1 })).toBeVisible()
   })
 }
 

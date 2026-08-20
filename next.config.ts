@@ -2,6 +2,19 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Next 16'da kararlı ve KÖK seviyede (experimental altında değil). 'use cache' yönergesi
+  // yalnız bu bayrak açıkken çalışıyor; Plan 2'de yazılmış revalidateTag(tag, 'max')
+  // çağrıları da ancak okuma tarafı cacheTag ile bağlandığında bir işe yarıyor.
+  //
+  // Segment export'ları `dynamic`, `dynamicParams`, `revalidate`, `fetchCache` v16.0.0'da
+  // kaldırıldı: süre gerekiyorsa cacheLife() ile verilir.
+  //
+  // ÖLÇÜLMÜŞ İKİ YAN ETKİ:
+  // 1) Panel statik kabuk denetiminden `instant = false` ile muaf (src/app/panel/layout.tsx).
+  // 2) Üretimde her dinamik rota önce statik kabuğu yayımladığı için, bir <Suspense> sınırının
+  //    İÇİNDE çağrılan notFound() durum kodunu değiştiremiyor (soft 404). Halka açık ayrıntı
+  //    sayfalarında varlık denetimi sayfa gövdesinde, Suspense'in DIŞINDA kalmalı.
+  cacheComponents: true,
   images: { formats: ['image/avif', 'image/webp'] },
   // argon2 ve sharp yerel (native) ikili taşır; sunucu paketine gömülemez.
   serverExternalPackages: ['argon2', 'sharp'],

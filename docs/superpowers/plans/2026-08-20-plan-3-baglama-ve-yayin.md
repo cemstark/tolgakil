@@ -410,6 +410,64 @@ eksiksiz geri geldi (182 birim, 271 e2e dev + `CI=1`, build 25/25, tsc/lint temi
 (A2) proxy JWT rolüne baksın + `requireAccess()` ikinci hat kalsın, (A3) 404 sözleşmesinden
 bilinçli olarak vazgeçilsin ve test 200 + "Sayfa bulunamadı" içeriğini doğrulasın.
 
+#### ÖLÇÜM SONUCU — GÖREV 1C: BAYRAK AÇILDI (karar (A3) — tarih: 2026-08-20)
+
+Aborjina kararı: **(A3)** — panel için 404 sözleşmesinden bilinçli vazgeçildi. Gerekçe: üç
+seçeneğin güvenlik sonucu aynı; panel `noindex` ve kimlik doğrulaması arkasında olduğu için
+durum kodunun gerçek bir tüketicisi yok. **`cacheComponents: true` artık depoda AÇIK.**
+
+**Karardan önce ölçülen kritik soru — halka açık taraf soft 404 üretiyor mu? HAYIR:**
+
+```
+/olcum-sonda/var-olan-yazi         HTTP=200     (generateStaticParams ile üretilmiş)
+/olcum-sonda/olmayan-bir-yazi      HTTP=404     (notFound(), Suspense DIŞINDA)
+/olmayan-sayfa                     HTTP=404
+/olcum-sonda-akan/olmayan-bir-yazi HTTP=200     (notFound(), Suspense İÇİNDE -> soft 404)
+```
+
+**Görev 8 için BAĞLAYICI KURAL:** `notFound()` gerçek 404 döndürür **ancak ve ancak** akış
+başlamadan, yani `<Suspense>` sınırının DIŞINDA çağrılırsa. Ayrıntı sayfalarında varlık
+denetimi sayfa gövdesinde kalmalı; akan bir çocuğa taşınırsa 404 sessizce 200 olur ve arama
+motoru boş sayfayı indeksler. Kural `next.config.ts` ve `src/lib/auth-guards.ts` yorumlarına
+da işlendi.
+
+**(A3) uygulanışı:** `tests/e2e/panel-yetki.spec.ts`'teki 6 editör testi zayıflatılmadı,
+**güçlendirildi** — durum kodu iddiası yerine (a) ret ekranı görünüyor, (b) korunan sayfanın
+başlığı/tablosu/formu `main` içinde hiç çizilmiyor, (c) gezinme yetkisiz bağlantı taşımıyor.
+Test başına `expect` sayısı 1 → 5. `skip` eklenmedi. `admin ... görür` testlerine de başlığın
+gerçekten görüldüğü iddiası eklendi (yoksa sızıntı testi boş sayfada da yeşil kalırdı).
+Mutasyon kanıtı: `canAccess` → `return true` yapıldığında 6 testin hepsi kırmızı.
+
+**Son durum (bayrak AÇIK):** `npm run build` yeşil (29/29), `npx tsc --noEmit` temiz (build'den
+SONRA), `npm run lint` temiz, `npm test` 182/182, `npm run test:e2e` 271/271,
+`CI=1 npm run test:e2e` 271/271 — **taban birebir korundu.**
+
+**Raporlanan iki gözlem (düzeltilmedi):** (1) yetkisiz panel yolunda `<title>` bölüm adını
+taşıyor — bayraktan ÖNCE de böyleydi, ölçüldü; veritabanı verisi sızmıyor, sayfa `noindex`.
+(2) Üretim günlüğünde yeni `⨯ Error: The destination stream closed early.` satırı — akış
+iptallerinden kaynaklanıyor, hiçbir teste yansımıyor.
+
+#### BAĞLAYICI KALIPLAR (bayrak açık — Görev 3+ buradan okur)
+
+1. **Sorgu katmanına `'use cache'` KONMAZ** — `cacheTag()` Vitest'te fırlatıyor (bayrak açıkken
+   bile; Vitest `next.config.ts` okumuyor). Sorgular saf kalır, sınır tüketicide kurulur.
+2. **Önbellekleme kalıbı** (üretim derlemesiyle doğrulandı; `cacheLife` rota tablosuna `1d 1w`
+   olarak yansıyor):
+   ```tsx
+   async function CalismaAlanlariBlogu() {
+     'use cache'
+     cacheTag(TAGS.practiceAreas)
+     cacheLife('days')
+     const areas = await listPublicPracticeAreas()
+     return <PracticeAreas areas={areas} />
+   }
+   ```
+3. **`searchParams` kalıbı (Görev 7):** sayfa `async` OLMAZ; promise `<Suspense>` sarmalı
+   çocuğa prop geçer, `await` orada yapılır.
+4. **`notFound()` kuralı (Görev 8):** varlık denetimi `<Suspense>` DIŞINDA kalmalı.
+5. **Panel:** `instant = false` ile statik kabuk denetiminin dışında; panelde `notFound()`
+   durum kodu değil içerik engelliyor.
+
 - [ ] **Adım 10: KARAR — olumsuzsa DUR**
 
 **Olumsuz sayılan sonuçlar** (herhangi biri yeterli):

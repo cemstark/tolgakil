@@ -48,9 +48,19 @@ export async function requireUser(): Promise<PanelUser> {
   return user
 }
 
-// Yetkisiz erişimde notFound(): kaynağın varlığını ele vermez ve gerçek bir HTTP durumu
-// döndürür. forbidden() elendi — Next 16.3'te experimental.authInterrupts bayrağı gerekiyor,
-// deneysel bayrak açmamak için bu yol seçildi.
+// Yetkisiz erişimde notFound(): kaynağın varlığını ele vermez. forbidden() elendi — Next
+// 16.3'te experimental.authInterrupts bayrağı gerekiyor, deneysel bayrak açmamak için bu yol
+// seçildi.
+//
+// DİKKAT: buradaki notFound() DURUM KODU için değil, İÇERİĞİ ENGELLEMEK için çağrılıyor.
+// cacheComponents açıkken üretimde her dinamik rota önce statik kabuğu yayımlıyor; yanıt 200
+// ile akmaya başladıktan sonra durum kodu değiştirilemediği için panel yollarında gerçek 404
+// dönmüyor (ölçüldü: dev kipinde 404, üretimde 200). Bu bilinçli kabul edilmiş bir sözleşme —
+// gerekçesi ve ölçümü tests/e2e/panel-yetki.spec.ts başındaki notta.
+//
+// Halka açık taraf bundan ETKİLENMİYOR: notFound() bir <Suspense> sınırının DIŞINDA çağrıldığı
+// sürece gerçek 404 dönüyor (ölçüldü). Makale/kadro ayrıntı sayfalarında varlık denetimi
+// sayfa gövdesinde kalmalı, akan bir çocuğun içine taşınmamalı — taşınırsa soft 404 olur.
 export async function requireAccess(resource: PanelResource): Promise<PanelUser> {
   const user = await requireUser()
   if (!canAccess(user.role, resource)) notFound()
