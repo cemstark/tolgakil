@@ -234,6 +234,13 @@ export const categorySchema = z
   .transform((v) => ({ ...v, slug: resolveSlug(v.slug, v.name) }))
   .superRefine((v, ctx) => requireSlug(v.slug, 'Kategori adından', ctx))
 
+// Slug ŞEMADA YOK: sabit satırlı tabloda slug kullanıcı girdisi değil, rota parametresi.
+// Server action onu isPageSlug ile daraltıyor; şemaya konsaydı "uydurma" bir slug şemadan
+// geçer ve UPDATE hiçbir satırı etkilemeden "kaydedildi" denirdi.
+export const pageSchema = z.object({
+  title: z.string().trim().min(3, 'Başlık en az 3 karakter olmalı.').max(220, 'Başlık en fazla 220 karakter olabilir.'),
+})
+
 // mapLat/mapLng zorunlu bir ANAHTAR (değer boş bırakılabilir) ve bu bilinçli: ayarlar
 // formunun tek çağıran olduğu ve formun bu alanları GERÇEKTEN çizdiği için şemayı
 // gevşetmeye gerek yok. Aynı gerekçeyle whatsapp/kep/sosyal/alt bilgi alanları da burada:

@@ -81,6 +81,12 @@ export const articles = mysqlTable(
     title: varchar('title', { length: 220 }).notNull(),
     excerpt: varchar('excerpt', { length: 400 }).notNull(),
     content: text('content').notNull(),
+    // FULLTEXT indeksi content'i kapsıyordu ve o sütun HTML tutuyor: "<strong>" araması
+    // makale getiriyor, etiket adları terim olarak indeksleniyordu (Plan 2 borcu). Bu sütun
+    // aynı metnin düz hâlini tutuyor ve indeks artık content yerine bunu kapsıyor.
+    // Nullable: geri doldurma script'i koşmadan önceki satırlar NULL kalır ve NULL bir
+    // FULLTEXT sütunu boş dize gibi davranır — o satır aramada çıkmaz, hata da vermez.
+    searchText: text('search_text'),
     coverMediaId: int('cover_media_id').references(() => media.id, { onDelete: 'set null' }),
     // Yazarı veya kategorisi olan makale sessizce sahipsiz kalmasın: silme reddedilir.
     authorId: int('author_id').references(() => lawyers.id, { onDelete: 'restrict' }),
@@ -130,6 +136,29 @@ export const settings = mysqlTable('settings', {
   footerText: varchar('footer_text', { length: 500 }),
 })
 
+// Sabit satırlı sayfa metinleri: spec §4 /hakkimizda, /kvkk ve /cerez-politikasi sayfalarını
+// istiyor ama spec §5 veri modelinde bu metinler için hiçbir alan yok. Kodda sabit metin
+// olsalardı avukat kendi metnini panelden değiştiremezdi. Yeni satır oluşturulamaz, satır
+// silinemez; yalnız düzenlenir (bkz. src/app/panel/sayfalar).
+export const pages = mysqlTable('pages', {
+  id: int('id').autoincrement().primaryKey(),
+  slug: varchar('slug', { length: 60 }).notNull().unique(),
+  title: varchar('title', { length: 220 }).notNull(),
+  content: text('content').notNull(), // sanitizeArticleHtml'den geçmiş HTML
+  updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
+})
+
+// Liste sütunun YANINDA duruyor: slug kümesini kısıtlayan tek şey bu dizi (veritabanında
+// ENUM yok — ENUM'a satır eklemek migration gerektirirdi ve buradaki amaç tam tersi,
+// kümenin kod tarafında kilitli kalması).
+export const PAGE_SLUGS = ['hakkimizda', 'kvkk', 'cerez-politikasi'] as const
+export type PageSlug = (typeof PAGE_SLUGS)[number]
+
+// Adres çubuğundan ve formdan gelen slug kullanıcı verisidir; daraltma bu yüklemle yapılır.
+export function isPageSlug(value: string): value is PageSlug {
+  return (PAGE_SLUGS as readonly string[]).includes(value)
+}
+
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 export type Media = typeof media.$inferSelect
@@ -146,3 +175,5 @@ export type Message = typeof messages.$inferSelect
 export type NewMessage = typeof messages.$inferInsert
 export type Settings = typeof settings.$inferSelect
 export type NewSettings = typeof settings.$inferInsert
+export type Page = typeof pages.$inferSelect
+export type NewPage = typeof pages.$inferInsert

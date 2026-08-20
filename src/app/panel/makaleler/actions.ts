@@ -104,11 +104,19 @@ export async function saveArticle(_prev: FormState, formData: FormData): Promise
   const publishedAt =
     parsed.data.status === 'published' ? (existing?.publishedAt ?? new Date()) : (existing?.publishedAt ?? null)
 
-  const values = {
+  // Tip ANNOTASYONU zorunlu, çıkarıma bırakılamaz: nesne bir değişkende durduğu için
+  // TypeScript fazlalık alan denetimini uygulamıyor ve drizzle tanımadığı anahtarı sessizce
+  // atıyor. Ölçüldü (Görev 2 mutasyon kanıtı): `searchText` sütunu şemadan kaldırıldığında
+  // bu dosya HATASIZ derlendi — yani sütun bir gün yeniden adlandırılsa arama beslemesi
+  // gürültüsüzce kesilirdi. Annotasyon o sessiz yolu derleme hatasına çeviriyor.
+  const values: typeof articles.$inferInsert = {
     title: parsed.data.title,
     slug: parsed.data.slug,
     excerpt: parsed.data.excerpt,
     content,
+    // FULLTEXT indeksi artık content'i değil bunu kapsıyor (bkz. schema.ts search_text).
+    // Aynı düz metin reklam yasağı taramasında da kullanılıyor; bir kez üretiliyor.
+    searchText: plainContent,
     status: parsed.data.status,
     categoryId: parsed.data.categoryId,
     authorId: parsed.data.authorId,

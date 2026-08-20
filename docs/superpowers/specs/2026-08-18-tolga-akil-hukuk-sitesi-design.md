@@ -218,7 +218,7 @@ Düzen `webstudio` projesindeki Vitest + Playwright yapılandırmasıyla aynıd�
 | Analitik kullanılacak mı, kullanılacaksa hangisi | TBY | Uygulama sırasında |
 | Gerçek içerik: büro adı, avukat özgeçmişleri, çalışma alanları, iletişim bilgileri | Müşteri | Panel hazır olduğunda |
 | MySQL yedekleme düzeni | TBY | Yayına almadan önce |
-| **KVKK aydınlatma metni ve çerez politikasının gerçek içeriği** — bu metinler hukuki belgedir ve model tarafından üretilmez; Plan 3 yalnız panelden düzenlenebilir yer tutucu koyar | Müşteri (avukat) | **Yayına almadan önce — yer tutucuyla yayına çıkılmaz** |
+| **KVKK aydınlatma metni ve çerez politikasının gerçek içeriği** — bu metinler hukuki belgedir ve model tarafından üretilmez; yer tutucu bugün `pages` tablosunda duruyor ve **Panel → Sayfa Metinleri** bölümünden düzenlenir | Müşteri (avukat) + barosu | **Yayına almadan önce — zorunlu; yer tutucuyla yayına çıkılmaz** |
 | Site adresi (`SITE_URL`) — tanımlı değilse derleme bilerek düşer; `localhost` dolu bir `sitemap.xml` indekslenirse geri alması haftalar sürer | TBY | Dağıtımdan önce |
 
 ## 14. Kapsam dışı

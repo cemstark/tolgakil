@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 // Uzantılı ve göreli yollar bilinçli: scripts/seed.mts bu dosyayı doğrudan Node ESM ile
 // yüklüyor; Node ne `@/` takma adını çözer ne de uzantısız göreli belirteci kabul eder.
 import { db } from './client.ts'
-import { categories, practiceAreas, settings, users } from './schema.ts'
+import { categories, pages, practiceAreas, settings, users } from './schema.ts'
 import { hashPassword } from '../lib/password.ts'
 import { SETTINGS_ID } from '../lib/settings-id.ts'
 
@@ -18,6 +18,18 @@ const SEED_PRACTICE_AREAS = [
   { slug: 'aile-hukuku', name: 'Aile Hukuku', summary: 'Boşanma, velayet, nafaka ve mal rejimi süreçleri.', sortOrder: 0 },
   { slug: 'is-hukuku', name: 'İş Hukuku', summary: 'İşçi ve işveren uyuşmazlıkları, alacak ve işe iade davaları.', sortOrder: 1 },
   { slug: 'ticaret-hukuku', name: 'Ticaret Hukuku', summary: 'Şirketler, sözleşmeler ve ticari uyuşmazlıklar.', sortOrder: 2 },
+]
+
+// HUKUKİ METİN ÜRETİLMİYOR — bağlayıcı karar. KVKK aydınlatma metni ve çerez politikası
+// hukuki belgedir; model üretimi bir metin, gerçek bir belge gibi görüneceği için burada
+// yalnız yer tutucu duruyor. Müvekkilin gerçek metni panelden girmesi spec §13'te açık
+// madde olarak kayıtlı.
+const YER_TUTUCU = '<p>Bu metin büro tarafından panelden girilecektir.</p>'
+
+const SEED_PAGES = [
+  { slug: 'hakkimizda', title: 'Hakkımızda', content: YER_TUTUCU },
+  { slug: 'kvkk', title: 'KVKK Aydınlatma Metni', content: YER_TUTUCU },
+  { slug: 'cerez-politikasi', title: 'Çerez Politikası', content: YER_TUTUCU },
 ]
 
 function requiredEnv(key: string): string {
@@ -63,5 +75,12 @@ export async function seed(): Promise<void> {
       email: 'info@example.com',
       footerText: 'Bu sitedeki bilgiler hukuki tavsiye niteliği taşımaz.',
     })
+  }
+
+  // Idempotent: var olan satırın İÇERİĞİNİ EZMEZ. Aksi hâlde tohumu ikinci kez koşturmak
+  // avukatın panelden girdiği gerçek KVKK metnini yer tutucuyla değiştirirdi.
+  for (const page of SEED_PAGES) {
+    const existing = await db.select().from(pages).where(eq(pages.slug, page.slug))
+    if (existing.length === 0) await db.insert(pages).values(page)
   }
 }

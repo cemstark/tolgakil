@@ -2,7 +2,7 @@ import type { UserRole } from '@/db/schema'
 
 export type PanelResource =
   | 'articles' | 'media' | 'lawyers' | 'practiceAreas'
-  | 'categories' | 'settings' | 'messages' | 'users'
+  | 'categories' | 'settings' | 'messages' | 'users' | 'pages'
 
 // Spec §3: editor yalnız yayın üretir; büroyu tanıtan veriler ve kullanıcı yönetimi admin'de.
 const EDITOR_RESOURCES: ReadonlySet<PanelResource> = new Set(['articles', 'media'])

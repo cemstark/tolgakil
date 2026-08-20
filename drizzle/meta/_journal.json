@@ -15,6 +15,13 @@
       "when": 1787128505244,
       "tag": "0001_fulltext_articles",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1787217589515,
+      "tag": "0002_pages_and_search_text",
+      "breakpoints": true
     }
   ]
 }

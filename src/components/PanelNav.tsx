@@ -17,6 +17,7 @@ const PANEL_LINKS = [
   { href: '/panel/kadro', label: 'Kadro', resource: 'lawyers' },
   { href: '/panel/calisma-alanlari', label: 'Çalışma Alanları', resource: 'practiceAreas' },
   { href: '/panel/kategoriler', label: 'Kategoriler', resource: 'categories' },
+  { href: '/panel/sayfalar', label: 'Sayfa Metinleri', resource: 'pages' },
   { href: '/panel/mesajlar', label: 'Mesajlar', resource: 'messages' },
   { href: '/panel/kullanicilar', label: 'Kullanıcılar', resource: 'users' },
   { href: '/panel/ayarlar', label: 'Ayarlar', resource: 'settings' },

@@ -100,17 +100,39 @@ describe('şema', () => {
     expect(Math.abs(row.createdAt.getTime() - oncesi)).toBeLessThan(60_000)
   })
 
+  // İndeks artık content'i DEĞİL search_text'i kapsıyor (0002 migration): content HTML
+  // tuttuğu için etiket adları terim olarak indeksleniyordu. Sorgu sütun listesi indeksin
+  // sütun listesiyle birebir aynı olmak zorunda; aksi hâlde MariaDB
+  // ER_FT_MATCHING_KEY_NOT_FOUND fırlatır.
   it('FULLTEXT indeksi makale gövdesinde önek araması yapar', async () => {
     const categoryId = await kategoriEkle('kira-hukuku')
     await db.insert(articles).values({
       slug: 'kira-tespit', title: 'Kira tespit davası',
-      excerpt: 'Kira bedelinin belirlenmesi', content: '<p>Kiracının hakları</p>',
+      excerpt: 'Kira bedelinin belirlenmesi', content: '<p>Kiracının <strong>hakları</strong></p>',
+      searchText: 'Kiracının hakları',
       categoryId, status: 'published',
     })
     const bulunan = await db
       .select({ slug: articles.slug })
       .from(articles)
-      .where(sql`match(${articles.title}, ${articles.excerpt}, ${articles.content}) against ('dava*' in boolean mode)`)
+      .where(sql`match(${articles.title}, ${articles.excerpt}, ${articles.searchText}) against ('dava*' in boolean mode)`)
     expect(bulunan.map((r) => r.slug)).toEqual(['kira-tespit'])
+  })
+
+  // İndeksi yeniden kurmanın asıl gerekçesi: "strong" bir hukuk terimi değil, HTML etiketi.
+  // content indekslenmeye devam etseydi bu arama makaleyi getirirdi.
+  it('FULLTEXT indeksi HTML etiket adlarını terim saymaz', async () => {
+    const categoryId = await kategoriEkle('kira-hukuku')
+    await db.insert(articles).values({
+      slug: 'kira-tespit', title: 'Kira tespit davası',
+      excerpt: 'Kira bedelinin belirlenmesi', content: '<p>Kiracının <strong>hakları</strong></p>',
+      searchText: 'Kiracının hakları',
+      categoryId, status: 'published',
+    })
+    const bulunan = await db
+      .select({ slug: articles.slug })
+      .from(articles)
+      .where(sql`match(${articles.title}, ${articles.excerpt}, ${articles.searchText}) against ('strong*' in boolean mode)`)
+    expect(bulunan).toEqual([])
   })
 })
