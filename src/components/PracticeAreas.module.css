@@ -14,22 +14,6 @@
   margin-top: 32px;
 }
 
-/* Yüzey, kenarlık, yuvarlak ve iç boşluk ortak `.card` sınıfından geliyor; burada yalnız
-   ızgara hücresini dolduran yerleşim kalıyor. */
-.cardLayout {
-  display: block;
-  height: 100%;
-}
-
-.cardTitle {
-  font-size: 22px;
-  margin-bottom: 12px;
-}
-
-.cardSummary {
-  color: var(--text-muted);
-}
-
 @media (min-width: 768px) {
   .grid {
     grid-template-columns: repeat(3, 1fr);

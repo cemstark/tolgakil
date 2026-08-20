@@ -38,3 +38,22 @@ for (const path of OVERFLOW_ROUTES) {
     expect(overflow).toBe(false)
   })
 }
+
+// Sabit metin sayfaları artık `pages` tablosundan besleniyor. Bu test veri bağının
+// gerçekten kurulduğunu ölçer: metin kodda sabit kalsaydı da h1 ve başlık geçerdi,
+// ama panelden girilen gövde HTML'i .prose kabında çizilmezdi.
+const VERI_SAYFALARI = [
+  { path: '/hakkimizda', slug: 'hakkimizda' },
+  { path: '/kvkk', slug: 'kvkk' },
+  { path: '/cerez-politikasi', slug: 'cerez-politikasi' },
+] as const
+
+for (const s of VERI_SAYFALARI) {
+  test(`${s.path} gövdesini veritabanından alır`, async ({ page }) => {
+    await page.goto(s.path)
+    const prose = page.locator('.prose')
+    await expect(prose).toHaveCount(1)
+    // Yer tutucu bile olsa gövde BOŞ olamaz: boş .prose, veri bağının koptuğu anlamına gelir.
+    expect((await prose.innerText()).trim().length).toBeGreaterThan(0)
+  })
+}

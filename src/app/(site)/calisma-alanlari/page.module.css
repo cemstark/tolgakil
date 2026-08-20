@@ -1,0 +1,15 @@
+.grid {
+  list-style: none;
+  display: grid;
+  gap: 20px;
+}
+
+.empty {
+  color: var(--text-muted);
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

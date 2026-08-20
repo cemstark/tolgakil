@@ -1,0 +1,6 @@
+.lead {
+  max-width: 68ch;
+  margin-bottom: 40px;
+  font-size: 19px;
+  color: var(--text-muted);
+}

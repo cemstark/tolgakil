@@ -1,14 +1,19 @@
 import type { Metadata } from 'next'
-import { PageHeading } from '@/components/PageHeading'
+import { notFound } from 'next/navigation'
+import { StaticPage } from '@/components/StaticPage'
+import { loadStaticPage } from '@/db/queries/public/static-pages'
 
-export const metadata: Metadata = { title: 'KVKK Aydınlatma Metni' }
+// Aydınlatma metni HUKUKİ BELGEDİR ve bu kodda yazılmaz; büro panelden girer. Tohumdaki
+// yer tutucu, gerçek metin girilene kadar durur (sözleşme §3.6, spec §13).
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await loadStaticPage('kvkk')
+  if (page === null) return { title: 'Sayfa bulunamadı' }
+  return { title: page.title }
+}
 
-// Gerçek hukuki metin Plan 3'te müşteri onayıyla gelecek; burada uydurma metin yok.
-export default function KvkkPage() {
-  return (
-    <article className="pageShell">
-      <PageHeading eyebrow="Yasal" title="KVKK Aydınlatma Metni" />
-      <p>Bu sayfadaki metin yer tutucudur; bu metin yayına alınmadan önce güncellenecektir.</p>
-    </article>
-  )
+export default async function KvkkPage() {
+  const page = await loadStaticPage('kvkk')
+  if (page === null) notFound()
+
+  return <StaticPage eyebrow="Yasal" title={page.title} content={page.content} />
 }

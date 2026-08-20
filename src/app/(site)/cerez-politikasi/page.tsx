@@ -1,14 +1,18 @@
 import type { Metadata } from 'next'
-import { PageHeading } from '@/components/PageHeading'
+import { notFound } from 'next/navigation'
+import { StaticPage } from '@/components/StaticPage'
+import { loadStaticPage } from '@/db/queries/public/static-pages'
 
-export const metadata: Metadata = { title: 'Çerez Politikası' }
+// Çerez politikası da hukuki belgedir; metin bu kodda yazılmaz (bkz. kvkk/page.tsx).
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await loadStaticPage('cerez-politikasi')
+  if (page === null) return { title: 'Sayfa bulunamadı' }
+  return { title: page.title }
+}
 
-// Gerçek hukuki metin Plan 3'te müşteri onayıyla gelecek; burada uydurma metin yok.
-export default function CookiePolicyPage() {
-  return (
-    <article className="pageShell">
-      <PageHeading eyebrow="Yasal" title="Çerez Politikası" />
-      <p>Bu sayfadaki metin yer tutucudur; bu metin yayına alınmadan önce güncellenecektir.</p>
-    </article>
-  )
+export default async function CookiePolicyPage() {
+  const page = await loadStaticPage('cerez-politikasi')
+  if (page === null) notFound()
+
+  return <StaticPage eyebrow="Yasal" title={page.title} content={page.content} />
 }

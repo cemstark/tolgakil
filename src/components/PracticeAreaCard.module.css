@@ -1,0 +1,16 @@
+.card {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  height: 100%;
+}
+
+.name {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.summary {
+  color: var(--text-muted);
+}
