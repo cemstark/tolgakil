@@ -114,8 +114,13 @@ getirmez. Arşiv birkaç yüz yazıyı aşarsa harici arama gerekir. Bu bilinçl
 ## 6. Teknik mimari
 
 - **Next.js 16.3**, App Router, TypeScript. Genel sayfalar sunucu bileşeni.
-- **Önbellekleme:** makale, kadro ve alan sayfaları statik üretilir; panelden içerik
-  değişince ilgili etiket `revalidateTag` ile tazelenir.
+- **Önbellekleme:** `cacheComponents: true`. Makale, kadro ve alan sayfaları statik üretilir;
+  önbellek sınırı **sayfa katmanındadır** (`'use cache'` + `cacheTag` + `cacheLife`), sorgu
+  katmanı saf kalır. Panelden içerik değişince ilgili etiket **`updateTag`** ile tazelenir.
+  **`revalidateTag` DEĞİL — ölçüldü:** `revalidateTag` tanımı gereği stale-while-revalidate
+  olduğu için panelden yayımlanan makale ana sayfada görünmedi; `updateTag` etiketi anında
+  düşürüyor ve sonraki istek taze veriyi bekliyor. Kısıt: `updateTag` yalnız server action'dan
+  çağrılabilir; route handler'dan tazeleme gerekirse orada `revalidateTag(tag, 'max')` kullanılır.
 - **Drizzle ORM + `mysql2`**; şema TypeScript'te, migration'lar `drizzle-kit` ile dosyada.
 - **Auth.js v5**, credentials sağlayıcı, `argon2` parola özeti, HTTP-only çerezde JWT
   oturum. `/panel/**` middleware ile korunur. Giriş denemesine IP başına hız sınırı.
