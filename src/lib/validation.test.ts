@@ -94,6 +94,25 @@ describe('articleSchema', () => {
       expect(sonuc.success, `categoryId=${categoryId} kabul edilmemeliydi`).toBe(false)
     }
   })
+
+  // /makaleler/kategori/[slug] statik segmenti /makaleler/[slug]'i önceler; bu slug'lı
+  // makale 404 bile vermez, sessizce kategori arşivini açar (sözleşme §4).
+  it('kategori slug\'ını reddeder', () => {
+    const sonuc = articleSchema.safeParse({ ...gecerliMakale, slug: 'kategori' })
+    expect(sonuc.success).toBe(false)
+    expect(toFormState(sonuc.error!).errors.slug).toContain(
+      'Bu adres kategori arşivi için ayrılmıştır; başka bir slug yazın.',
+    )
+  })
+
+  // Kural TAM EŞLEŞME olmalı. "kategori" ile başlayan her şeyi yasaklayan bir sürüm,
+  // "kategoriler-arasi-fark" gibi meşru başlıkları da reddedip içerik kaybettirirdi.
+  it('yasaklı slug\'a benzeyen değerleri kabul eder', () => {
+    for (const slug of ['kategoriler', 'kategori-secimi', 'alt-kategori']) {
+      const sonuc = articleSchema.safeParse({ ...gecerliMakale, slug })
+      expect(sonuc.success, `slug=${slug} kabul edilmeliydi`).toBe(true)
+    }
+  })
 })
 
 describe('slug üretilemediğinde gösterilen alan adı', () => {

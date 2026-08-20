@@ -134,6 +134,22 @@ function requireSlug(slug: string, sourcePhrase: string, ctx: z.RefinementCtx): 
   }
 }
 
+// Rota segmentiyle çakışan slug'lar. Liste TAM EŞLEŞME ile karşılaştırılır: "kategoriler"
+// gibi yalnızca benzeyen bir slug'ın çakışması yok, onu da yasaklamak içerik kaybettirir.
+export const RESERVED_ARTICLE_SLUGS = ['kategori'] as const
+
+function rejectReservedSlug(slug: string, ctx: z.RefinementCtx): void {
+  if ((RESERVED_ARTICLE_SLUGS as readonly string[]).includes(slug)) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['slug'],
+      // Neden yasak olduğu yazılıyor: kullanıcı keyfî bir kısıt değil, adres çakışması
+      // gördüğünü anlasın ve başka bir slug seçsin.
+      message: 'Bu adres kategori arşivi için ayrılmıştır; başka bir slug yazın.',
+    })
+  }
+}
+
 export const loginSchema = z.object({
   email: z.email('Geçerli bir e-posta adresi girin.'),
   password: z.string().min(1, 'Parola zorunlu.'),
@@ -188,6 +204,7 @@ export const articleSchema = z
   .transform((v) => ({ ...v, slug: resolveSlug(v.slug, v.title) }))
   .superRefine((v, ctx) => {
     requireSlug(v.slug, 'Başlıktan', ctx)
+    rejectReservedSlug(v.slug, ctx)
     // Yayımlanan makale kategori sayfasından erişilebilir olmalı; taslakta bu zorunluluk yok.
     if (v.status === 'published' && v.categoryId === null) {
       ctx.addIssue({ code: 'custom', path: ['categoryId'], message: 'Yayımlamak için kategori seçin.' })
