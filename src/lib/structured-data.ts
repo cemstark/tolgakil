@@ -99,11 +99,12 @@ export function buroYapilandirilmisVerisi(
 /**
  * JSON-LD'yi `<script>` içine gömerken kullanılacak güvenli dize.
  *
- * `</script>` dizisi JSON içinde geçerli bir metin ama HTML ayrıştırıcısı onu betiğin sonu
- * sayar; bir çalışma alanı özetine o metin girerse sayfa bozulur ve kalan JSON gövdeye
- * yazılır. Ters eğik çizgiyle kaçırmak JSON'ı geçersiz KILMAZ (`<\/script>` geçerli bir
- * JSON kaçışı) ama HTML ayrıştırıcısını durdurmaz.
+ * BÜTÜN `<` karakterleri kaçırılıyor, yalnız `</script` değil. Sadece kapanış etiketini
+ * kaçırmak yetmiyordu: `<!--<script` dizisi HTML ayrıştırıcısını "double escaped" durumuna
+ * sokuyor ve o durumda ilk `</script>` elemanı SONLANDIRMIYOR, sayfanın kalanı JSON-LD
+ * gövdesine yutuluyor. Denetimde yakalandı. `\u003c` geçerli bir JSON kaçışı olduğu için
+ * veri bozulmuyor; ayrıştırıcılar aynı değeri okuyor.
  */
 export function jsonLdMetni(veri: Record<string, unknown>): string {
-  return JSON.stringify(veri).replace(/<\/script/gi, '<\\/script')
+  return JSON.stringify(veri).replace(/</g, '\\u003c')
 }

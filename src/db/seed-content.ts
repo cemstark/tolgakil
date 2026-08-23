@@ -10,9 +10,14 @@
  * onayladığı hukuki metni model çıktısıyla değiştirmek, onayı geçersiz kılar. Değişiklik
  * ancak büro yeni bir metin gönderdiğinde yapılır.
  *
- * TÜRETİLEN tek alan `summary`: belgede kart özeti yok, ama kartların ve meta açıklamaların
- * bir özete ihtiyacı var. Özetler yeni iddia üretmez — her biri o başlığın kendi "Başlıca
- * Çalışma Konuları" listesinin düz bir cümleye dönüştürülmüş hâlidir.
+ * BELGEDEN SAPAN TEK ŞEYLER — tam liste:
+ *   1. `summary` alanları TÜRETİLMİŞTİR. Belgede kart özeti yok ama kartların ve meta
+ *      açıklamaların bir özete ihtiyacı var. Özetler yeni iddia üretmez; her biri o
+ *      başlığın kendi "Başlıca Çalışma Konuları" listesinin düz bir cümleye dönüşmüş hâli.
+ *   2. Belgedeki "AKİL" büyük harf yazımı "Akil" olarak normalleştirilmiştir.
+ * Bunun dışında düzyazıya dokunulmamıştır. (İlk sürümde avukatın özgeçmişindeki çalışma
+ * alanı listesi sessizce değiştirilmiş ve birkaç cümle düşürülmüştü; denetimde yakalanıp
+ * belgedeki hâline döndürüldü.)
  *
  * Metinler seed.ts'ten AYRI duruyor çünkü seed.ts bir kurulum betiği; onaylı düzyazının
  * kurulum mantığıyla aynı dosyada olması, ikisinden birine dokunurken diğerini kazara
@@ -28,7 +33,9 @@ export const SEED_SETTINGS = {
   address: 'Bahçelievler Mah. İstiklal Cad. No: 162/A D: 8, İlkadım / Samsun',
   phone: '0362 234 00 54',
   phoneSecondary: '0541 643 50 55',
-  whatsapp: '0541 643 50 55',
+  // Uluslararası biçim: wa.me ülke kodu bekliyor. whatsappHref() ulusal biçimi de çevirir
+  // ama veri kaynağının kendisi doğru olsun.
+  whatsapp: '+90 541 643 50 55',
   workingHours: 'Hafta içi 08.00-18.00, Cumartesi 08.00-14.00, Pazar kapalı',
   email: 'akilavukatlik@gmail.com',
   footerText: 'Bu sitedeki bilgiler hukuki tavsiye niteliği taşımaz.',
@@ -53,11 +60,18 @@ export const SEED_LAWYER = {
   university: 'İstanbul Bilgi Üniversitesi Hukuk Fakültesi',
   email: 'akilavukatlik@gmail.com',
   sortOrder: 0,
+  // Belgenin "Mesleki Deneyim" bölümünden BİREBİR. İlk sürümde iki sapma vardı ve denetimde
+  // yakalandı: (1) avukatın kendi çalışma alanlarını saydığı cümleden "yatırım hukuku,
+  // ticaret ve şirketler hukuku" çıkarılıp yerine belgede o cümlede geçmeyen "icra ve iflas
+  // hukuku" konmuştu, (2) "Yaklaşık 8 yıllık mesleki deneyim" cümlesi ile birkaç sıfat
+  // sessizce düşürülmüştü. Bir avukatın onayladığı, kendi uzmanlığını tarif eden cümleyi
+  // değiştirmek onayın kapsamı dışındadır; metin belgedeki hâline döndürüldü.
+  // Tek biçimsel düzeltme: belgedeki "AKİL" büyük harf yazımı "Akil" olarak normalleştirildi.
   bio: [
-    '<p>Büromuzun kurucusu Av. Tolga Akil, Samsun Barosuna kayıtlı bir avukat olup Türk hukukunun farklı alanlarına ilişkin bilgi birikimi ve uygulama deneyimiyle yerli ve yabancı müvekkillere hukuki danışmanlık ve avukatlık hizmetleri sunmaktadır.</p>',
-    '<p>Çalışma alanı özellikle gayrimenkul uyuşmazlıkları, icra ve iflas hukuku, iş hukuku ve tazminat davaları ile sözleşmesel ilişkilerden kaynaklanan ihtilaflar üzerinde yoğunlaşmaktadır.</p>',
+    '<p>Büromuzun kurucusu Av. Tolga Akil, Samsun Barosuna kayıtlı bir avukat olup Türk hukukunun farklı alanlarına ilişkin kapsamlı bilgi birikimi ve uygulama deneyimiyle yerli ve yabancı müvekkillere hukuki danışmanlık ve avukatlık hizmetleri sunmaktadır.</p>',
+    '<p>Çalışma alanı özellikle yatırım hukuku, ticaret ve şirketler hukuku, gayrimenkul uyuşmazlıkları, iş hukuku ve tazminat davaları ile sözleşmesel ilişkilerden kaynaklanan ihtilaflar üzerinde yoğunlaşmaktadır.</p>',
     '<p>Avukat Tolga Akil, 2017 yılında İstanbul Bilgi Üniversitesi Hukuk Fakültesinden mezun olmuştur. 2018 yılında Samsun’da yasal stajını tamamladıktan sonra avukatlık mesleğini Samsun’da icra etmeye başlamıştır.</p>',
-    '<p>Av. Tolga Akil, müvekkilleriyle uzun vadeli ve güvene dayalı ilişkiler kurmanın, hukuki sorunların doğru şekilde anlaşılması ve her somut olayın özelliklerine göre uygun stratejinin belirlenmesiyle mümkün olduğuna inanır. Bu doğrultuda hukuki meseleleri kapsamlı şekilde analiz ederek uygulanabilir çözüm yolları geliştirmeyi hedefler.</p>',
+    '<p>Yaklaşık 8 yıllık mesleki deneyimi bulunan Avukat Tolga Akil, farklı hukuk alanlarında edindiği bilgi ve deneyim doğrultusunda çalışmalarını sürdürmektedir. Av. Tolga Akil, müvekkilleriyle uzun vadeli ve güvene dayalı ilişkiler kurmanın, hukuki sorunların doğru şekilde anlaşılması ve her somut olayın özelliklerine göre uygun stratejinin belirlenmesiyle mümkün olduğuna inanır. Bu doğrultuda karmaşık hukuki meseleleri kapsamlı şekilde analiz ederek etkili ve uygulanabilir çözüm yolları geliştirmeyi hedefler.</p>',
   ].join(''),
 } as const
 
@@ -261,9 +275,10 @@ export const SEED_ABOUT_PAGE = [
   '<p>Akil Hukuk Bürosunun çalışma anlayışında, her hukuki uyuşmazlığın kendi koşulları içerisinde değerlendirilmesi ve hukuki sürecin somut olayın özelliklerine göre ele alınması esas alınmaktadır.</p>',
   '<p>Büro, hukuki süreçlerin başlangıcından sonuçlanmasına kadar gerekli hukuki işlemlerin yürütülmesi, uyuşmazlıkların hukuki açıdan değerlendirilmesi ve müvekkillerin süreç hakkında bilgilendirilmesi doğrultusunda çalışmalarını sürdürmektedir.</p>',
   '<h2>Mesleki Deneyim</h2>',
-  '<p>Büromuzun kurucusu Av. Tolga Akil, Samsun Barosuna kayıtlı bir avukat olup Türk hukukunun farklı alanlarına ilişkin bilgi birikimi ve uygulama deneyimiyle yerli ve yabancı müvekkillere hukuki danışmanlık ve avukatlık hizmetleri sunmaktadır.</p>',
+  '<p>Büromuzun kurucusu Av. Tolga Akil, Samsun Barosuna kayıtlı bir avukat olup Türk hukukunun farklı alanlarına ilişkin kapsamlı bilgi birikimi ve uygulama deneyimiyle yerli ve yabancı müvekkillere hukuki danışmanlık ve avukatlık hizmetleri sunmaktadır. Çalışma alanı özellikle yatırım hukuku, ticaret ve şirketler hukuku, gayrimenkul uyuşmazlıkları, iş hukuku ve tazminat davaları ile sözleşmesel ilişkilerden kaynaklanan ihtilaflar üzerinde yoğunlaşmaktadır.</p>',
   '<p>Avukat Tolga Akil, 2017 yılında İstanbul Bilgi Üniversitesi Hukuk Fakültesinden mezun olmuştur. 2018 yılında Samsun’da yasal stajını tamamladıktan sonra avukatlık mesleğini Samsun’da icra etmeye başlamıştır.</p>',
-  '<p>Akil Hukuk Bürosu, hukuki ihtiyaçların doğru şekilde değerlendirilmesi ve hukuki süreçlerin mevzuat çerçevesinde yürütülmesi amacıyla faaliyet göstermektedir.</p>',
+  '<p>Yaklaşık 8 yıllık mesleki deneyimi bulunan Avukat Tolga Akil, farklı hukuk alanlarında edindiği bilgi ve deneyim doğrultusunda çalışmalarını sürdürmektedir.</p>',
+  '<p>Akil Hukuk Bürosu, deneyimli kadrosuyla birlikte hukuki ihtiyaçların doğru şekilde değerlendirilmesi ve hukuki süreçlerin mevzuat çerçevesinde yürütülmesi amacıyla faaliyet göstermektedir.</p>',
 ].join('')
 
 /** Makale kategorileri çalışma alanlarıyla aynı kümeden: yazılar bir alana bağlanacak. */

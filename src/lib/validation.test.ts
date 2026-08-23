@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   ARTICLE_CONTENT_MAX_BYTES, articleContentLengthError, articleSchema, byteLength,
-  categorySchema, lawyerSchema, loginSchema, settingsSchema, toFormState,
+  categorySchema, contactSchema, lawyerSchema, loginSchema, settingsSchema, toFormState,
   userCreateSchema, userUpdateSchema,
 } from '@/lib/validation'
 
@@ -371,5 +371,74 @@ describe('userCreateSchema', () => {
       username: 'yeni-kullanici', name: 'Yeni Kullanıcı', password: 'yeterince-uzun-parola', role: 'superadmin',
     })
     expect(sonuc.success).toBe(false)
+  })
+})
+
+/**
+ * İletişim formu şeması.
+ *
+ * Denetimde yakalandı: bu şema ve onu kullanan server action, sitenin KİMLİK DOĞRULAMASI
+ * OLMAYAN tek yazma yolu olmasına rağmen hiç test edilmiyordu. Aşağıdaki durumlar o
+ * boşluğu kapatıyor — özellikle sütun sınırları (aşan bir değer INSERT'i düşürürdü) ve
+ * KVKK onayının atlanamazlığı.
+ */
+describe('contactSchema', () => {
+  const gecerli = {
+    name: 'Deneme Ziyaretçi',
+    email: 'ziyaretci@ornek.com',
+    phone: '0532 111 22 33',
+    subject: 'Kira sözleşmesi hakkında',
+    body: 'Kiracı olduğum işyeri için kira bedelinin belirlenmesi konusunda görüşmek istiyorum.',
+    kvkkAccepted: 'evet',
+  }
+
+  it('geçerli gönderimi kabul eder', () => {
+    const sonuc = contactSchema.safeParse(gecerli)
+    expect(sonuc.success).toBe(true)
+    expect(sonuc.data?.name).toBe('Deneme Ziyaretçi')
+  })
+
+  it('KVKK onayı işaretlenmemişse reddeder', () => {
+    // İşaretlenmemiş kutu FormData'ya hiç girmez; FormData.get() null döndürür.
+    const sonuc = contactSchema.safeParse({ ...gecerli, kvkkAccepted: null })
+    expect(sonuc.success).toBe(false)
+    expect(toFormState(sonuc.error!).errors.kvkkAccepted?.[0]).toContain('onaylamalısınız')
+  })
+
+  it('telefon isteğe bağlı; boş bırakılınca null olur', () => {
+    expect(contactSchema.safeParse({ ...gecerli, phone: '' }).data?.phone).toBeNull()
+    expect(contactSchema.safeParse({ ...gecerli, phone: null }).data?.phone).toBeNull()
+  })
+
+  it('çok kısa mesajı reddeder', () => {
+    const sonuc = contactSchema.safeParse({ ...gecerli, body: 'Merhaba' })
+    expect(sonuc.success).toBe(false)
+    expect(toFormState(sonuc.error!).errors.body?.[0]).toContain('en az 20 karakter')
+  })
+
+  it('geçersiz e-posta biçimini reddeder', () => {
+    expect(contactSchema.safeParse({ ...gecerli, email: 'ornek.com' }).success).toBe(false)
+  })
+
+  // Sütun genişlikleri: name 160, email 190, phone 40, subject 220 (bkz. db/schema.ts).
+  // Şema sınırı sütunu AŞAMAZ — aşarsa INSERT çalışma anında düşer ve ziyaretçi mesajını
+  // kaybeder. Sınırlar burada kilitleniyor.
+  it('sütun genişliğini aşan değerleri reddeder', () => {
+    expect(contactSchema.safeParse({ ...gecerli, name: 'a'.repeat(161) }).success).toBe(false)
+    expect(contactSchema.safeParse({ ...gecerli, subject: 'a'.repeat(221) }).success).toBe(false)
+    expect(contactSchema.safeParse({ ...gecerli, phone: '1'.repeat(41) }).success).toBe(false)
+    expect(contactSchema.safeParse({ ...gecerli, body: 'a'.repeat(5001) }).success).toBe(false)
+  })
+
+  it('sınır değerleri kabul eder', () => {
+    expect(contactSchema.safeParse({ ...gecerli, name: 'a'.repeat(160) }).success).toBe(true)
+    expect(contactSchema.safeParse({ ...gecerli, subject: 'a'.repeat(220) }).success).toBe(true)
+    expect(contactSchema.safeParse({ ...gecerli, body: 'a'.repeat(5000) }).success).toBe(true)
+  })
+
+  it('baştaki ve sondaki boşlukları kırpar', () => {
+    const sonuc = contactSchema.safeParse({ ...gecerli, name: '  Deneme  ', subject: '  Konu  ' })
+    expect(sonuc.data?.name).toBe('Deneme')
+    expect(sonuc.data?.subject).toBe('Konu')
   })
 })

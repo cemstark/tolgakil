@@ -95,8 +95,15 @@ test('h2 mobilde 30px çizilir', async ({ page }, testInfo) => {
 test('mobil menü açıkken erişilebilirlik ihlali yok', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobil', 'masaüstünde panel zaten her zaman açık')
   await page.goto('/')
+  const panel = page.locator('#main-menu')
   await page.locator('[aria-controls="main-menu"]').click()
-  await expect(page.locator('#main-menu')).toHaveAttribute('data-open', 'true')
+  await expect(panel).toHaveAttribute('data-open', 'true')
+  // Açılış animasyonunun BİTMESİ bekleniyor. `data-open` özniteliği React state'iyle anında
+  // değişiyor ama panelin saydamlığı 240 ms'lik bir geçişle 0'dan 1'e çıkıyor; axe o aralıkta
+  // koşarsa yarı saydam paneli ölçüp gerçekte var olmayan bir kontrast ihlali bildiriyor
+  // (ölçüldü: CTA düğmesi 4,1:1 — arkadaki koyu zeminle karışmış hâli). Test, geçiş anını
+  // değil menünün AÇIK durumunu ölçmek için yazıldı.
+  await expect(panel).toHaveCSS('opacity', '1')
   const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
   expect(result.violations).toEqual([])
 })

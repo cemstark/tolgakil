@@ -20,3 +20,17 @@ describe('whatsappHref', () => {
     expect(whatsappHref('+90 532 000 00 00')).toBe('https://wa.me/905320000000')
   })
 })
+
+describe('whatsappHref ulusal biçim', () => {
+  // Denetimde yakalanan hata: tohumdaki numara ulusal biçimdeydi (`0541 …`) ve üretilen
+  // adres baştaki sıfırı taşıyordu; WhatsApp böyle bir adresi reddediyor. Testin eski tek
+  // örneği zaten uluslararası biçimdeydi, bu yüzden hatayı hiç görmüyordu.
+  it('baştaki sıfırı ülke koduyla değiştirir', () => {
+    expect(whatsappHref('0541 643 50 55')).toBe('https://wa.me/905416435055')
+  })
+
+  it('zaten ülke kodlu numaraya dokunmaz', () => {
+    expect(whatsappHref('+90 541 643 50 55')).toBe('https://wa.me/905416435055')
+    expect(whatsappHref('90 541 643 50 55')).toBe('https://wa.me/905416435055')
+  })
+})

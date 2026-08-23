@@ -168,3 +168,24 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* KVKK açıklaması onay satırının altında, ondan görsel olarak ayrık: onay kutusunun
+   etiketi kısa ve tek iş yapar, ayrıntı ve bağlantı buraya iner. */
+.consentNote {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-top: -8px;
+  max-width: 60ch;
+}
+
+/* Ekran okuyucuya okunur, ekranda görünmez. `display: none` bunu yapmaz — o, içeriği
+   erişilebilirlik ağacından da siler. */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

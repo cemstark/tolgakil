@@ -8,7 +8,23 @@ import { USERNAME_ERROR, USERNAME_PATTERN } from '@/lib/username'
 z.config(z.locales.tr())
 
 export type FieldErrors = Record<string, string[]>
-export type FormState = { ok: boolean; errors: FieldErrors; message?: string; warnings?: string[] }
+/**
+ * `values` YALNIZ halka açık iletişim formu tarafından kullanılıyor ve isteğe bağlı.
+ *
+ * Gerekçe: React 19'da `<form action={fn}>` ile gönderilen KONTROLSÜZ form, eylem
+ * çalıştırılmadan önce otomatik sıfırlanıyor (react-dom kaynağında `requestFormReset`).
+ * Panel formları kontrollü olduğu için (`useEntityValues`) bundan etkilenmiyor; iletişim
+ * formu ilk sürümde kontrolsüzdü ve doğrulama hatasında ziyaretçinin yazdığı HER ŞEY
+ * siliniyordu — 2000 karakter yazıp onay kutusunu unutan kullanıcı baştan başlıyordu.
+ * Değerler eylemden geri taşınıp forma yeniden yazılıyor.
+ */
+export type FormState = {
+  ok: boolean
+  errors: FieldErrors
+  message?: string
+  warnings?: string[]
+  values?: Record<string, string>
+}
 
 // Başlangıç durumu için bir sabit DIŞA AKTARILMIYOR: istemci bileşenleri bu modülden yalnız
 // TİP alabiliyor. Değer olarak import edilen tek bir sabit bile modülü istemci paketine

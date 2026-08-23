@@ -2,7 +2,6 @@ import type { MetadataRoute } from 'next'
 import { cacheLife, cacheTag } from 'next/cache'
 import { listPublicPracticeAreas } from '@/db/queries/public/practice-areas'
 import { listPublicLawyers } from '@/db/queries/public/lawyers'
-import { listArticleFeedEntries } from '@/db/queries/public/articles'
 import { TAGS } from '@/lib/cache-tags'
 import { mutlakAdres } from '@/lib/site-url'
 
@@ -26,13 +25,12 @@ import { mutlakAdres } from '@/lib/site-url'
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   'use cache'
-  cacheTag(TAGS.practiceAreas, TAGS.articles, TAGS.lawyers)
+  cacheTag(TAGS.practiceAreas, TAGS.lawyers)
   cacheLife('max')
 
-  const [areas, lawyers, articles] = await Promise.all([
+  const [areas, lawyers] = await Promise.all([
     listPublicPracticeAreas(),
     listPublicLawyers(),
-    listArticleFeedEntries(),
   ])
 
   // Öncelikler göreli: ana sayfa ve çalışma alanları arama sonucunda hedeflenen sayfalar,
@@ -43,10 +41,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: mutlakAdres('/hakkimizda'), changeFrequency: 'yearly', priority: 0.7 },
     { url: mutlakAdres('/kadro'), changeFrequency: 'yearly', priority: 0.7 },
     { url: mutlakAdres('/iletisim'), changeFrequency: 'yearly', priority: 0.8 },
-    { url: mutlakAdres('/makaleler'), changeFrequency: 'weekly', priority: 0.6 },
-    { url: mutlakAdres('/kvkk'), changeFrequency: 'yearly', priority: 0.2 },
-    { url: mutlakAdres('/cerez-politikasi'), changeFrequency: 'yearly', priority: 0.2 },
   ]
+
+  // BURADA OLMAYANLAR ve gerekçeleri:
+  //   /makaleler/[slug] — ROTA HENÜZ YOK: src/app/(site)/makaleler altında yalnız page.tsx
+  //     var ve o da yer tutucu. Makale adreslerini bildirmek, büro ilk yazısını yayımladığı
+  //     anda Googlebot'a 404 verdirirdi. Ayrıntı rotası açılınca listArticleFeedEntries()
+  //     ile buraya eklenecek (TAGS.articles etiketi de o zaman geri gelmeli).
+  //   /makaleler — yer tutucu sayfa; içeriği yokken dizine önerilmesi anlamsız.
+  //   /kvkk, /cerez-politikasi — metinleri hâlâ yer tutucu; gerçek metin girilince eklenir.
 
   return [
     ...sabitler,
@@ -59,12 +62,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: mutlakAdres(`/kadro/${lawyer.slug}`),
       changeFrequency: 'yearly' as const,
       priority: 0.6,
-    })),
-    ...articles.map((article) => ({
-      url: mutlakAdres(`/makaleler/${article.slug}`),
-      lastModified: article.publishedAt,
-      changeFrequency: 'yearly' as const,
-      priority: 0.5,
     })),
   ]
 }

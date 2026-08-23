@@ -20,10 +20,23 @@ const YEREL_ADRES = 'http://localhost:3000'
 function coz(): string {
   const aday = process.env.NEXT_PUBLIC_SITE_URL || process.env.AUTH_URL || YEREL_ADRES
   try {
-    // Sondaki eğik çizgi atılıyor: `${SITE_URL}/iletisim` gibi birleştirmeler çift eğik
-    // çizgi üretmesin (bazı tarayıcılar ve tarayıcı botları bunu ayrı adres sayar).
-    return new URL(aday).origin
+    // Sondaki eğik çizgi ve alt yol atılıyor: `${SITE_URL}/iletisim` gibi birleştirmeler
+    // çift eğik çizgi üretmesin (bazı tarayıcı botları bunu ayrı adres sayar).
+    const cozulen = new URL(aday).origin
+    // Üretimde yerel adrese düşmek SESSİZ kalmamalı: o durumda sitemap'teki tüm adresler,
+    // her sayfanın canonical'ı ve JSON-LD kimliği localhost gösterir; arama motoru
+    // erişemediği bir kanonik adres yüzünden siteyi dizinden düşürebilir ve hiçbir yerde iz
+    // kalmaz. En azından derleme/çalışma günlüğünde görünsün.
+    if (cozulen === YEREL_ADRES && process.env.NODE_ENV === 'production') {
+      console.error(
+        '[site-url] Üretimde site adresi yerel adrese düştü. NEXT_PUBLIC_SITE_URL veya ' +
+          'AUTH_URL şemasıyla tanımlanmalı (https://...). Sitemap, canonical ve JSON-LD ' +
+          'adresleri yanlış üretilecek.',
+      )
+    }
+    return cozulen
   } catch {
+    console.error(`[site-url] Geçersiz site adresi: ${JSON.stringify(aday)}. Yerel adrese düşülüyor.`)
     return YEREL_ADRES
   }
 }

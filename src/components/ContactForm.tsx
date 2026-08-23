@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useId } from 'react'
+import { useActionState, useId, useState } from 'react'
 import Link from 'next/link'
 import type { FormState } from '@/lib/validation'
 import styles from './ContactForm.module.css'
@@ -34,11 +34,35 @@ function HataMetni({ id, mesaj }: { id: string; mesaj: string | undefined }) {
   )
 }
 
+const BOS_DEGERLER = { name: '', email: '', phone: '', subject: '', body: '' }
+
 export function ContactForm({ action }: ContactFormProps) {
   const [state, formAction, isPending] = useActionState(action, BASLANGIC)
   // Alan kimlikleri bileşen örneğine özgü: sayfada ikinci bir form çizilirse label'lar
   // yanlış alana bağlanmasın.
   const id = useId()
+
+  /**
+   * Form KONTROLLÜ (panel formlarıyla aynı desen). Kontrolsüz bırakılamaz: React 19,
+   * `<form action={fn}>` gönderiminde formu eylem çalışmadan ÖNCE sıfırlıyor, yani bir
+   * doğrulama hatasında ziyaretçinin yazdığı her şey siliniyordu.
+   *
+   * Eylemden dönen değerler render SIRASINDA aktarılıyor, useEffect ile değil: effect
+   * içinde setState zincirleme render tetikliyor ve React'in react-hooks/set-state-in-effect
+   * kuralı bunu hata sayıyor. Bu, React'in "önceki prop/state ile karşılaştırıp render
+   * sırasında ayarlama" için önerdiği desen.
+   */
+  const [degerler, setDegerler] = useState(BOS_DEGERLER)
+  const [oncekiState, setOncekiState] = useState(state)
+  if (state !== oncekiState) {
+    setOncekiState(state)
+    // Başarıda `values` gelmiyor: form temizlenir. Hatada gelen değerler geri yazılır.
+    setDegerler(state.values === undefined ? BOS_DEGERLER : { ...BOS_DEGERLER, ...state.values })
+  }
+
+  const alanDegistir = (alan: keyof typeof BOS_DEGERLER) => (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => setDegerler((onceki) => ({ ...onceki, [alan]: event.target.value }))
 
   const hata = (alan: string): string | undefined => state.errors[alan]?.[0]
 
@@ -69,6 +93,7 @@ export function ContactForm({ action }: ContactFormProps) {
         <label htmlFor={`${id}-name`}>Ad soyad</label>
         <input
           id={`${id}-name`} name="name" type="text" required autoComplete="name"
+          value={degerler.name} onChange={alanDegistir('name')}
           {...alanOzellikleri('name')}
         />
         <HataMetni id={`${id}-name-hata`} mesaj={hata('name')} />
@@ -79,6 +104,7 @@ export function ContactForm({ action }: ContactFormProps) {
           <label htmlFor={`${id}-email`}>E-posta</label>
           <input
             id={`${id}-email`} name="email" type="email" required autoComplete="email"
+            value={degerler.email} onChange={alanDegistir('email')}
             {...alanOzellikleri('email')}
           />
           <HataMetni id={`${id}-email-hata`} mesaj={hata('email')} />
@@ -90,6 +116,7 @@ export function ContactForm({ action }: ContactFormProps) {
           </label>
           <input
             id={`${id}-phone`} name="phone" type="tel" autoComplete="tel"
+            value={degerler.phone} onChange={alanDegistir('phone')}
             {...alanOzellikleri('phone')}
           />
           <HataMetni id={`${id}-phone-hata`} mesaj={hata('phone')} />
@@ -100,6 +127,7 @@ export function ContactForm({ action }: ContactFormProps) {
         <label htmlFor={`${id}-subject`}>Konu</label>
         <input
           id={`${id}-subject`} name="subject" type="text" required
+          value={degerler.subject} onChange={alanDegistir('subject')}
           {...alanOzellikleri('subject')}
         />
         <HataMetni id={`${id}-subject-hata`} mesaj={hata('subject')} />
@@ -109,6 +137,7 @@ export function ContactForm({ action }: ContactFormProps) {
         <label htmlFor={`${id}-body`}>Mesajınız</label>
         <textarea
           id={`${id}-body`} name="body" rows={7} required
+          value={degerler.body} onChange={alanDegistir('body')}
           {...alanOzellikleri('body')}
         />
         <HataMetni id={`${id}-body-hata`} mesaj={hata('body')} />
@@ -125,13 +154,23 @@ export function ContactForm({ action }: ContactFormProps) {
         <input id={`${id}-website`} name="website" type="text" tabIndex={-1} autoComplete="off" />
       </div>
 
+      {/* KVKK bağlantısı <label> DIŞINDA ve yeni sekmede: etiketin içindeyken metni okumak
+          için tıklamak hem onay kutusunu değiştiriyor hem aynı sekmede sayfadan ayırıyordu.
+          Ziyaretçi geri döndüğünde formu baştan doldurmak zorunda kalıyordu. */}
       <div className={styles.consent}>
         <input id={`${id}-kvkk`} name="kvkkAccepted" type="checkbox" value="evet" {...alanOzellikleri('kvkkAccepted')} />
         <label htmlFor={`${id}-kvkk`}>
-          <Link href="/kvkk" className="textLink">KVKK Aydınlatma Metni</Link>’ni okudum, kişisel
-          verilerimin bu kapsamda işlenmesini onaylıyorum.
+          Kişisel verilerimin aydınlatma metni kapsamında işlenmesini onaylıyorum.
         </label>
       </div>
+      <p className={styles.consentNote}>
+        <Link href="/kvkk" className="textLink" target="_blank" rel="noopener noreferrer">
+          KVKK Aydınlatma Metni
+          <span className={styles.visuallyHidden}> (yeni sekmede açılır)</span>
+        </Link>
+        {' '}— formla ilettiğiniz ad, e-posta, telefon ve mesajınızın yanı sıra IP adresiniz ve
+        tarayıcı bilginiz de kayıt altına alınır.
+      </p>
       <HataMetni id={`${id}-kvkkAccepted-hata`} mesaj={hata('kvkkAccepted')} />
 
       {/* `disabled` gönderim sırasında: çift gönderim, mesajın panelde iki kez görünmesi
