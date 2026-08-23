@@ -7,7 +7,9 @@ import { loadStaticPage } from '@/db/queries/public/static-pages'
 export async function generateMetadata(): Promise<Metadata> {
   const page = await loadStaticPage('cerez-politikasi')
   if (page === null) return { title: 'Sayfa bulunamadı' }
-  return { title: page.title }
+  // Kanonik adres bulunamayan sayfaya YAZILMIYOR: var olmayan bir belgeyi kendi kendisinin
+  // aslı ilan etmek, arama motoruna 404'ü indekslenebilir bir sayfa gibi gösterirdi.
+  return { title: page.title, alternates: { canonical: '/cerez-politikasi' } }
 }
 
 export default async function CookiePolicyPage() {

@@ -76,3 +76,10 @@
     grid-template-columns: 2fr 1fr 1fr;
   }
 }
+
+/* Çalışma saatleri adres bloğunun devamı ama ayrı bir bilgi; adresle aynı satır ritmine
+   girmesin diye kendi üst boşluğu var. */
+.hours {
+  margin-top: 12px;
+  font-size: 15px;
+}

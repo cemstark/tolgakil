@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 import { Cormorant_Garamond, Outfit } from 'next/font/google'
 import { SITE } from '@/content/site'
+// Mutlak adres dört yerde okunuyor (metadataBase, sitemap, robots, JSON-LD); kopyalanan bir
+// adres sessizce ayrışıp arama motoruna iki farklı site gösterirdi.
+import { SITE_URL } from '@/lib/site-url'
 import './globals.css'
 
 // latin-ext olmadan ğ ş ı İ ç ö ü harfleri yedek yazı tipine düşer.
@@ -18,33 +21,11 @@ const body = Outfit({
   display: 'swap',
 })
 
-const DESCRIPTION = 'Aile, iş ve ticaret hukuku alanlarında dava takibi ve danışmanlık.'
-
-const YEREL_ADRES = 'http://localhost:3000'
-
-// metadataBase olmadan Next göreli og:image/canonical adreslerini mutlak hâle getiremiyor
-// ve derlemede uyarı basıyor; paylaşım kartı da sessizce görselsiz kalıyor.
-// Sıralama: kendi değişkeni → AUTH_URL (üretimde zaten alan adını taşıyor) → yerel.
-// AUTH_URL yedek olarak duruyor çünkü dağıtımda tanımlı olan tek mutlak adres o; gerçek
-// alan adı belli olunca NEXT_PUBLIC_SITE_URL tanımlanması yeterli, kod değişmez.
-//
-// `||` kullanılıyor, `??` DEĞİL: .env dosyasında `NEXT_PUBLIC_SITE_URL=` (değersiz) yazmak
-// boş DİZE üretir, `??` bunu geçerli sayıp geçirir ve `new URL('')` fırlatır. try/catch de
-// aynı sebeple var — bozuk bir adres (ör. şeması unutulmuş "example.com") aynı sonucu verir.
-// Hata MODÜL DEĞERLENDİRME anında oluştuğu için hiçbir error boundary yakalayamaz; sunucu
-// bu dosyanın en altındaki yorumun tam olarak kaçınmak istediği __next_error__ kabuğunu
-// döndürür ve Türkçe metinle telefon numarası kaybolur. Yanlış yapılandırma, sitenin
-// tamamını değil yalnızca paylaşım kartının adresini bozmalı.
-function siteAdresiniCoz(): string {
-  const aday = process.env.NEXT_PUBLIC_SITE_URL || process.env.AUTH_URL || YEREL_ADRES
-  try {
-    return new URL(aday).toString()
-  } catch {
-    return YEREL_ADRES
-  }
-}
-
-const SITE_URL = siteAdresiniCoz()
+// Meta açıklaması ~140 karakter: arama sonucunda kesilmeden görünen aralık. Şehir ve ilçe
+// başta, çünkü hedef sorgu "Samsun avukat" biçiminde konum içeriyor; ardından belgedeki
+// yedi çalışma alanı, arama motoru sayfayı bu konularla ilişkilendirsin.
+const DESCRIPTION =
+  'Samsun İlkadım’da gayrimenkul, icra ve iflas, iş, tazminat, sigorta, kira ve miras hukuku alanlarında avukatlık ve hukuki danışmanlık hizmeti.'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

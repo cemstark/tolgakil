@@ -8,6 +8,7 @@ import {
 } from '@/db/queries/public/practice-areas'
 import { renderableHtml } from '@/lib/render-html'
 import { TAGS } from '@/lib/cache-tags'
+import { SITE } from '@/content/site'
 import styles from './page.module.css'
 
 // params Next 16'da Promise; await edilmeden okunamaz.
@@ -40,9 +41,16 @@ export async function generateMetadata({ params }: AreaPageProps): Promise<Metad
   const area = await getPublicPracticeAreaBySlug(slug)
   if (area === null) return { title: 'Sayfa bulunamadı' }
 
-  // Açıklama alanın kendi özetinden geliyor; övgü sıfatı ya da şehir + hukuk dalı
-  // kalıbı eklenmiyor (spec §2.1 anahtar kelime sınırı).
-  return { title: area.name, description: area.summary }
+  // Başlık ALANIN KENDİ ADI: "Samsun Gayrimenkul Avukatı" gibi bir anahtar kelime kalıbı
+  // kurulmuyor (spec §2.1). Açıklamada ise büronun bulunduğu yer doğal bir cümle içinde
+  // geçiyor — konum, yönetmeliğin zaten yayımlanmasını beklediği iletişim bilgisidir ve
+  // müşterinin talebi de "doğal şekilde" Samsun odaklı olmasıydı. Övgü sıfatı, üstünlük
+  // veya başarı ifadesi hiçbir durumda eklenmiyor.
+  return {
+    title: area.name,
+    description: `${area.summary} ${SITE.district} / ${SITE.city}’daki büromuz bu alanda avukatlık ve hukuki danışmanlık hizmeti sunmaktadır.`,
+    alternates: { canonical: `/calisma-alanlari/${slug}` },
+  }
 }
 
 export default async function PracticeAreaPage({ params }: AreaPageProps) {

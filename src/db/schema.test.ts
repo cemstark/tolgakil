@@ -50,7 +50,7 @@ describe('şema', () => {
   })
 
   it('aynı slug ile ikinci avukat eklenemez', async () => {
-    const veri = { slug: 'tolga-akil', fullName: 'Tolga Akıl', title: 'Avukat', isPublished: false, sortOrder: 0 }
+    const veri = { slug: 'tolga-akil', fullName: 'Tolga Akil', title: 'Avukat', isPublished: false, sortOrder: 0 }
     await db.insert(lawyers).values(veri)
     expect(
       await hataKodu(

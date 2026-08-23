@@ -179,7 +179,7 @@ describe('getPublishedArticleBySlug', () => {
   it('yayımlanmış makalenin yazarını ve kategorisini birlikte döndürür', async () => {
     const kategoriId = await kategoriEkle('kira-hukuku', 'Kira Hukuku')
     const [avukat] = await db.insert(lawyers).values({
-      slug: 'tolga-akil', fullName: 'Tolga Akıl', title: 'Avukat', isPublished: true, sortOrder: 0,
+      slug: 'tolga-akil', fullName: 'Tolga Akil', title: 'Avukat', isPublished: true, sortOrder: 0,
     })
     await db.insert(articles).values({
       slug: 'kira-tespit', title: 'Kira Tespit Davası', excerpt: 'Özet metni burada duruyor.',
@@ -188,7 +188,7 @@ describe('getPublishedArticleBySlug', () => {
     })
 
     const makale = await getPublishedArticleBySlug('kira-tespit')
-    expect(makale?.authorName).toBe('Tolga Akıl')
+    expect(makale?.authorName).toBe('Tolga Akil')
     expect(makale?.authorSlug).toBe('tolga-akil')
     expect(makale?.categoryName).toBe('Kira Hukuku')
     expect(makale?.content).toBe('<p>Gövde.</p>')

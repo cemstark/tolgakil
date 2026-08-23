@@ -10,6 +10,10 @@ import styles from './Hero.module.css'
 // Tanıtım metni (h1 ve lead) veritabanında karşılığı olmayan sabit metindir; TBB reklam
 // yasağına uygun (iddia, üstünlük ve başarı ifadesi içermez) ve `settings` tablosunda
 // böyle bir alan yok. Yalnız büro adı veriden geliyor.
+//
+// Metin müşterinin teslim ettiği belgeden: başlık belgenin anasayfa başlığı, alt metin ise
+// oradaki tanıtım cümlesi. Şehir ve ilçe ilk ekranda GEÇİYOR — site Samsun'da aranacak ve
+// h1'in hemen altındaki ilk paragraf, arama motorunun konumu ilişkilendirdiği yer.
 export async function Hero() {
   const { officeName } = await getPublicSiteIdentity()
 
@@ -19,12 +23,14 @@ export async function Hero() {
         <div className={styles.copy}>
           <p className={styles.eyebrow}>{officeName}</p>
           <h1 className={styles.title}>
-            Hukuki süreçlerde
+            Hukuki çözüm süreçlerinizde
             <br />
             yanınızdayız
           </h1>
           <p className={styles.lead}>
-            Aile, iş ve ticaret hukuku alanlarında dava takibi ve danışmanlık hizmeti sunuyoruz.
+            Samsun ili İlkadım ilçesinde faaliyet gösteren büromuz; gayrimenkul hukuku başta olmak
+            üzere icra ve iflas, iş, tazminat, sigorta, kira ve miras hukuku alanlarında avukatlık
+            ve hukuki danışmanlık hizmeti sunmaktadır.
           </p>
           <div className={styles.actions}>
             <Link href={CTA_LINK.href} className={styles.pillFilled}>

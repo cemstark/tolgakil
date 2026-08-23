@@ -279,6 +279,10 @@ export const settingsSchema = z.object({
   address: z.string().trim().min(10, 'Adres en az 10 karakter olmalı.').max(400, 'Adres en fazla 400 karakter olabilir.'),
   phone: z.string().trim().min(7, 'Telefon numarası en az 7 karakter olmalı.').max(40, 'Telefon numarası en fazla 40 karakter olabilir.'),
   email: z.email('Geçerli bir e-posta adresi girin.'),
+  // İkinci telefon ve çalışma saatleri isteğe bağlı: her büronun ikinci hattı yoktur ve
+  // saatlerini yayımlamak istemeyebilir. Boş bırakıldıklarında ekranda hiç çizilmiyorlar.
+  phoneSecondary: optionalText(40, 'İkinci telefon numarası'),
+  workingHours: optionalText(200, 'Çalışma saatleri'),
   whatsapp: optionalText(40, 'WhatsApp numarası'),
   kep: optionalText(190, 'KEP adresi'),
   mapLat: coordinate,
@@ -314,4 +318,44 @@ export const userUpdateSchema = z.object({
     .nullish()
     .transform((v) => v ?? '')
     .refine((v) => v === '' || v.length >= 12, 'Parola en az 12 karakter olmalı.'),
+})
+
+/**
+ * Halka açık iletişim formu. Panel şemalarından FARKLI bir güven sınırında: gönderen
+ * kimliği doğrulanmamış bir ziyaretçi, yani her alan düşmanca kabul edilir ve üst sınırlar
+ * sütun genişliklerine göre değil, sütun genişliklerinden ÖNCE dayatılır (aşırı uzun bir
+ * gövde veritabanına gitmeden burada reddedilsin).
+ *
+ * `subject` ve `kvkkAccepted` müşterinin istediği dört alanın (ad, e-posta, telefon, mesaj)
+ * ÜSTÜNE eklendi:
+ *   - subject: `messages.subject` sütunu NOT NULL. Sabit bir değerle doldurulsaydı panelde
+ *     bütün mesajlar aynı başlıkla listelenir ve liste okunamaz hâle gelirdi.
+ *   - kvkkAccepted: form kişisel veri (ad, e-posta, telefon) topluyor; açık rıza olmadan
+ *     kaydetmek KVKK'ya aykırı olurdu. Onay anı `messages.kvkkAcceptedAt` sütununa yazılıyor
+ *     — sütun zaten bu amaçla açılmış.
+ */
+export const contactSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, 'Ad soyad en az 2 karakter olmalı.')
+    .max(160, 'Ad soyad en fazla 160 karakter olabilir.'),
+  email: z.email('Geçerli bir e-posta adresi girin.').max(190, 'E-posta en fazla 190 karakter olabilir.'),
+  // Telefon isteğe bağlı: ziyaretçi yalnız e-postayla da ulaşılmak isteyebilir. Biçim
+  // dayatılmıyor — sabit hat, cep ve uluslararası yazımlar farklı ve reddedilen geçerli bir
+  // numara, kaybedilmiş bir başvuru demek.
+  phone: optionalText(40, 'Telefon numarası'),
+  subject: z
+    .string()
+    .trim()
+    .min(3, 'Konu en az 3 karakter olmalı.')
+    .max(220, 'Konu en fazla 220 karakter olabilir.'),
+  body: z
+    .string()
+    .trim()
+    .min(20, 'Mesaj en az 20 karakter olmalı.')
+    .max(5000, 'Mesaj en fazla 5000 karakter olabilir.'),
+  // `checkbox` işaretsizken false üretiyor; burada literal true isteniyor ki onay
+  // verilmeden gönderim şemada dursun, action'da ayrıca kontrol gerekmesin.
+  kvkkAccepted: checkbox.refine((v) => v === true, 'Devam etmek için aydınlatma metnini onaylamalısınız.'),
 })

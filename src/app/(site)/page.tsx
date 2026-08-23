@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { cacheLife, cacheTag } from 'next/cache'
 import { Hero } from '@/components/Hero'
 import { PracticeAreas } from '@/components/PracticeAreas'
@@ -6,7 +7,19 @@ import { TeamStrip } from '@/components/TeamStrip'
 import { listPublicPracticeAreas } from '@/db/queries/public/practice-areas'
 import { listLatestArticles } from '@/db/queries/public/articles'
 import { listPublicLawyers } from '@/db/queries/public/lawyers'
+import { getPublicSiteIdentity } from '@/db/queries/public/site-identity'
 import { TAGS } from '@/lib/cache-tags'
+import { buroYapilandirilmisVerisi, jsonLdMetni } from '@/lib/structured-data'
+import { SITE } from '@/content/site'
+
+// Ana sayfanın kendi metadata'sı YOKTU; kök layout'un varsayılanına düşüyordu, yani
+// başlık yalnız büro adıydı. Arama sonucunda tıklanmayı belirleyen tek satır o başlık ve
+// konum bilgisi taşımıyordu. `absolute` şart: kök layout'un `%s | Akil Hukuk Bürosu`
+// şablonu buraya uygulansaydı büro adı iki kez yazılırdı.
+export const metadata: Metadata = {
+  title: { absolute: `${SITE.name} | ${SITE.city} Avukat` },
+  alternates: { canonical: '/' },
+}
 
 // Şeritteki makale sayısı: ızgara masaüstünde üç sütun, tek satır dolsun.
 const HOME_ARTICLE_COUNT = 3
@@ -39,14 +52,26 @@ export default async function HomePage() {
 
   // Üç sorgu paralel; sıralı await'te toplam gecikme üçünün toplamı olurdu. Hata
   // yakalanmıyor: veritabanı erişilemezse sayfa (site)/error.tsx sınırına düşsün.
-  const [areas, articles, lawyers] = await Promise.all([
+  const [areas, articles, lawyers, identity] = await Promise.all([
     listPublicPracticeAreas(),
     listLatestArticles(HOME_ARTICLE_COUNT),
     listPublicLawyers(),
+    getPublicSiteIdentity(),
   ])
 
   return (
     <>
+      {/* Yapılandırılmış veri yalnız ANA SAYFADA: aynı büro tanımını her sayfada tekrarlamak
+          arama motoruna yeni bilgi vermez, yalnız her belgeyi büyütür. `@id` alanı sayesinde
+          ileride başka sayfalardan bu tanıma referans verilebilir.
+          dangerouslySetInnerHTML burada doğru araç: JSON-LD betik gövdesi olarak yazılmalı,
+          React'in metin kaçışı geçerli JSON'ı bozardı. Gövde kullanıcı girdisi taşıyor
+          (çalışma alanı adları ve özetleri), bu yüzden jsonLdMetni() </script> dizisini
+          kaçırıyor — gerekçesi o fonksiyonun başında. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdMetni(buroYapilandirilmisVerisi(identity, areas)) }}
+      />
       <Hero />
       <PracticeAreas areas={areas} />
       <ArticleStrip articles={articles} />

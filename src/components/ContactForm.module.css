@@ -1,0 +1,170 @@
+/* Form yüzey sözleşmesinden okuyor (--surface/--text/--line/--field-border/--danger), yani
+   koyu ve krem bölümlerin ikisinde de doğru çiziliyor. Renk sabiti yazılmıyor. */
+.form {
+  display: grid;
+  gap: 20px;
+  max-width: 640px;
+  margin-top: 32px;
+}
+
+/* Canlı bölge her zaman DOM'da (bileşendeki gerekçe); mesaj yokken yer kaplamasın. */
+.status:empty {
+  display: none;
+}
+
+.success,
+.failure {
+  padding: 14px 18px;
+  border-radius: var(--radius-inner);
+  border: 1px solid;
+}
+
+.success {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+/* Hata bildirimi yalnız renkle ayrılmıyor (WCAG 1.4.1): kenarlık ve metnin kendisi de
+   durumu taşıyor. --danger yüzey sözleşmesinden geliyor ve her iki zeminde de ölçülmüş. */
+.failure {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--danger);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.optional {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.field input,
+.field textarea {
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-inner);
+  padding: 12px 14px;
+  /* Dokunmatik hedef ve iOS'ta otomatik yakınlaştırmayı önleyen 16px taban: daha küçük
+     yazı tipli bir alana odaklanınca Safari sayfayı büyütüyor ve düzen kayıyor. */
+  min-height: 48px;
+  font-size: 16px;
+  transition:
+    border-color var(--dur-hover) var(--ease-out),
+    box-shadow var(--dur-hover) var(--ease-out);
+}
+
+.field textarea {
+  /* Yatay yeniden boyutlandırma kapalı: kullanıcı alanı genişletip düzeni taşırmasın. */
+  resize: vertical;
+  min-height: 160px;
+  line-height: 1.7;
+}
+
+.field input:focus-visible,
+.field textarea:focus-visible {
+  border-color: var(--accent);
+}
+
+/* Geçersiz alanın kenarlığı da değişiyor — hata metnine ek ikinci bir görsel sinyal. */
+.field input[aria-invalid='true'],
+.field textarea[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.error {
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.row {
+  display: grid;
+  gap: 20px;
+}
+
+@media (min-width: 560px) {
+  .row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.consent {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: start;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.consent input {
+  /* Onay kutusu varsayılan boyutu ~13px; dokunmatikte ıskalanıyor. Büyütme `transform`
+     yerine genişlik/yükseklikle: ölçeklenen bir kutunun tıklama alanı büyümüyor. */
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.submit {
+  justify-self: start;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 14px 28px;
+  min-height: 48px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  /* Altın zemin üzerinde koyu metin; krem yüzeyde --accent koyu altına döndüğü için
+     metin rengi de zemine göre değişmeli. İki durumda da ölçülen kontrast 4,5:1 üstü. */
+  color: var(--surface);
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    box-shadow var(--dur-hover) var(--ease-out),
+    transform var(--dur-hover) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .submit:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 88%, white);
+    box-shadow: var(--shadow-lift);
+    transform: translateY(calc(-1 * var(--lift)));
+  }
+}
+
+.submit:active:not(:disabled) {
+  transform: translateY(0) scale(.98);
+  transition-duration: var(--dur-press);
+}
+
+/* Gönderim sırasında: imleç beklemeyi anlatıyor, saydamlık düğmenin devre dışı olduğunu.
+   Kontrast kaybı kabul edilebilir sınırda tutuldu — devre dışı öğeler WCAG 1.4.3'ten muaf
+   ama okunamayan bir "Gönderiliyor…" yine de kötü geri bildirim olurdu. */
+.submit:disabled {
+  cursor: progress;
+  opacity: .72;
+}
+
+/* Tuzak alan: görsel olarak kaldırılıyor ama `display: none` kullanılmıyor — bazı botlar
+   gizli alanları atlamak için tam olarak ona bakıyor. */
+.honeypot {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

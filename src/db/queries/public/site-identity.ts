@@ -8,6 +8,12 @@ export type PublicSiteIdentity = {
   address: string
   phone: string
   phoneHref: string
+  // İkinci numara ve çalışma saatleri isteğe bağlı: ayarlarda boş bırakılabilirler ve
+  // boşken ekranda hiç çizilmiyorlar (null, boş dize DEĞİL — "değer yok" ile "boş metin"
+  // ayrımı çağıran tarafta koşul yazmayı gerektirmesin).
+  phoneSecondary: string | null
+  phoneSecondaryHref: string | null
+  workingHours: string | null
   email: string
   emailHref: string
   whatsappHref: string | null
@@ -33,13 +39,20 @@ export async function getPublicSiteIdentity(): Promise<PublicSiteIdentity> {
   cacheLife('max')
 
   const s = await getSettings()
-  const whatsapp = s.whatsapp === null || s.whatsapp.trim() === '' ? null : s.whatsapp
+  // Boş dize ile null aynı şeye indirgeniyor: panelde temizlenen bir alan '' olarak
+  // kaydediliyor ve o hâliyle "değer var" gibi görünüp ekranda boş bir bağlantı çizerdi.
+  const bosVeyaNull = (value: string | null) => (value === null || value.trim() === '' ? null : value)
+  const whatsapp = bosVeyaNull(s.whatsapp)
+  const phoneSecondary = bosVeyaNull(s.phoneSecondary)
 
   return {
     officeName: s.officeName,
     address: s.address,
     phone: s.phone,
     phoneHref: telHref(s.phone),
+    phoneSecondary,
+    phoneSecondaryHref: phoneSecondary === null ? null : telHref(phoneSecondary),
+    workingHours: bosVeyaNull(s.workingHours),
     email: s.email,
     emailHref: `mailto:${s.email}`,
     whatsappHref: whatsapp === null ? null : whatsappHref(whatsapp),

@@ -15,9 +15,36 @@ export function SiteFooter({ identity }: SiteFooterProps) {
             {identity.address}
             <br />
             <a href={identity.phoneHref} className="textLink">{identity.phone}</a>
+            {/* İkinci numara, WhatsApp ve çalışma saatleri ayarlarda boş bırakılabilir;
+                boşken hiç çizilmiyorlar ki alt bilgide anlamsız bir boşluk kalmasın. */}
+            {identity.phoneSecondary !== null && identity.phoneSecondaryHref !== null ? (
+              <>
+                <br />
+                <a href={identity.phoneSecondaryHref} className="textLink">{identity.phoneSecondary}</a>
+              </>
+            ) : null}
             <br />
             <a href={identity.emailHref} className="textLink">{identity.email}</a>
+            {identity.whatsappHref !== null ? (
+              <>
+                <br />
+                {/* rel="noopener": target="_blank" ile açılan sayfa window.opener üzerinden
+                    bu sekmeyi yönlendirebilir. */}
+                <a
+                  href={identity.whatsappHref}
+                  className="textLink"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  WhatsApp
+                </a>
+              </>
+            ) : null}
           </address>
+
+          {identity.workingHours !== null ? (
+            <p className={styles.hours}>{identity.workingHours}</p>
+          ) : null}
           {/* Alt bilgi metni boş bırakılabilir; boşken paragraf hiç çizilmez ki
               alt bilgide anlamsız bir boşluk kalmasın. */}
           {identity.footerText !== null && identity.footerText.trim() !== '' ? (

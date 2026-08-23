@@ -29,6 +29,8 @@ export default async function SettingsPage() {
           officeName: settings.officeName,
           address: settings.address,
           phone: settings.phone,
+          phoneSecondary: settings.phoneSecondary ?? '',
+          workingHours: settings.workingHours ?? '',
           email: settings.email,
           whatsapp: settings.whatsapp ?? '',
           kep: settings.kep ?? '',

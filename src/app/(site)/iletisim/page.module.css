@@ -1,6 +1,26 @@
+/* Bilgi sütunu ile form yan yana; dar ekranda alt alta. Form daha geniş pay alıyor —
+   sayfanın asıl eylemi o. */
+.layout {
+  display: grid;
+  gap: var(--section);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr 1.2fr;
+    gap: 64px;
+  }
+}
+
+.blockTitle {
+  font-size: 22px;
+  margin-bottom: 16px;
+}
+
 .address {
   font-style: normal;
-  margin-top: 32px;
+  line-height: 1.9;
 }
 
 /* Alt bilgideki adres bloğuyla aynı düzeltme ve aynı değer (SiteFooter.module.css):
@@ -11,4 +31,58 @@
   display: inline-flex;
   align-items: center;
   min-height: 32px;
+}
+
+.whatsapp {
+  margin-top: 24px;
+}
+
+/* WhatsApp bağlantısı bir düğme gibi çiziliyor: telefon ve e-postadan farklı bir eylem
+   (uygulama açıyor) ve büronun belgede özellikle istediği kanal. Yüzey sözleşmesinden
+   okuyor, kendi yeşil marka rengini getirmiyor — sitenin paletini bozmak, tek accent
+   kuralını da kırardı. */
+.whatsappLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 12px 24px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-pill);
+  font-size: 15px;
+  font-weight: 500;
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    transform var(--dur-hover) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .whatsappLink:hover {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    transform: translateY(calc(-1 * var(--lift)));
+  }
+}
+
+.whatsappLink:active {
+  transform: translateY(0) scale(.98);
+  transition-duration: var(--dur-press);
+}
+
+.hours {
+  margin-top: 40px;
+}
+
+.formNote {
+  color: var(--text-muted);
+  max-width: 60ch;
+}
+
+/* Ekran okuyucuya okunur, ekranda görünmez. `display: none` bunu yapmaz — o, içeriği
+   erişilebilirlik ağacından da siler. */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

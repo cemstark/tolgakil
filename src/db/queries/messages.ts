@@ -1,6 +1,6 @@
 import { desc, eq } from 'drizzle-orm'
 import { db } from '@/db/client'
-import { messages, type Message } from '@/db/schema'
+import { messages, type Message, type NewMessage } from '@/db/schema'
 
 /**
  * Panelde tek seferde listelenen en fazla mesaj.
@@ -43,4 +43,19 @@ export async function markMessageRead(id: number): Promise<void> {
 
 export async function deleteMessage(id: number): Promise<void> {
   await db.delete(messages).where(eq(messages.id, id))
+}
+
+/**
+ * İletişim formundan gelen mesajı kaydeder.
+ *
+ * Bu, `messages` tablosuna yazan TEK üretim yolu; tabloyu şimdiye kadar yalnızca panel
+ * okuyordu. Halka açık bir uçtan besleniyor, dolayısıyla çağıran taraf doğrulamayı
+ * (contactSchema) ve hız sınırını YAPMIŞ olmalı — burada ikinci bir savunma katmanı yok,
+ * sorgu katmanı iş kuralı taşımaz.
+ *
+ * `ip` ve `userAgent` sütunları kötüye kullanım incelemesi için var ve nullable: ters vekil
+ * arkasında istemci adresi okunamayabilir, uydurulmuş bir değer yazmaktansa boş bırakılır.
+ */
+export async function createMessage(values: NewMessage): Promise<void> {
+  await db.insert(messages).values(values)
 }

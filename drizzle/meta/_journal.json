@@ -29,6 +29,13 @@
       "when": 1787254044578,
       "tag": "0003_users_email_to_username",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1787501878600,
+      "tag": "0004_sleepy_ezekiel_stane",
+      "breakpoints": true
     }
   ]
 }

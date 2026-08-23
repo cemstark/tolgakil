@@ -44,7 +44,7 @@ describe('getPublicLawyerBySlug', () => {
 
   // Sütun mode:'string'; TZ=America/New_York altında Date'e çevrilseydi bir gün geriye kayardı.
   it('mesleğe başlama tarihini DİZE olarak taşır', async () => {
-    await avukatEkle('tolga-akil', 'Tolga Akıl', true)
+    await avukatEkle('tolga-akil', 'Tolga Akil', true)
     const avukat = await getPublicLawyerBySlug('tolga-akil')
     expect(avukat?.practiceStartDate).toBe('2010-03-15')
     expect(avukat?.bio).toBe('<p>Özgeçmiş.</p>')

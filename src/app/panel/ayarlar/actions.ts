@@ -15,6 +15,8 @@ export async function saveSettings(_prev: FormState, formData: FormData): Promis
     officeName: formData.get('officeName'),
     address: formData.get('address'),
     phone: formData.get('phone'),
+    phoneSecondary: formData.get('phoneSecondary'),
+    workingHours: formData.get('workingHours'),
     email: formData.get('email'),
     whatsapp: formData.get('whatsapp'),
     kep: formData.get('kep'),

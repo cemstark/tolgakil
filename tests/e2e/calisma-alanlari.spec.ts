@@ -27,15 +27,19 @@ function yeniAd(): string {
   return ad
 }
 
+// Tohumdaki alan adı müşteri içeriğiyle değişti (Aile Hukuku → Gayrimenkul Hukuku) ve
+// büro adının yazımı düzeldi (Akıl → Akil; avukatın soyadı AKİL). Testin ölçtüğü DAVRANIŞ
+// aynı: tohumlanan bir alan listede görünüyor, tekil sayfası açılıyor, tek h1 taşıyor ve
+// başlık şablonu uygulanıyor.
 test('tohumdaki çalışma alanları listede ve tekil sayfada görünür', async ({ page }) => {
   await page.goto('/calisma-alanlari')
-  const kart = page.getByRole('link', { name: /Aile Hukuku/ })
+  const kart = page.getByRole('link', { name: /Gayrimenkul Hukuku/ })
   await expect(kart).toBeVisible()
   await kart.click()
 
-  await expect(page.getByRole('heading', { level: 1, name: 'Aile Hukuku' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Gayrimenkul Hukuku' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
-  await expect(page).toHaveTitle('Aile Hukuku | Akıl Hukuk Bürosu')
+  await expect(page).toHaveTitle('Gayrimenkul Hukuku | Akil Hukuk Bürosu')
 
   const sonuc = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
   expect(sonuc.violations).toEqual([])

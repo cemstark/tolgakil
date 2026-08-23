@@ -132,7 +132,17 @@ export const settings = mysqlTable('settings', {
   officeName: varchar('office_name', { length: 160 }).notNull(),
   address: varchar('address', { length: 400 }).notNull(),
   phone: varchar('phone', { length: 40 }).notNull(),
+  // Büronun iki numarası var (sabit hat + cep). Tek `phone` alanına virgülle iki numara
+  // sıkıştırmak telHref()'i bozardı: dialable() bütün rakamları birleştirip aranamayan tek
+  // bir numara üretirdi. Nullable — ikinci numarası olmayan bir büro için zorunlu değil.
+  phoneSecondary: varchar('phone_secondary', { length: 40 }),
   whatsapp: varchar('whatsapp', { length: 40 }),
+  // Serbest metin, yapılandırılmış gün/saat çifti DEĞİL: "Hafta içi 08.00-18.00, Cumartesi
+  // 08.00-14.00, Pazar kapalı" gibi tek satır. Yapılandırılmış model panelde yedi satırlık
+  // bir düzenleyici gerektirirdi ve tatil/öğle arası gibi istisnaları yine taşıyamazdı.
+  // JSON-LD'nin openingHours alanı bu metinden DEĞİL, koddaki ayrı bir sabitten üretiliyor
+  // (bkz. src/lib/structured-data.ts) — makine okunur biçim serbest metinden türetilemez.
+  workingHours: varchar('working_hours', { length: 200 }),
   email: varchar('email', { length: 190 }).notNull(),
   kep: varchar('kep', { length: 190 }),
   mapLat: varchar('map_lat', { length: 32 }),

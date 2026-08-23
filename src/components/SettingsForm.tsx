@@ -7,6 +7,8 @@ export type SettingsFormValues = {
   officeName: string
   address: string
   phone: string
+  phoneSecondary: string
+  workingHours: string
   email: string
   whatsapp: string
   kep: string
@@ -51,8 +53,21 @@ export function SettingsForm({ action, values }: SettingsFormProps) {
               value={form.phone} onChange={set('phone')} error={fieldError('phone')}
             />
             <TextField
+              id="settings-phone-secondary" name="phoneSecondary" label="İkinci telefon" type="tel"
+              value={form.phoneSecondary} onChange={set('phoneSecondary')} error={fieldError('phoneSecondary')}
+              hint="Boş bırakılabilir. Sabit hattın yanındaki cep numarası."
+            />
+          </FieldRow>
+
+          <FieldRow>
+            <TextField
               id="settings-whatsapp" name="whatsapp" label="WhatsApp numarası" type="tel"
               value={form.whatsapp} onChange={set('whatsapp')} error={fieldError('whatsapp')}
+            />
+            <TextField
+              id="settings-working-hours" name="workingHours" label="Çalışma saatleri"
+              value={form.workingHours} onChange={set('workingHours')} error={fieldError('workingHours')}
+              hint="Tek satır. Örnek: Hafta içi 08.00-18.00, Cumartesi 08.00-14.00, Pazar kapalı"
             />
           </FieldRow>
 

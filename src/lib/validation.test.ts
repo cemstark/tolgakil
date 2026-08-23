@@ -5,10 +5,10 @@ import {
   userCreateSchema, userUpdateSchema,
 } from '@/lib/validation'
 
-const gecerliAvukat = { slug: '', fullName: 'Tolga Akıl', title: 'Avukat' }
+const gecerliAvukat = { slug: '', fullName: 'Tolga Akil', title: 'Avukat' }
 
 const gecerliAyarlar = {
-  officeName: 'Akıl Hukuk Bürosu',
+  officeName: 'Akil Hukuk Bürosu',
   address: 'Örnek Mah. Örnek Cad. No: 1, Kadıköy / İstanbul',
   phone: '+90 216 000 00 00',
   email: 'info@example.com',
@@ -135,8 +135,8 @@ describe('onay kutusu', () => {
   // <input type="checkbox"> value yazılmazsa tarayıcı 'on' gönderir; yalnız 'evet' aransaydı
   // kullanıcı kutuyu işaretler, "Kaydedildi" görür ama kayıt yayına girmezdi.
   it('tarayıcının varsayılan "on" değerini de işaretli sayar', () => {
-    expect(lawyerSchema.safeParse({ slug: '', fullName: 'Tolga Akıl', title: 'Avukat', isPublished: 'on' }).data?.isPublished).toBe(true)
-    expect(lawyerSchema.safeParse({ slug: '', fullName: 'Tolga Akıl', title: 'Avukat', isPublished: 'evet' }).data?.isPublished).toBe(true)
+    expect(lawyerSchema.safeParse({ slug: '', fullName: 'Tolga Akil', title: 'Avukat', isPublished: 'on' }).data?.isPublished).toBe(true)
+    expect(lawyerSchema.safeParse({ slug: '', fullName: 'Tolga Akil', title: 'Avukat', isPublished: 'evet' }).data?.isPublished).toBe(true)
   })
 
   it('alan hiç gönderilmezse işaretsiz sayar', () => {

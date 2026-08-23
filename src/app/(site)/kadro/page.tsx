@@ -7,7 +7,12 @@ import { TAGS } from '@/lib/cache-tags'
 import styles from './page.module.css'
 
 // Başlık büro adı + sayfa konusuyla sınırlı (spec §10); kök layout şablonu büro adını ekler.
-export const metadata: Metadata = { title: 'Kadro' }
+export const metadata: Metadata = {
+  title: 'Kadro',
+  // Kanonik adres: aynı içerik sorgu dizesi eklenmiş adreslerden de
+  // ulaşılabildiğinde arama motoru bunu içerik kopyası sayabiliyor.
+  alternates: { canonical: '/kadro' },
+}
 
 export default async function TeamPage() {
   // ÖNBELLEK SINIRI — src/app/(site)/page.tsx'teki kalıpla aynı (Görev 1C ile bağlayıcı

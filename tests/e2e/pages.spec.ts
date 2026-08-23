@@ -18,7 +18,8 @@ for (const p of PAGES) {
     // Sayfada tam olarak bir h1 olduğu ayrıca sayılır.
     await expect(page.getByRole('heading', { level: 1, name: p.title })).toBeVisible()
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
-    await expect(page).toHaveTitle(`${p.title} | Akıl Hukuk Bürosu`)
+    // Büro adı "Akil", "Akıl" DEĞİL — avukatın soyadı AKİL (müşteri belgesi, 07.08.2026).
+    await expect(page).toHaveTitle(`${p.title} | Akil Hukuk Bürosu`)
     const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
     expect(result.violations).toEqual([])
   })

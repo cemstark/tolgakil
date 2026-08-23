@@ -2,24 +2,19 @@ import { eq } from 'drizzle-orm'
 // Uzantılı ve göreli yollar bilinçli: scripts/seed.mts bu dosyayı doğrudan Node ESM ile
 // yüklüyor; Node ne `@/` takma adını çözer ne de uzantısız göreli belirteci kabul eder.
 import { db } from './client.ts'
-import { categories, pages, practiceAreas, settings, users } from './schema.ts'
+import { categories, lawyers, pages, practiceAreas, settings, users } from './schema.ts'
 import { hashPassword } from '../lib/password.ts'
 import { SETTINGS_ID } from '../lib/settings-id.ts'
 import { USERNAME_ERROR, USERNAME_PATTERN } from '../lib/username.ts'
-
-const SEED_CATEGORIES = [
-  { slug: 'aile-hukuku', name: 'Aile Hukuku' },
-  { slug: 'is-hukuku', name: 'İş Hukuku' },
-  { slug: 'ticaret-hukuku', name: 'Ticaret Hukuku' },
-  { slug: 'kira-hukuku', name: 'Kira Hukuku' },
-]
-
-// Plan 1'in sabit içeriğiyle birebir aynı metinler; reklam yasağına uygun, iddia içermez.
-const SEED_PRACTICE_AREAS = [
-  { slug: 'aile-hukuku', name: 'Aile Hukuku', summary: 'Boşanma, velayet, nafaka ve mal rejimi süreçleri.', sortOrder: 0 },
-  { slug: 'is-hukuku', name: 'İş Hukuku', summary: 'İşçi ve işveren uyuşmazlıkları, alacak ve işe iade davaları.', sortOrder: 1 },
-  { slug: 'ticaret-hukuku', name: 'Ticaret Hukuku', summary: 'Şirketler, sözleşmeler ve ticari uyuşmazlıklar.', sortOrder: 2 },
-]
+// Müşterinin teslim ettiği ve avukat tarafından onaylanmış metinler ayrı modülde; gerekçesi
+// o dosyanın başında yazılı (kurulum mantığı ile onaylı düzyazı aynı dosyada durmasın).
+import {
+  SEED_ABOUT_PAGE,
+  SEED_CATEGORIES,
+  SEED_LAWYER,
+  SEED_PRACTICE_AREAS,
+  SEED_SETTINGS,
+} from './seed-content.ts'
 
 // HUKUKİ METİN ÜRETİLMİYOR — bağlayıcı karar. KVKK aydınlatma metni ve çerez politikası
 // hukuki belgedir; model üretimi bir metin, gerçek bir belge gibi görüneceği için burada
@@ -28,7 +23,9 @@ const SEED_PRACTICE_AREAS = [
 const YER_TUTUCU = '<p>Bu metin büro tarafından panelden girilecektir.</p>'
 
 const SEED_PAGES = [
-  { slug: 'hakkimizda', title: 'Hakkımızda', content: YER_TUTUCU },
+  // Hakkımızda YER_TUTUCU değil: metni büro teslim etti ve avukat onayladı. KVKK ve çerez
+  // politikası yer tutucu KALIYOR — onlar hukuki belge ve teslim edilen dosyada yoklar.
+  { slug: 'hakkimizda', title: 'Hakkımızda', content: SEED_ABOUT_PAGE },
   { slug: 'kvkk', title: 'KVKK Aydınlatma Metni', content: YER_TUTUCU },
   { slug: 'cerez-politikasi', title: 'Çerez Politikası', content: YER_TUTUCU },
 ]
@@ -83,15 +80,14 @@ export async function seed(): Promise<void> {
 
   const existingSettings = await db.select().from(settings).where(eq(settings.id, SETTINGS_ID))
   if (existingSettings.length === 0) {
-    // Plan 1'deki SITE sabitinin aynısı; gerçek bilgiler müşteriden gelince panelden değişecek.
-    await db.insert(settings).values({
-      id: SETTINGS_ID,
-      officeName: 'Akıl Hukuk Bürosu',
-      address: 'Örnek Mah. Örnek Cad. No: 1, Kadıköy / İstanbul',
-      phone: '+90 216 000 00 00',
-      email: 'info@example.com',
-      footerText: 'Bu sitedeki bilgiler hukuki tavsiye niteliği taşımaz.',
-    })
+    await db.insert(settings).values({ id: SETTINGS_ID, ...SEED_SETTINGS })
+  }
+
+  // Büronun tek avukatı. Idempotent: slug varsa dokunulmaz, yani panelden düzenlenmiş
+  // özgeçmiş ikinci tohumlamada geri alınmaz.
+  const existingLawyer = await db.select().from(lawyers).where(eq(lawyers.slug, SEED_LAWYER.slug))
+  if (existingLawyer.length === 0) {
+    await db.insert(lawyers).values({ ...SEED_LAWYER, isPublished: true })
   }
 
   // Idempotent: var olan satırın İÇERİĞİNİ EZMEZ. Aksi hâlde tohumu ikinci kez koşturmak
