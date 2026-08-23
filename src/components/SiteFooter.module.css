@@ -1,6 +1,9 @@
 .footer {
   background: var(--ink-2);
   color: var(--text-ink-muted);
+  /* Kendinden önceki bölüm de koyu olduğunda (ana sayfada kadro şeridi) alt bilginin
+     nerede başladığı okunmuyordu; --ink-2 ile --ink arasındaki fark tek başına yetmiyor. */
+  border-top: 1px solid var(--line-ink);
 }
 
 .inner {
@@ -23,10 +26,44 @@
   line-height: 1.8;
 }
 
+/* Telefon ve e-posta bağlantıları ÖLÇÜLDÜ: 22px yükseklik veriyorlardı, WCAG 2.5.8'in
+   istediği 24px'in altında. Üstelik mobilde sitenin en kritik dokunma hedefi bunlar —
+   telefon bağlantısı doğrudan aramayı başlatıyor ve ıskalanması kullanıcıyı kaybettirir.
+
+   Değer 44px değil 32px: 44px, WCAG 2.5.5'in (AAA) rakamı; buradaki yükümlülük 2.5.8 (AA)
+   ve eşiği 24px. 44px, adres bloğunun ~30,6px'lik satır kutusunu neredeyse yarı yarıya
+   büyütüp adres satırı ile telefon/e-posta satırları arasında düzensiz boşluk bırakıyordu.
+   32px hem eşiği rahatça geçiyor hem satır ritmini koruyor. */
+.address a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+}
+
 .links {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  /* Boşluk kalemin KENDİ yüksekliğine taşındı (aşağıdaki min-height): 8px'lik aralık +
+     ~30px'lik satır, dokunmatik hedefi kalemler arasına düşen ölü boşlukla bölüyordu. */
+  gap: 0;
+}
+
+/* `fit-content` olmadan bağlantı sütunun tamamına yayılır ve odak halkası metinle
+   ilgisiz, sayfa genişliğinde bir kutu çizer. */
+.links a {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 40px;
+  transition: color var(--dur-hover) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .links a:hover {
+    /* Sönük griden tam metin rengine: alt bilgi bağlantıları okunaklı ama geri planda
+       kalıyordu, hangisinin tıklanabilir olduğu ancak imleçle anlaşılıyordu. */
+    color: var(--text-ink);
+  }
 }
 
 .note {

@@ -8,7 +8,16 @@
   color: var(--text-muted);
 }
 
-@media (min-width: 768px) {
+/* İki aşamalı ızgara — gerekçesi PracticeAreas.module.css'te. Ana sayfadaki şeritle
+   aynı kırılma noktaları kullanılıyor ki aynı kart iki sayfada farklı genişliklerde
+   sarmasın. */
+@media (min-width: 560px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
   .grid {
     grid-template-columns: repeat(3, 1fr);
   }

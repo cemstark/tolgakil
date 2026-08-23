@@ -1,7 +1,13 @@
-/* Dış kapsayıcı: kardeş bölümlerle aynı desen (padding: var(--section) var(--pad)),
-   arka planı/rengi yok — dikey ritim yalnızca bir kez sayılır. */
+/* Dış kapsayıcı: krem adayı sayfa kenarından ve komşu bölümlerden ayırır, kendi arka
+   planı/rengi yok.
+
+   DİKEY boşluk bilerek yarım: ölçüldüğünde üst üste ÜÇ kat var(--section) birikiyordu —
+   üstteki bölümün alt dolgusu (96px) + buranın üst dolgusu (96px) + krem bloğun kendi iç
+   dolgusu (96px) = 288px, yani 1440px'lik ekranda neredeyse üçte bir ekran boş kalıyordu.
+   Ada ile komşuları arasındaki nefes korunuyor, üçleme kırılıyor.
+   YATAY dolgu tam kalıyor; o, kardeş bölümlerle aynı kenar hizasını tutan şey. */
 .section {
-  padding: var(--section) var(--pad);
+  padding: calc(var(--section) / 2) var(--pad);
 }
 
 /* Krem blok: genişlik var(--max) ile sınırlanır ve ortalanır; kendi iç boşluğu ve
@@ -34,7 +40,40 @@
 .itemLink {
   display: grid;
   gap: 4px;
-  padding: 24px 0;
+  /* Yatay dolgu + eşit negatif kenar boşluğu: satır hover'da bir zemin kazanıyor, ama
+     metin hizası hover'sız hâliyle BİREBİR aynı kalıyor. Dolgu eklenip kenar boşluğu
+     verilmeseydi tüm liste sağa kayardı. */
+  padding: 24px 16px;
+  margin-inline: -16px;
+  border-radius: var(--radius-inner);
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    color var(--dur-hover) var(--ease-out);
+}
+
+/* Satırın tamamı tıklanabilir ama hiçbir görsel ipucu vermiyordu; imleç metnin üstüne
+   gelmedikçe bağlantı olduğu anlaşılmıyordu. Zemin --text'ten türetiliyor, yani krem
+   bölümde koyu bir tonlama, koyu bölümde açık bir tonlama olarak çiziliyor. */
+@media (hover: hover) and (pointer: fine) {
+  /* %6 değil %4. Ölçüldü: %6 tonlama krem zemini rgb(226,224,216)'ya indiriyor ve hover'da
+     --accent'e (--gold-ink #7d5f26) dönen başlıkla kontrastı 4,52:1'e düşürüyordu — .itemTitle
+     bir <h3> ve font-weight 300/22px olduğu için "büyük metin" sayılmıyor, eşik 4,5:1, yani
+     marj sıfırdı. %4 tonlamada oran 4,66:1 — tarayıcıda hesaplanmış renklerden ölçüldü;
+     zemin dokusu artık ayrı bir katman değil arka plan görüntüsü olduğu için bu orana
+     karışmıyor. globals.css'teki diğer bütün kontrast değerleri
+     ölçülerek belgelenmiş; bu hover durumu ilk turda ölçülmemişti. */
+  .itemLink:hover {
+    background: color-mix(in srgb, var(--text) 4%, transparent);
+  }
+
+  .itemLink:hover .itemTitle {
+    color: var(--accent);
+  }
+}
+
+.itemLink:active {
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+  transition-duration: var(--dur-press);
 }
 
 .category {
@@ -46,6 +85,9 @@
 
 .itemTitle {
   font-size: 22px;
+  /* Geçiş burada olmak zorunda: renk kuralı satırın hover'ında ama uygulandığı öğe bu.
+     Yazılmasaydı başlık rengi zemin yumuşarken anında sıçrardı. */
+  transition: color var(--dur-hover) var(--ease-out);
 }
 
 .date {

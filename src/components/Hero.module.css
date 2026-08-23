@@ -41,32 +41,105 @@
   gap: 12px;
 }
 
+/* Dar ekranda iki düğme sarıp alt alta düşüyor ama genişlikleri metin uzunluğuna göre
+   farklı kalıyordu; sonuç, sol kenarı hizalı sağ kenarı tırtıklı bir çift oluyordu.
+   Tek sütuna düştükleri anda ikisi de tam genişliğe çekiliyor. */
+@media (max-width: 479px) {
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
 .pillFilled,
 .pillOutline {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   padding: 14px 28px;
   border-radius: var(--radius-pill);
   font-size: 15px;
+  /* Sayfanın birincil eylemi; 44px dokunmatik hedef alt sınırı burada en kritik yer. */
+  min-height: 48px;
+  border: 1px solid transparent;
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out),
+    box-shadow var(--dur-hover) var(--ease-out),
+    transform var(--dur-hover) var(--ease-out);
 }
 
 .pillFilled {
   background: var(--gold);
   color: var(--ink);
+  font-weight: 500;
+  box-shadow: var(--shadow-card);
 }
 
 .pillOutline {
-  border: 1px solid var(--line-ink);
+  border-color: var(--line-ink);
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .pillFilled:hover {
+    /* Altın zaten kontrast ölçülerek seçildi; tonu kaydırmak yerine hafifçe
+       açılıyor ve yükseliyor — okunabilirlik hesabı bozulmuyor. */
+    background: color-mix(in srgb, var(--gold) 88%, white);
+    box-shadow: var(--shadow-lift);
+    transform: translateY(calc(-1 * var(--lift)));
+  }
+
+  .pillOutline:hover {
+    border-color: var(--gold);
+    background: color-mix(in srgb, var(--text-ink) 6%, transparent);
+  }
+}
+
+/* Bası geri bildirimi hover'dan bağımsız: dokunmatikte tek onay sinyali bu. */
+.pillFilled:active,
+.pillOutline:active {
+  transform: translateY(0) scale(.98);
+  transition-duration: var(--dur-press);
+}
+
+/* Geçici yüzey — müşteriden ofis/portre görseli gelince burası <Image> ile değişecek.
+   Eskiden düz `var(--ink-2)` idi: ana sayfanın en büyük alanı boş gri bir dikdörtgendi.
+   Düz renk yerine ışık kaynağı kurgulanıyor — sağ üstten düşen altın bir aydınlanma,
+   sol altta onun zayıf yankısı. Radyal seçildi: 45 derecelik düz bir doğrusal gradyan
+   tam da "yapay zekâ şablonu" görünümünü veren şey. */
 .visual {
   border-radius: var(--radius-block);
-  background: var(--ink-2);
-  aspect-ratio: 4 / 5;
+  background:
+    /* İnce dikey çizgi ritmi. Tek başına gradyan bırakıldığında yüzey "henüz yüklenmemiş
+       bir görsel" gibi okunuyordu; düzenli bir desen onu KASITLI bir yüzeye çeviriyor.
+       Aralık 46px — daha sıkısı ekranda moiré yapıyor, daha genişi desen olmaktan çıkıp
+       rastgele çizgilere dönüşüyor. */
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 46px,
+      color-mix(in srgb, var(--gold) 8%, transparent) 46px 47px
+    ),
+    /* Işık kaynağı: sağ üstten düşen sıcak aydınlanma. Öncekinden dar ve yoğun —
+       geniş yayılınca zeminden ayırt edilemiyordu. */
+    radial-gradient(66% 48% at 74% 18%, color-mix(in srgb, var(--gold) 46%, transparent), transparent 72%),
+    radial-gradient(80% 60% at 8% 94%, color-mix(in srgb, var(--gold) 14%, transparent), transparent 62%),
+    linear-gradient(168deg, var(--ink-2), var(--ink));
+  border: 1px solid var(--line-ink);
+  /* Üst kenardaki iç ışık çizgisi yüzeye kalınlık verir; dış gölge onu sayfadan ayırır. */
+  box-shadow:
+    var(--shadow-card),
+    inset 0 1px 0 color-mix(in srgb, var(--gold) 14%, transparent);
+  /* Mobilde 4/5 dikey oran ekranın yarısını yutuyordu ve içeriği ilk ekrandan kovuyordu.
+     Dar ekranda yatay bir şerit, masaüstünde özgün dikey oran (aşağıda). */
+  aspect-ratio: 16 / 10;
 }
 
 @media (min-width: 768px) {
   .inner {
     grid-template-columns: 1.1fr 1fr;
+  }
+
+  .visual {
+    aspect-ratio: 4 / 5;
   }
 }

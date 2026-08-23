@@ -14,7 +14,16 @@
   margin-top: 32px;
 }
 
-@media (min-width: 768px) {
+/* İki aşamalı ızgara — gerekçesi PracticeAreas.module.css'te yazılı: tek 768px kırılma
+   noktası tablet aralığında kartları ~230px'e sıkıştırıyordu. Portre fotoğrafı taşıyan
+   bu kartlarda sıkışma daha da belirgindi (3/4 oranlı çerçeve okunmaz hâle geliyordu). */
+@media (min-width: 560px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
   .grid {
     grid-template-columns: repeat(3, 1fr);
   }

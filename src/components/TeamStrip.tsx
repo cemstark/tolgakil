@@ -8,11 +8,13 @@ export function TeamStrip({ lawyers }: TeamStripProps) {
   return (
     <section className={styles.section}>
       <div className={styles.inner}>
-        <h2>Kadro</h2>
+        {/* `reveal` / `stagger`: globals.css'teki kaydırmaya bağlı giriş — gerekçesi ve
+            geri düşüş davranışı PracticeAreas.tsx'te yazılı. */}
+        <h2 className="reveal">Kadro</h2>
         {lawyers.length === 0 ? (
           <p className={styles.empty}>Kadro bilgileri yakında yayımlanacak.</p>
         ) : (
-          <ul className={styles.grid}>
+          <ul className={`${styles.grid} stagger`}>
             {lawyers.map((lawyer) => (
               <li key={lawyer.slug}>
                 <LawyerCard lawyer={lawyer} />

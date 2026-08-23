@@ -28,9 +28,34 @@
   --danger: #f0a6a0;
   --field-border: #6b7688;
 
+  /* ——— Hareket sözleşmesi ———
+     Tarayıcının yerleşik `ease-out`'u UI için fazla zayıf; bu iki eğri ölçülü ve ağırbaşlı
+     bir his verir. Bilinçli olarak yay (spring) ve bounce YOK: burası bir hukuk bürosu,
+     zıplayan arayüz kurumsal tonu bozar.
+
+     --lift, hover'da uygulanan dikey kaymanın TEK kaynağıdır. Azaltılmış hareket
+     tercihinde 0px'e düşürülür (aşağıdaki prefers-reduced-motion bloğu): böylece renk ve
+     gölge geçişi — kavramaya yardım eden kısım — korunur, yalnızca konum değişimi
+     kaybolur. Blok tüm geçişleri topluca öldürseydi arayüz o modda tamamen ölürdü. */
+  --ease-out: cubic-bezier(.23, 1, .32, 1);
+  --dur-press: 120ms;
+  --dur-hover: 200ms;
+  --dur-panel: 240ms;
+  --lift: 3px;
+
+  /* Gölgeler nötr siyah DEĞİL, --ink'in lacivere çalan tonuyla boyalı: düz siyah krem
+     zeminde gri bir kir lekesi gibi duruyor. Işık kaynağı tek ve tepede — iki katman da
+     aşağı doğru düşer, hiçbir yerde yukarı vuran gölge yok. Krem yüzeyin kendi
+     karşılıkları [data-surface="paper"] bloğunda. */
+  --shadow-card: 0 1px 2px rgba(11, 15, 21, .24), 0 10px 24px -14px rgba(11, 15, 21, .5);
+  --shadow-lift: 0 2px 6px rgba(11, 15, 21, .28), 0 22px 44px -18px rgba(11, 15, 21, .62);
+
   --radius-pill: 999px;
   --radius-block: 26px;
   --radius-card: 20px;
+  /* Yuvarlaklık hiyerarşisi: dış kapsayıcı yumuşak, iç öğe daha sıkı. Her şeyin aynı
+     yarıçapta olması düzeni tekdüzeleştiriyordu. */
+  --radius-inner: 12px;
 
   --max: 1200px;
   --pad: clamp(1.25rem, 4vw, 2.5rem);
@@ -83,23 +108,61 @@
   --danger: #9b2c22;
   --field-border: #807b6e;
 
+  /* Koyu yüzeyin gölgesi krem üzerinde çamur gibi duruyor: rgba(11,15,21,.5) kremde
+     mavimsi gri bir leke bırakıyor. Krem karşılıkları zeminin kendi sıcak tonuyla
+     (kahve-altın) boyalı ve çok daha düşük yoğunlukta — açık zeminde göz aynı gölgeyi
+     kat kat daha koyu algılar. Işık yönü değişmiyor, yalnız renk ve şiddet. */
+  --shadow-card: 0 1px 2px rgba(60, 50, 30, .07), 0 10px 24px -14px rgba(60, 50, 30, .18);
+  --shadow-lift: 0 2px 6px rgba(60, 50, 30, .09), 0 22px 44px -18px rgba(60, 50, 30, .26);
+
   background: var(--surface);
+  /* Zemin dokusu. body::after'daki doku `z-index: -1`e indirildiğinden (kontrast gerekçesi
+     orada yazılı) artık yalnız çıplak sayfa zemininde görünüyor; krem ada kendi arka planını
+     çizdiği için onun üstünde kalıyordu — yani dokunun asıl hedefi olan EN DÜZ yüzey
+     dokusuz kalmıştı.
+     Burada doku bir katman değil, yüzeyin arka plan GÖRÜNTÜSÜ: metnin altında kalıyor,
+     dolayısıyla bu bloğun başında ölçülen kontrast oranlarının hiçbirini aşındırmıyor.
+     Saydamlık SVG'nin içine gömülü (rect opacity), çünkü `background-image` öğe
+     saydamlığıyla ayrıca kısılamaz.
+     `background` kısayolundan SONRA yazılmak zorunda — kısayol background-image'i `none`a
+     çeker. Aynı kural içinde olduğu için kaynak sırası garantili. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23p)' opacity='.05'/%3E%3C/svg%3E");
   color: var(--text);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+html {
+  /* Sayfa içi çapa (ana sayfadaki #articles) anında sıçramasın. Azaltılmış hareket
+     tercihinde aşağıdaki blok bunu `auto`ya çeviriyor. */
+  scroll-behavior: smooth;
+  /* Başlık `position: sticky` — bu olmadan çapaya atlayınca hedef başlık hapın ALTINDA
+     kalıyor ve kullanıcı yanlış yere geldiğini sanıyor. Değer hapın yüksekliği
+     (16px üst boşluk + ~56px hap) + bir nefes payı. */
+  scroll-padding-top: 96px;
+}
+
 body {
   background: var(--ink);
   color: var(--text-ink);
   font-family: var(--font-body), system-ui, sans-serif;
-  font-size: 17px;
+  /* px değil rem: sabit 17px, tarayıcı yazı tipi boyutunu büyüten kullanıcının
+     tercihini tamamen yok sayıyordu (WCAG 1.4.4). 1.0625rem varsayılan ayarda yine
+     17px verir, ayar değişince onunla birlikte ölçeklenir. */
+  font-size: 1.0625rem;
   line-height: 1.8;
   -webkit-font-smoothing: antialiased;
   /* İçerik kısa olduğunda footer sayfa ortasında asılı kalmasın diye yapışkan düzen. */
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  /* Yığın bağlamı: zemin dokusunu (body::after, z-index: -1) bu öğenin bağlamına hapseder.
+     DÜZELTME: ilk yazılışta gerekçesi "bu olmadan doku arka planın arkasında kalıp görünmez"
+     diye yazılmıştı — YANLIŞ. `html` bir arka plan taşımadığı için body'nin arka planı
+     canvas'a aktarılıyor (CSS Backgrounds §2.11.2) ve canvas her şeyin en altında boyanıyor;
+     negatif katman `isolation` olmadan da görünürdü. Kural savunma amaçlı duruyor: ileride
+     `html`e bir arka plan verilirse doku sessizce kaybolurdu. */
+  isolation: isolate;
 }
 
 /* Görev 3'te eklenecek <main>, kalan alanı doldurup footer'ı sayfa altına iter. */
@@ -108,17 +171,50 @@ main { flex: 1; }
 h1, h2, h3 {
   font-family: var(--font-display), Georgia, serif;
   font-weight: 300;
-  letter-spacing: -.5px;
   line-height: 1.05;
+  /* Son satırda tek başına kalan yetim kelimeyi önler. Başlıklar kısa olduğu için
+     `balance` uygun (tarayıcı ilk ~6 satırla sınırlı uygular); gövde metni `pretty`
+     kullanır, aşağıda. */
+  text-wrap: balance;
 }
 
-h1 { font-size: 36px; }
-h2 { font-size: 30px; }
+/* Boyut px kırılma noktasıyla değil clamp ile: 768px'de 36→56px'e ZIPLAYAN eski kural
+   tablet aralığını (768–1100) tamamen atlıyordu, orada başlık gövdeye göre orantısız
+   kalıyordu. Alt/üst sınırlar eskisiyle aynı (36px / 56px), aradaki geçiş sürekli.
 
-@media (min-width: 768px) {
-  h1 { font-size: 56px; }
-  h2 { font-size: 40px; }
+   Tracking artık px değil em: sabit -.5px, 36px'de -%1,4 ederken 56px'de -%0,9 ediyordu,
+   yani büyük başlık ORANTISAL OLARAK daha gevşek çiziliyordu — tam tersi olmalı. Serif
+   display yüzünde büyük boy daha sıkı tracking ister. */
+/* Akışkan aralık BİLEREK 480px'de başlatılıyor, 360px'de değil: mevcut tasarım sözleşmesi
+   (tests/e2e/home.spec.ts ve design-system.spec.ts) mobilde h1'in tam 36px, h2'nin tam
+   30px çizilmesini şart koşuyor. Orta ifade 480px'in altında alt sınırın altına düştüğü
+   için clamp orada alt sınıra KİLİTLENİR ve telefonlarda değer ondalıklı değil, tam
+   36px/30px kalır. İlk denemede geçiş 360px'den başlatılmıştı ve 412px'lik Pixel 7'de
+   37,57px üretip iki testi düşürdü — kırılma noktası ölçülerek buraya taşındı.
+     h1: 480px→36px, 1024px→56px  (%3,6765 eğim)
+     h2: 480px→30px, 1024px→40px  (%1,8382 eğim)
+   Kazanç, eskiden tek 768px sıçramasıyla atlanan 480–1024 aralığının artık sürekli
+   ölçeklenmesi. */
+h1 {
+  font-size: clamp(2.25rem, 1.147rem + 3.6765vw, 3.5rem);
+  letter-spacing: -.022em;
 }
+
+h2 {
+  font-size: clamp(1.875rem, 1.3238rem + 1.8382vw, 2.5rem);
+  letter-spacing: -.018em;
+}
+
+h3 { letter-spacing: -.012em; }
+
+/* Gövde metninde yetim kelime ve kötü satır kırılması. `balance` uzun metinde
+   pahalı ve tarayıcı zaten satır sayısıyla sınırlıyor; `pretty` bunun için var. */
+p, li { text-wrap: pretty; }
+
+/* Tarih ve sayı sütunlarında rakam genişliği eşitlenir; orantılı rakamda makale
+   listesinin tarih sütunu satırdan satıra kayıyordu. Yalnız `time`: yanına eklenen
+   `.tabular` yardımcı sınıfı hiçbir bileşende kullanılmıyordu. */
+time { font-variant-numeric: tabular-nums; }
 
 a { color: inherit; text-decoration: none; }
 
@@ -127,11 +223,47 @@ a { color: inherit; text-decoration: none; }
   outline-offset: 3px;
 }
 
+/* Azaltılmış hareket = DAHA AZ ve DAHA YUMUŞAK hareket, sıfır hareket değil.
+   Eski blok `transition-duration: .01ms !important` ile ayrım gözetmeden HER geçişi
+   öldürüyordu; o kural yürürlükte kalsaydı bu turda eklenen renk ve gölge geçişleri de
+   ölür, arayüz bu kullanıcılar için tepkisiz hâle gelirdi — oysa rahatsız eden şey
+   rengin yumuşaması değil, öğenin YER DEĞİŞTİRMESİ.
+
+   Bu yüzden ayrım yapılıyor:
+     - konum/ölçek değişimi kaldırılır (--lift sıfırlanır, keyframe'ler kapatılır),
+     - renk, gölge ve saydamlık geçişi KORUNUR (durumu okunur kılan kısım). */
 @media (prefers-reduced-motion: reduce) {
+  :root { --lift: 0px; }
+
   *, *::before, *::after {
     animation-duration: .01ms !important;
-    transition-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
+
+    /* GÜVENLİK AĞI. --lift yalnız ONA BAĞLI hareketleri durduruyordu; --lift ile ilgisi
+       olmayan transform geçişleri (kadro fotoğrafının hover'daki %4 yakınlaşması, mobil
+       menü panelinin kayarak açılması) tam süreyle oynamaya devam ediyordu — denetimde
+       yakalandı. Burada `transform` geçiş listesinden topluca çıkarılıyor, geriye kavramayı
+       destekleyen renk/gölge/saydamlık geçişleri kalıyor.
+       `*` sıfır özgüllükte olduğu için modül sınıflarını ezmek üzere !important şart. */
+    transition-property:
+      opacity, color, background-color, border-color,
+      box-shadow, text-decoration-color, visibility !important;
+  }
+
+  html { scroll-behavior: auto; }
+
+  /* Kaydırmayla beliren bölümler doğrudan görünür başlar. Kural savunma amaçlı: bu kipte
+     `.reveal`/`.stagger` animasyonları zaten hiç uygulanmıyor (tanımları
+     `prefers-reduced-motion: no-preference` kapısının arkasında), yani bugün ölü. Yine de
+     duruyor çünkü o kapı ileride kaldırılırsa `animation-fill-mode: both` öğeleri
+     başlangıç durumunda — opacity: 0'da — dondurur ve İÇERİK KAYBOLUR; erişilebilirlik
+     düzeltmesinin içeriği yok etmesi kabul edilemez bir başarısızlık biçimi.
+     `.stagger > *` denetimde eksik olduğu için eklendi: kapsam @media print kuralıyla
+     artık birebir aynı. */
+  .reveal, .reveal > *, .stagger > * {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 
@@ -171,6 +303,40 @@ main:focus-visible { outline: none; }
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
   padding: clamp(1rem, 3vw, 1.5rem);
+  /* Sitede tek bir gölge yoktu; her yüzey aynı düzlemde duruyordu ve kartın zeminden
+     ayrıldığı okunmuyordu. Gölge yüzey sözleşmesinden geliyor, yani krem bölümde
+     kendiliğinden sıcak ve daha hafif karşılığına döner. */
+  box-shadow: var(--shadow-card);
+}
+
+/* Yalnız BAĞLANTI olan kartlar hover/press alır: `.card` panelde istatistik kutusu ve
+   boş-durum metni olarak da kullanılıyor (medya, panel özeti), onların tıklanabilir
+   görünmesi yanlış bir vaat olurdu. `a.card` bu ikisini kapsam dışında bırakır.
+
+   `transition: all` bilinçli olarak yazılmadı — özellikler tek tek sayılıyor ki
+   ileride eklenecek bir özellik sessizce animasyona girmesin. */
+a.card {
+  transition:
+    box-shadow var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out),
+    transform var(--dur-hover) var(--ease-out);
+}
+
+/* Dokunmatik cihaz bir dokunuşta sahte :hover üretir ve efekt parmak kalkınca
+   ekranda ASILI kalır; hover yalnızca gerçek imleci olan cihazlarda çalışır. */
+@media (hover: hover) and (pointer: fine) {
+  a.card:hover {
+    transform: translateY(calc(-1 * var(--lift)));
+    box-shadow: var(--shadow-lift);
+    border-color: var(--accent);
+  }
+}
+
+/* Bası geri bildirimi hover'dan BAĞIMSIZ: dokunmatikte tek geri bildirim budur.
+   Süre kısa (--dur-press) — bası tepkisi geciktiğinde arayüz yavaş hissettirir. */
+a.card:active {
+  transform: translateY(0) scale(.99);
+  transition-duration: var(--dur-press);
 }
 
 /* Ortak sayfa kabuğu: yedi iç sayfa + 404 + hata sayfası aynı sarmalayıcıyı kullanır.
@@ -226,4 +392,127 @@ main:focus-visible { outline: none; }
   padding: 0;
   border: 0;
   background: none;
+}
+
+/* Metin içi bağlantı hover'da yalnız alt çizgi kalınlığını değiştirir — renk zaten
+   kontrast ölçülerek seçilmiş, onu oynatmak WCAG hesabını bozar. */
+/* Alt çizgi, bağlantıyı düz metinden RENKTEN BAĞIMSIZ olarak ayıran şey (WCAG 1.4.1) —
+   yukarıdaki .textLink yorumunda gerekçesi yazılı. Bu yüzden solgunlaştırılamaz:
+   ilk turda %45 opaklığa düşürülmüştü ve alt bilgideki altın bağlantının --ink-2 zeminine
+   karşı kontrastı 2,45:1'e iniyordu — WCAG 1.4.11'in grafik öğeler için istediği 3:1'in
+   altında.
+   Değer %80: KREM yüzey belirleyici oldu. Koyu zeminde (--gold / --ink-2) %75 zaten 4,39:1
+   veriyordu, ama krem yüzeyde (--gold-ink / --paper) aynı oran 3,12:1'e iniyor — 3:1
+   eşiğini geçiyor ama marj neredeyse yok. %80'de krem oranı 3,42:1, alt bilgide 4,79:1
+   (üçü de tarayıcıda hesaplanmış renklerden ölçüldü). Somut yeri:
+   makale şeridindeki "Tümünü gör" ve makale gövdesindeki bütün .prose a bağlantıları.
+   Güçlü hâl artık yalnız :hover'da değil: dokunmatik kullanıcı hover'ı hiç görmüyor,
+   klavye kullanıcısı da görmüyordu; :focus-visible eklendi. */
+.textLink,
+.prose a {
+  transition: text-decoration-color var(--dur-hover) var(--ease-out);
+  text-decoration-color: color-mix(in srgb, currentColor 80%, transparent);
+}
+
+.textLink:focus-visible,
+.prose a:focus-visible {
+  text-decoration-color: currentColor;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .textLink:hover,
+  .prose a:hover {
+    text-decoration-color: currentColor;
+  }
+}
+
+/* ——— Kaydırmayla beliren bölümler ———
+   `animation-timeline: view()` ile ÇALIŞMA ANINDA JAVASCRIPT YOK: IntersectionObserver
+   çözümü bu sunucu-bileşeni ağırlıklı sitede her bölümü 'use client' yapmayı gerektirirdi.
+
+   @supports zorunlu — desteklemeyen tarayıcı `animation-timeline` satırını yok sayar ama
+   `animation` satırını UYGULAR; o durumda tüm bölümler sayfa yüklenirken bir kez oynar,
+   ekranın altındakiler kullanıcı hiç görmeden biter ve geriye anlamsız bir titreme kalır.
+   Sarmalayıcı sayesinde desteklemeyen tarayıcıda içerik doğrudan görünür — kayıp yok.
+
+   Eğri `linear`: zaman tabanlı bir animasyon değil, ilerleme kullanıcının kaydırma
+   konumuna bağlı. Yumuşatmayı kullanıcının kendi kaydırma ivmesi zaten sağlıyor;
+   üstüne easing koymak hareketi kaydırmadan KOPARIR. */
+@keyframes reveal-rise {
+  from {
+    opacity: 0;
+    /* scale(0) değil, hiç ölçek yok: 18px'lik ölçülü bir yükselme. Hukuk bürosunda
+       büyüyerek beliren kart fazla gösterişli kaçıyor. */
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal-rise linear both;
+      animation-timeline: view();
+      /* Bölüm görünür alana girerken oynar ve YARIDAN ÖNCE biter; sonuna kadar sürseydi
+         kullanıcı okumaya başladığında öğe hâlâ hareket ediyor olurdu. */
+      animation-range: entry 0% entry 55%;
+    }
+
+    /* Kademeli giriş: kaydırmaya bağlı bir zaman çizelgesinde `animation-delay`
+       çalışmaz (gecikme saniye cinsinden, ilerleme ise yüzde). Karşılığı, her kardeşin
+       aralığını biraz ileri kaydırmaktır — sonuç aynı: kartlar hep birlikte değil,
+       peş peşe giriyor. */
+    .stagger > * {
+      animation: reveal-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 50%;
+    }
+    .stagger > *:nth-child(2) { animation-range: entry 7% entry 57%; }
+    .stagger > *:nth-child(3) { animation-range: entry 14% entry 64%; }
+    .stagger > *:nth-child(4) { animation-range: entry 21% entry 71%; }
+    .stagger > *:nth-child(n + 5) { animation-range: entry 26% entry 76%; }
+  }
+}
+
+/* Yazdırmada kaydırma diye bir şey yok: `view()` zaman çizelgesi hiç ilerlemez ve
+   `both` dolgusu öğeleri başlangıç durumunda — yani opacity: 0'da — dondurur. Kural
+   yazılmasaydı sayfanın çıktısı BOŞ alınırdı. Playwright'ın tam sayfa ekran görüntüsü
+   de aynı sebeple bölüm başlıklarını boş yakalıyordu; bu kural onu da düzeltmez ama
+   sorunu ilk oradan gördük.
+   Aynı yerde zemin dokusu da kapatılıyor — mürekkep harcar, kâğıtta karşılığı yok. */
+@media print {
+  .reveal, .reveal > *, .stagger > * {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  body::after { display: none; }
+}
+
+/* ——— Doku ———
+   Düz renk zeminler dijital ve steril duruyordu. Ayrı bir <div> yerine `body::after`:
+   DOM'a eleman eklemez, `position: fixed` olduğu için gövdenin flex düzenine karışmaz.
+   z-index 1 — içeriğin üstünde ama yapışkan başlığın (z-index 50) altında, yani cam
+   hapın kendi bulanıklığını kirletmez. Opaklık kasıtlı olarak eşikte: fark edilmemeli,
+   yalnız yüzeyin ölü düzlüğünü kırmalı. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  /* z-index 1 DEĞİL, -1. Önceki değerde katman metnin ÜSTÜNE çiziliyordu: <main>
+     konumlandırılmamış ve z-index taşımıyor, body de yığın bağlamı yaratmıyordu, dolayısıyla
+     kök bağlamda z-index:1 olan bu katman normal akıştaki her şeyin üstünde kalıyordu.
+     Sonuç, sayfadaki tüm metnin üstüne ince bir gri tül geçmesi ve dosyanın başında
+     ÖLÇÜLEREK belgelenmiş bütün WCAG oranlarının (--gold-ink 5,0:1, --field-border 3,57:1 …)
+     sessizce aşınmasıydı. Doku zaten bir ZEMİN dokusu; yeri içeriğin altı.
+     `isolation: isolate` (body kuralında) burada şart: yığın bağlamı olmadan z-index:-1
+     katman body'nin kendi arka planının da altına düşer ve hiç görünmez. */
+  z-index: -1;
+  pointer-events: none;
+  opacity: .04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 }

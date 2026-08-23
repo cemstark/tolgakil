@@ -14,7 +14,17 @@
   margin-top: 32px;
 }
 
-@media (min-width: 768px) {
+/* İki aşamalı ızgara. Eskiden tek kırılma noktası vardı (768px) ve orada doğrudan üç
+   sütuna geçiliyordu: 768px genişliğinde bir tablette her kart ~230px'e sıkışıyor,
+   başlık ile özet iç içe giriyordu. Ara adım o aralığı iki sütunla dolduruyor, üç sütun
+   ise gerçekten yeri olan genişliğe (1024px) erteleniyor. */
+@media (min-width: 560px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
   .grid {
     grid-template-columns: repeat(3, 1fr);
   }

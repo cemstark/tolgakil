@@ -2,3 +2,13 @@
   font-style: normal;
   margin-top: 32px;
 }
+
+/* Alt bilgideki adres bloğuyla aynı düzeltme ve aynı değer (SiteFooter.module.css):
+   bağlantılar ölçüldüğünde 22px yükseklik veriyordu, WCAG 2.5.8'in 24px alt sınırının
+   altında. 32px eşiği geçerken satır ritmini de koruyor (44px, AAA rakamı, bloğu şişiriyordu).
+   Bu sayfada önemi daha da büyük — kullanıcı buraya zaten ARAMAK için geliyor. */
+.address a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+}

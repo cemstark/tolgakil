@@ -81,18 +81,26 @@ test('mobilde menü açılınca bağlantılar görünür, kapanınca gizlenir', 
   // düşer ve sıfır eşleşme toBeHidden()'ı yanıltıcı biçimde geçirir (bkz. denetim K3).
   const link = panel.locator('a', { hasText: 'Makaleler' })
 
+  // Gizleme MEKANİZMASI `display: none` değil `visibility: hidden`: `display`
+  // animasyonlanamıyor ve panel açılıp kapanırken zıplıyordu. İkisi de aynı iki güvenceyi
+  // verir — panel tıklanamaz VE klavye Tab sırasına girmez — ama yalnız `visibility`
+  // geçişe izin verir (SiteHeader.module.css).
+  // Testin asıl iddiası olan DAVRANIŞ (bağlantı görünür/gizli) toBeHidden ve toBeVisible
+  // ile aynen korunuyor; değişen yalnız hangi özelliğin ölçüldüğü.
   await expect(panel).toHaveAttribute('data-open', 'false')
-  await expect(panel).toHaveCSS('display', 'none')
+  await expect(panel).toHaveCSS('visibility', 'hidden')
   await expect(link).toBeHidden()
 
   await toggle.click()
   await expect(panel).toHaveAttribute('data-open', 'true')
-  await expect(panel).not.toHaveCSS('display', 'none')
+  await expect(panel).toHaveCSS('visibility', 'visible')
   await expect(link).toBeVisible()
 
   await toggle.click()
   await expect(panel).toHaveAttribute('data-open', 'false')
-  await expect(panel).toHaveCSS('display', 'none')
+  // Kapanışta gizlenme, kapanma animasyonu bittikten SONRA gerçekleşir (visibility
+  // geçişi gecikmeli); toHaveCSS zaten yeniden deneyerek bekler.
+  await expect(panel).toHaveCSS('visibility', 'hidden')
   await expect(link).toBeHidden()
 })
 

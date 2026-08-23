@@ -11,11 +11,16 @@ export function PracticeAreas({ areas }: PracticeAreasProps) {
   return (
     <section className={styles.section}>
       <div className={styles.inner}>
-        <h2>Çalışma Alanları</h2>
+        {/* `reveal` ve `stagger` globals.css'te tanımlı küresel sınıflar (CSS modülü değil):
+            kaydırmaya bağlı giriş animasyonunu açarlar. Çalışma anında JavaScript
+            gerektirmezler — `animation-timeline: view()` kullanıyorlar, bu yüzden bu
+            bileşenin sunucu bileşeni kalması bozulmuyor. Desteklemeyen tarayıcıda ve
+            azaltılmış hareket tercihinde içerik doğrudan görünür. */}
+        <h2 className="reveal">Çalışma Alanları</h2>
         {areas.length === 0 ? (
           <p className={styles.empty}>Çalışma alanları yakında yayımlanacak.</p>
         ) : (
-          <ul className={styles.grid}>
+          <ul className={`${styles.grid} stagger`}>
             {areas.map((area) => (
               <li key={area.slug}>
                 <PracticeAreaCard area={area} />

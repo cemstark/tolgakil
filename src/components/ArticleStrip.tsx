@@ -14,7 +14,11 @@ export function ArticleStrip({ articles }: ArticleStripProps) {
     // ile birlikte gelir — asıl tematik <section>'da, `id` de burada.
     <div className={styles.section}>
       <section id="articles" data-surface="paper" className={styles.inner}>
-        <div className={styles.header}>
+        {/* `reveal` / `stagger`: globals.css'teki kaydırmaya bağlı giriş — gerekçesi ve
+            geri düşüş davranışı PracticeAreas.tsx'te yazılı. Başlık ile "Tümünü gör"
+            birlikte giriyor; ikisi tek bir satır olarak okunuyor, ayrı ayrı belirmeleri
+            bağı koparırdı. */}
+        <div className={`${styles.header} reveal`}>
           <h2>Makaleler</h2>
           <Link href="/makaleler" className="textLink">
             Tümünü gör
@@ -23,7 +27,7 @@ export function ArticleStrip({ articles }: ArticleStripProps) {
         {articles.length === 0 ? (
           <p className={styles.empty}>Henüz yayımlanmış makale yok.</p>
         ) : (
-          <ul className={styles.list}>
+          <ul className={`${styles.list} stagger`}>
             {articles.map((article) => {
               // Gün ISO gövdesinden kesiliyor; formatDate de UTC'ye sabitli, böylece
               // görünen tarih ile dateTime özniteliği asla ayrışmıyor.

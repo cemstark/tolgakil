@@ -8,7 +8,15 @@
   color: var(--text-muted);
 }
 
-@media (min-width: 768px) {
+/* İki aşamalı ızgara — gerekçesi PracticeAreas.module.css'te. Ana sayfadaki kadro
+   şeridiyle aynı kırılma noktaları: aynı LawyerCard iki sayfada aynı genişlikte çizilsin. */
+@media (min-width: 560px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
   .grid {
     grid-template-columns: repeat(3, 1fr);
   }

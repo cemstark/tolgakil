@@ -18,10 +18,68 @@
   gap: 16px;
   padding: 10px 10px 10px 24px;
   border-radius: var(--radius-pill);
-  /* Koyu zeminde yarı saydam cam yüzey; renk sabiti değil, --text-ink token'ından türetilir. */
-  background: color-mix(in srgb, var(--text-ink) 7%, transparent);
+  /* Cam yüzey, ama KOYU bir tabanın üstünde.
+     Eski hâli yalnız `color-mix(in srgb, var(--text-ink) 7%, transparent)` idi — yani %93
+     saydam. Hap sayfa boyunca yapışkan olduğu için ArticleStrip'in krem adası (#efece3)
+     altından geçiyor ve o anda arkadaki krem neredeyse olduğu gibi görünüyordu: hapın
+     efektif zemini ≈ rgb(240,236,228), üstündeki --text-ink metni (#f3f1ea) ile arasındaki
+     kontrast 1,04:1 — marka adı ve bütün gezinme bağlantıları kayboluyordu. Tarayıcıda
+     ekran görüntüsüyle doğrulandı. `backdrop-filter` bunu çözmez; bulanıklaştırır ama
+     parlaklığı düşürmez.
+     Axe bunu yakalayamaz: saydam bir katmanın ARKASINDAKİ, üstelik kaydırma konumuna göre
+     değişen zemini değerlendiremiyor.
+
+     %85 donuk --ink tabanı krem bloğun üstünde 9,7:1, koyu zeminde 13,9:1 veriyor; camlık
+     hissi kalan %15 saydamlık ve backdrop-filter ile korunuyor. Işık katmanı artık ayrı
+     bir background-image olarak taşınıyor ki aşağıdaki pill-settle yalnız TABANI (
+     background-color) canlandırsın, ışığı ezmesin. */
+  background-color: color-mix(in srgb, var(--ink) 85%, transparent);
+  background-image: linear-gradient(
+    color-mix(in srgb, var(--text-ink) 7%, transparent),
+    color-mix(in srgb, var(--text-ink) 7%, transparent)
+  );
   border: 1px solid var(--line-ink);
   backdrop-filter: blur(12px);
+  /* Gerçek cam kenarı yalnız dış kenarlıkla oluşmuyor; içeriden gelen 1px'lik ışık çizgisi
+     yüzeye kalınlık veriyor. Dış gölge hapı sayfadan ayırır, iç gölge kenarı kırar. */
+  box-shadow:
+    var(--shadow-card),
+    inset 0 1px 0 color-mix(in srgb, var(--text-ink) 9%, transparent);
+}
+
+/* Hap sayfa kaydırıldıkça yoğunlaşır: en üstteyken neredeyse saydam, içerik altına
+   girmeye başlayınca zeminden ayrılır. Kaydırmaya bağlı olduğu için ÇALIŞMA ANINDA
+   JAVASCRIPT YOK — scroll dinleyicisi her karede yeniden çizim tetikler, bu ise
+   birleştirici (compositor) üzerinde kalır.
+
+   @supports zorunlu: desteklemeyen tarayıcı `animation-timeline` satırını atlar ama
+   `animation`ı uygular; hap o zaman sayfa açılışında bir kez yoğunlaşıp öyle kalırdı.
+   Sarmalayıcıyla desteklemeyen tarayıcıda hap sabit ve doğru görünür. */
+/* Yalnız `background-color` (donuk taban) ve kenarlık canlandırılıyor — `background`
+   kısayolu DEĞİL. Kısayol yazılsaydı yukarıdaki ışık katmanını (background-image) da
+   ezerdi. Alt uç %62: hap o anda hero'nun koyu zemininde duruyor, orada daha saydam
+   olması camlığı güçlendiriyor; üst uç %88 ve 100px'de doyuma ulaşıyor, yani krem ada
+   (sayfada ~1300px aşağıda) hapın altına girdiğinde taban çoktan en donuk hâlinde. */
+@keyframes pill-settle {
+  from {
+    background-color: color-mix(in srgb, var(--ink) 62%, transparent);
+    border-color: transparent;
+  }
+  to {
+    background-color: color-mix(in srgb, var(--ink) 88%, transparent);
+    border-color: var(--line-ink);
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .pill {
+      animation: pill-settle linear both;
+      animation-timeline: scroll();
+      /* İlk 100px'de tamamlanır: geçiş, kullanıcı daha ilk ekranı terk etmeden bitmeli. */
+      animation-range: 0 100px;
+    }
+  }
 }
 
 .brand {
@@ -35,6 +93,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
+  transition: color var(--dur-hover) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .brand:hover { color: var(--gold); }
 }
 
 .menuButton {
@@ -46,10 +109,42 @@
   font-size: 14px;
   padding: 8px 16px;
   cursor: pointer;
+  /* Dokunmatik hedef en az 44px: eski hâli (8px dolgu + 14px metin) ~34px veriyordu,
+     WCAG 2.5.8'in altında. Bu düğme YALNIZ dokunmatik/dar ekranda görünüyor, yani
+     kuralın en çok geçerli olduğu yer burası. */
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  /* `transform` listede olmak ZORUNDA: aşağıdaki :active kuralı ölçek uyguluyor ve
+     transition-duration yazıyor, ama özellik listede olmadığı için ölçek anında
+     sıçrıyordu ve --dur-press ölü kalıyordu (denetim bulgusu). */
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out),
+    transform var(--dur-hover) var(--ease-out);
+}
+
+.menuButton:active {
+  /* Dokunmatikte hover yok; bası geri bildirimi tek dokunsal onay. */
+  transform: scale(.97);
+  transition-duration: var(--dur-press);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .menuButton:hover {
+    background: color-mix(in srgb, var(--text-ink) 8%, transparent);
+    border-color: var(--gold);
+  }
 }
 
 .nav {
-  display: none;
+  /* `display: none` DEĞİL: kapalı durumdan açık duruma geçiş animasyonlanamıyordu ve
+     panel anında zıplıyordu. `visibility: hidden` aynı iki güvenceyi verir — panel
+     tıklanamaz VE klavye Tab sırasına girmez (odak sızıntısı olmaz) — ama geçişe izin
+     verir. Yerini kaplama sorunu yok, panel zaten `position: absolute`. */
+  visibility: hidden;
+  opacity: 0;
+  display: flex;
   flex-direction: column;
   gap: 4px;
   position: absolute;
@@ -60,11 +155,72 @@
   border-radius: var(--radius-block);
   background: var(--ink-2);
   border: 1px solid var(--line-ink);
+  box-shadow: var(--shadow-lift);
+
+  /* Panel yüksek bir menüde ekranın dışına taşabiliyordu ve içinde kaydırma yoktu;
+     alt kalemler kısa ekranlarda erişilemez hâle geliyordu. Sınır, görünür alandan
+     hapın kapladığı payı düşer. */
+  max-height: calc(100dvh - 140px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  /* Panel tetikleyicisinden açılır: menü düğmesi sağ üstte, dolayısıyla ölçek oradan
+     büyür. `center` olsaydı panel düğmeyle ilgisiz bir yerden doğmuş gibi görünürdü. */
+  transform: translateY(-8px) scale(.98);
+  transform-origin: top right;
+  /* `visibility` SÜRESİ sıfır, GECİKMESİ panel süresi kadar — düz bir
+     `visibility var(--dur-panel)` yazımı değil. Fark ölçüldü: düz yazımda panel
+     açılırken visibility bir süre `hidden` kalıyor ve o aralıkta klavye odağı panele
+     giremiyor; tests/e2e/shell.spec.ts'teki Escape testi tam bu yüzden düştü
+     (Tab sonrası odak panelin dışında kalıyordu).
+     Gecikmeli biçimde: kapanışta panel önce solup kayar, animasyon BİTİNCE gizlenir;
+     açılışta ise aşağıdaki kural gecikmeyi sıfırlar ve panel anında odaklanabilir olur. */
+  transition:
+    opacity var(--dur-panel) var(--ease-out),
+    transform var(--dur-panel) var(--ease-out),
+    visibility 0s linear var(--dur-panel);
 }
 
-/* Panel kapalıyken display:none, klavye Tab sırasına hiç girmez (odak sızıntısı olmaz). */
+/* Panelin kayarak/ölçeklenerek açılması, kullanıcının KAÇINAMAYACAĞI bir hareket — hover'a
+   bağlı değil, menüyü açan herkes görüyor. Azaltılmış hareket kipinde geçişi durdurmak
+   yetmiyordu (öğe animasyonsuz da olsa yer değiştirmiş konumdan başlıyordu); başlangıç
+   dönüşümü tamamen kaldırılıyor, panel yalnızca soluyarak geliyor. */
+@media (prefers-reduced-motion: reduce) {
+  .nav {
+    transform: none;
+    /* Geçiş burada AÇIKÇA yeniden yazılıyor, yalnız transform'un kaldırılmasına
+       güvenilmiyor. Sebep: globals.css'teki güvenlik ağı `transition-property`yi 7 kalemlik
+       bir listeye çeviriyor ama `transition-duration`/`delay` listelerine dokunmuyor ve CSS
+       kısa listeleri DÖNGÜSEL tekrarlıyor. Yukarıdaki üç kalemlik süre/gecikme dizisi
+       (240ms/0s, 240ms/0s, 0s/240ms) yeni 7 kalemlik özellik listesine yeniden hizalanıyor
+       ve `visibility` özgün "0s süre / 240ms gecikme" yuvası yerine başka bir yuvaya
+       düşüyor. Bugün zararsız — `visibility` ayrık enterpolasyonla iki durumda da aynı
+       sonucu veriyor — ama tamamen rastlantısal: listeye dördüncü bir kalem eklenmesi
+       `visibility`yi "0s süre / 240ms gecikme" konumuna oturtur ve panel AÇILIRKEN 240ms
+       gizli kalır. Bu tam olarak yukarıdaki yorumun anlattığı, Escape testini düşüren hata.
+       Hiçbir test azaltılmış hareket kipinde koşmadığı için regresyon sessizce geçerdi. */
+    transition:
+      opacity var(--dur-panel) var(--ease-out),
+      visibility 0s linear var(--dur-panel);
+  }
+
+  .nav[data-open='true'] {
+    transition:
+      opacity var(--dur-panel) var(--ease-out),
+      visibility 0s linear 0s;
+  }
+}
+
 .nav[data-open='true'] {
-  display: flex;
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  /* Açılış yönünde gecikme yok: görünürlük ilk karede geçer, solma ve kayma animasyonu
+     onun üstünde oynar. */
+  transition:
+    opacity var(--dur-panel) var(--ease-out),
+    transform var(--dur-panel) var(--ease-out),
+    visibility 0s linear 0s;
 }
 
 .link,
@@ -72,12 +228,63 @@
   padding: 10px 12px;
   border-radius: var(--radius-pill);
   font-size: 15px;
+  /* Dar ekranda menü kalemleri ~40px'e düşüyordu; 44px dokunmatik hedef alt sınırı.
+     Masaüstünde (aşağıda) geri alınıyor, orada imleç var ve hap yükselirdi. */
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  /* `transform` listede: :active ölçeği aksi hâlde anında sıçrıyor (.menuButton ile aynı
+     denetim bulgusu). */
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out),
+    color var(--dur-hover) var(--ease-out),
+    transform var(--dur-hover) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .link:hover {
+    background: color-mix(in srgb, var(--text-ink) 8%, transparent);
+  }
+}
+
+/* Etkin bölüm işareti. Bu kural EKSİKTİ: bileşen `aria-current="page"` basıyordu ama
+   halka açık sitede karşılığı hiç yazılmamıştı, yani ekran okuyucu hangi sayfada
+   olunduğunu söylerken gören kullanıcı göremiyordu.
+   Panelin (PanelNav.module.css) desenine bilerek eşleniyor: yalnız renk değil, zemin ve
+   kenarlık da değişiyor — renk körlüğünde ve yüksek kontrast kipinde tek başına renk
+   ayırt edici değil (WCAG 1.4.1). */
+.link[aria-current='page'] {
+  background: color-mix(in srgb, var(--text-ink) 8%, transparent);
+  border-color: var(--gold);
+  color: var(--gold);
 }
 
 .cta {
   background: var(--gold);
   color: var(--ink);
   text-align: center;
+  justify-content: center;
+  font-weight: 500;
+}
+
+/* CTA zaten dolgulu; etkin durumu zeminle işaretlenemez. Ayırt edici sinyal, hapın
+   çevresine oturan ikinci bir halka — renkten bağımsız, biçimsel bir fark. */
+.cta[aria-current='page'] {
+  box-shadow: 0 0 0 1px var(--ink), 0 0 0 3px var(--gold);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cta:hover {
+    background: color-mix(in srgb, var(--gold) 88%, white);
+  }
+}
+
+.cta:active,
+.link:active {
+  transform: scale(.98);
+  transition-duration: var(--dur-press);
 }
 
 @media (min-width: 768px) {
@@ -86,6 +293,12 @@
   }
 
   .nav {
+    /* Masaüstünde panel yok: görünürlük, kaçış ölçeği ve panel kabuğu topluca geri alınır.
+       `visibility` açıkça `visible` yazılmak ZORUNDA, aksi hâlde mobil kuralın
+       `hidden` değeri burada da geçerli kalır ve menü masaüstünde hiç görünmez. */
+    visibility: visible;
+    opacity: 1;
+    transform: none;
     display: flex;
     position: static;
     flex-direction: row;
@@ -94,6 +307,15 @@
     padding: 0;
     border: none;
     background: none;
+    box-shadow: none;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .link,
+  .cta {
+    /* İmleçli cihazda 44px alt sınırı gereksiz ve hapı şişiriyor. */
+    min-height: 0;
   }
 
   .cta {
