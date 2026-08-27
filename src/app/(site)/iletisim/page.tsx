@@ -6,10 +6,25 @@ import { SITE } from '@/content/site'
 import { sendContactMessage } from './actions'
 import styles from './page.module.css'
 
+const ACIKLAMA = `${SITE.name} iletişim bilgileri: ${SITE.district} / ${SITE.city} adresi, telefon numaraları ve iletişim formu.`
+
 export const metadata: Metadata = {
   title: 'İletişim',
-  description: `${SITE.name} iletişim bilgileri: ${SITE.district} / ${SITE.city} adresi, telefon numaraları ve iletişim formu.`,
+  description: ACIKLAMA,
   alternates: { canonical: '/iletisim' },
+  // openGraph/twitter olmadan bu sayfa paylaşıldığında kartta yalnız kök layout'un
+  // başlığı — "Akil Hukuk Bürosu" — görünüyordu; alıcı hangi sayfanın gönderildiğini
+  // anlamıyordu. siteName ve locale TEKRAR yazılmak zorunda: Next openGraph'ı kökle
+  // derin birleştirmiyor, tümüyle değiştiriyor.
+  openGraph: {
+    siteName: SITE.name,
+    locale: 'tr_TR',
+    title: 'İletişim',
+    description: ACIKLAMA,
+    url: '/iletisim',
+    type: 'website',
+  },
+  twitter: { card: 'summary_large_image', title: 'İletişim', description: ACIKLAMA },
 }
 
 // Sabit SITE değil VERİTABANI okunuyor: iletişim bilgileri panelden değiştirilebilmeli ve

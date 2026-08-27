@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import sharp from 'sharp'
-import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MEGAPIXELS, MAX_UPLOAD_PIXELS, OVERSIZE_MESSAGE } from '@/lib/media-limits'
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MEGAPIXELS, MAX_UPLOAD_PIXELS, OVERSIZE_MESSAGE, WEBP_QUALITY } from '@/lib/media-limits'
 
 // Yükleme yolunun TAMAMI bu modülde toplanıyor. Üretimde dizin dağıtım kökünün dışına
 // taşınacak (spec §13) ve gerekirse Cloudflare R2'ye geçilecek; o değişikliğin buradan
@@ -10,7 +10,6 @@ import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MEGAPIXELS, MAX_UPLOAD_PIXELS, OVERSIZE_ME
 // dokunmuyor, hep bu arayüzü çağırıyor.
 
 const MAX_WIDTH = 1600
-const WEBP_QUALITY = 82
 
 // Depolanan biçim daima WebP: tek uzantı, tek Content-Type, tek beyaz liste girdisi.
 export const STORED_EXTENSION = '.webp'

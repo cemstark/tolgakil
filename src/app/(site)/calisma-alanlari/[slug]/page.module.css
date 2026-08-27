@@ -1,3 +1,25 @@
+/* Başlık ile özet arasındaki sinematik şerit. Sayfanın işi metin okutmak; görsel araya
+   nefes koyar ama içeriği ilk ekrandan kovmamalı. Kaynak dosya 16/10 üretiliyor, buradaki
+   oran farkını `object-fit: cover` kapatıyor (.mediaFrame img).
+
+   ORAN ÖLÇÜLEREK SEÇİLDİ: önce 16/7 denendi, ekran görüntüsünde 1200px genişlikte 525px
+   yükseklik verdi — 1000px'lik bir masaüstü penceresinde özet paragrafı katlamanın altına
+   düşüyor ve sayfa "başlık + dev fotoğraf" gibi okunuyordu. 3/1 aynı genişlikte 400px
+   veriyor; şerit hâlâ geniş ama altındaki ilk paragraf ekrana giriyor.
+
+   Mobilde 3/1 fazla ince kalıyor — 390px genişlikte yüksekliği 130px'e iniyor ve fotoğraf
+   "şerit" olmaktan çıkıp tanınmaz bir kesite dönüşüyor; dar ekranda 16/10 korunuyor. */
+.media {
+  aspect-ratio: 16 / 10;
+  margin-bottom: 32px;
+}
+
+@media (min-width: 768px) {
+  .media {
+    aspect-ratio: 3 / 1;
+  }
+}
+
 .lead {
   max-width: 68ch;
   margin-bottom: 40px;

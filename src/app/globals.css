@@ -339,6 +339,60 @@ a.card:active {
   transition-duration: var(--dur-press);
 }
 
+/* ——— Görsel çerçevesi ———
+   Stok görsellerin ortak kabuğu: hero, çalışma alanı kartı, alan ayrıntı bandı ve
+   hakkımızda şeridi aynı sınıfı kullanır. Global sınıf olmak zorunda değildi ama dört
+   ayrı CSS modülünde aynı yedi satırı tekrarlamak, birini değiştirip üçünü unutmanın
+   kestirme yoludur.
+
+   Renk yazmıyor; yüzey sözleşmesinden (--surface-raised / --line) okuyor, böylece krem
+   bölümde kendiliğinden sıcak karşılığına dönüyor. Zemin rengi görsel yüklenene kadar
+   görünen şey: boş beyaz yerine yüzeyin kendi tonu, yani yükleme sırasında sayfa
+   parlamıyor. */
+/* Seçici `:where()` içinde: özgüllüğü SIFIR. Bu sınıf her zaman bir CSS modülü sınıfıyla
+   birlikte kullanılıyor (`class="Card-module__media mediaFrame"`) ve modülün o öğe için
+   yazdığı her bildirim — kenarlık, köşe, gölge — hiçbir hileye gerek kalmadan kazanmalı.
+   Düz `.mediaFrame` yazıldığında iki kural da (0,1,0) oluyor ve kazananı yalnız stil
+   sayfalarının yüklenme sırası belirliyordu; sıra Next'in parça bölme kararına bağlı
+   olduğu için bu bir sözleşme değil, tesadüftü. */
+:where(.mediaFrame) {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-block);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+}
+
+/* Alt kenardan yukarı doğru yüzey rengine dönen ince perde. İki işi var: görselin sert
+   alt kenarını sayfaya bağlamak ve fotoğrafın altına düşen metnin (kart başlığı) üstünde
+   durduğu bandı sakinleştirmek.
+
+   `--surface` üzerinden yazılıyor — koyu bölümde koyuya, krem bölümde kreme kararıyor.
+   Görselin ÜSTÜNE metin binmiyor, dolayısıyla globals.css'in başında ölçülmüş kontrast
+   oranlarının hiçbiri bu katmandan etkilenmiyor. */
+:where(.mediaFrame)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--surface) 55%, transparent),
+    transparent 42%
+  );
+}
+
+/* Görselin kendisi çerçeveyi tam doldurur. `object-fit: cover` üç oranın (4/5, 16/10,
+   masaüstünde 3/1) tek dosyadan türetilmesini sağlayan şey; `display: block` alt satır boşluğunu
+   keser, yoksa çerçevenin altında birkaç piksellik bir şerit kalır. */
+:where(.mediaFrame) img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* Ortak sayfa kabuğu: yedi iç sayfa + 404 + hata sayfası aynı sarmalayıcıyı kullanır.
    Inline style tekrarını önler; medya sorgusu taşıyamayan inline style'ın aksine burada
    gerekirse mobile-first bir kırılma noktası eklenebilir. */

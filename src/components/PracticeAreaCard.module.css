@@ -5,6 +5,38 @@
   height: 100%;
 }
 
+/* Görsel kartın iç boşluğunu taşar: fotoğraf kenardan kenara oturunca kart bir "kutu
+   içinde kutu" olmaktan çıkıp tek parça görünüyor. Negatif kenar boşluğu global .card'ın
+   padding'iyle AYNI ifadeyi kullanmak zorunda (clamp(1rem, 3vw, 1.5rem)) — sayı olarak
+   tekrarlanması hoş değil ama CSS'te bir kuralın padding'ini başka bir kuraldan okumanın
+   yolu yok ve iki değerin ayrışması kartın kenarında ince bir şerit bırakır.
+
+   Alt boşluk 4px: ızgaranın kendi 12px'lik gap'i görselden sonra fazla geniş duruyordu,
+   başlık fotoğrafa yaklaşınca ikisi tek blok gibi okunuyor.
+
+   Köşe yarıçapı .mediaFrame'in --radius-block'unu değil kartın --radius-card'ını
+   kullanıyor: dış köşe kartın, iç köşenin ondan büyük olması gözle yanlış görünür. */
+/* Global `.mediaFrame` ile birlikte kullanılıyor; buradaki bildirimler onunkileri ezmek
+   için tek sınıf özgüllüğünde yazılabiliyor, çünkü o kural `:where()` içinde tanımlı
+   (globals.css) ve özgüllüğü sıfır. `position: relative` burada TEKRARLANMIYOR —
+   `.mediaFrame` zaten veriyor ve `<Image fill>` onu oradan alıyor; diğer üç kullanım da
+   aynı şekilde davranıyor. */
+.media {
+  display: block;
+  aspect-ratio: 16 / 10;
+  margin: calc(-1 * clamp(1rem, 3vw, 1.5rem));
+  margin-bottom: 4px;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  /* Kenarlığı yalnız altta bırakıyoruz: diğer üç kenarda kartın kendi kenarlığıyla
+     üst üste binip çift çizgi yapardı. */
+  border-width: 0 0 1px 0;
+  /* Gölge de sıfırlanıyor: `.mediaFrame` her görsele kart gölgesi veriyor, ama bu görsel
+     ZATEN bir kartın içinde ve kartın kendi gölgesi var. İkisi üst üste binince görselin
+     üst köşelerinde ikinci bir karartma beliriyordu — kartın `overflow` kısıtı olmadığı
+     için gölge kenardan taşıyordu. */
+  box-shadow: none;
+}
+
 .name {
   font-family: var(--font-display), Georgia, serif;
   font-size: 22px;

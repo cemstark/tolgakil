@@ -1,5 +1,7 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { CTA_LINK } from '@/lib/navigation'
+import { HERO_IMAGE } from '@/content/practice-area-images'
 import { getPublicSiteIdentity } from '@/db/queries/public/site-identity'
 import styles from './Hero.module.css'
 
@@ -41,8 +43,31 @@ export async function Hero() {
             </Link>
           </div>
         </div>
-        {/* Dekoratif zemin; içerik taşımadığı için erişilebilirlik ağacından çıkarılıyor. */}
-        <div className={styles.visual} aria-hidden="true" />
+        {/* Dekoratif görsel; içerik taşımadığı için erişilebilirlik ağacından çıkarılıyor.
+            Adalet heykeli sayfanın söylemediği hiçbir şeyi söylemiyor — h1 ve alttaki
+            paragraf büronun ne yaptığını zaten yazıyor. Bu yüzden alt="" ve aria-hidden:
+            ekran okuyucu için görselin varlığı bilgi değil gürültü olurdu.
+
+            `fill` + konteynerdeki aspect-ratio: üç kırılma noktasında (mobil 16/10,
+            ≥768px 4/5) tek dosya kullanılıyor, ölçüyü CSS veriyor.
+
+            `priority` KULLANILMIYOR: Next 16'da o prop `preload` lehine bırakıldı
+            (node_modules/next/dist/docs/.../image.md, "priority" başlığı). Belge ikisi
+            yerine çoğu durumda `loading="eager"` veya `fetchPriority="high"` öneriyor ve
+            `preload`u bu ikisiyle BİRLİKTE kullanmamayı söylüyor. Hero ilk ekranda ve
+            LCP adayı olduğu için ikisi seçildi, preload yazılmadı. */}
+        <div className={`${styles.visual} mediaFrame`} aria-hidden="true">
+          <Image
+            src={HERO_IMAGE.src}
+            alt=""
+            fill
+            /* ≥768px'te hero iki sütuna bölünüyor (1.1fr 1fr), yani görsel kabaca
+               ekranın %46'sı; altında tek sütun ve tam genişlik. */
+            sizes="(min-width: 768px) 46vw, 100vw"
+            loading="eager"
+            fetchPriority="high"
+          />
+        </div>
       </div>
     </section>
   )

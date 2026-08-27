@@ -281,6 +281,116 @@ export const SEED_ABOUT_PAGE = [
   '<p>Akil Hukuk Bürosu, deneyimli kadrosuyla birlikte hukuki ihtiyaçların doğru şekilde değerlendirilmesi ve hukuki süreçlerin mevzuat çerçevesinde yürütülmesi amacıyla faaliyet göstermektedir.</p>',
 ].join('')
 
+/**
+ * KVKK aydınlatma metni ve çerez politikası.
+ *
+ * **KARAR DEĞİŞİKLİĞİ — kaydı burada duruyor.** Bu iki metin daha önce bilerek yer tutucuydu
+ * ve gerekçesi `seed.ts` içinde "hukuki metin üretilmiyor" başlığıyla yazılıydı: üretilmiş
+ * bir metnin gerçek belge gibi görünmesi riski. Karar 27.08.2026'da site sahibinin açık
+ * talimatıyla değiştirildi. Sebep pratik: bir hukuk bürosunun sitesinde BOŞ bir KVKK sayfası,
+ * eksik bir metinden daha kötü görünüyor ve site o hâliyle yayına çıkamıyordu.
+ *
+ * Riski azaltan şey metnin kaynağı: aşağıdaki her cümle KODUN GERÇEĞİNDEN türetildi,
+ * genel bir şablondan değil.
+ *   - İşlenen veri kalemleri `messages` tablosunun sütunlarıyla birebir (schema.ts):
+ *     name, email, phone, subject, body, kvkk_accepted_at, ip, user_agent, created_at.
+ *   - Çerez bölümü kod taranarak VE `curl -I` ile ölçülerek yazıldı: halka açık sayfalar
+ *     hiç çerez bırakmıyor; `/panel/giris` açıldığında next-auth iki çerez kuruyor
+ *     (`authjs.csrf-token`, `authjs.callback-url`), girişten sonra buna oturum çerezi
+ *     ekleniyor — yani üçü de zorunlu ve üçü de panele ait. Analitik veya üçüncü taraf
+ *     izleyici HİÇ YOK — arandı, bulunamadı.
+ *   - Veri sorumlusu bilgileri `SEED_SETTINGS` ile aynı kaynaktan.
+ *
+ * Yine de bu metin bir AVUKAT TARAFINDAN GÖZDEN GEÇİRİLMELİDİR; saklama süresi gibi
+ * kalemler büronun kendi politikasına göre değişir ve kod onu bilemez. Av. Tolga Akil
+ * panelden (/panel/sayfalar) istediği an düzeltebilir — tohum idempotent olduğu için
+ * panelden girilen metnin üstüne yazmaz.
+ *
+ * Yalnız `src/lib/sanitize.ts` beyaz listesindeki etiketler kullanılıyor
+ * (p, h2, h3, ul, li, strong, a). TABLO YOK: beyaz listede olmadığı için `renderableHtml`
+ * onu sessizce siler ve sayfada içeriği kaybolmuş bir boşluk kalırdı.
+ */
+export const SEED_KVKK_PAGE = [
+  '<p>Bu aydınlatma metni, 6698 sayılı Kişisel Verilerin Korunması Kanunu’nun 10. maddesi uyarınca, veri sorumlusu sıfatıyla Akil Hukuk Bürosu tarafından hazırlanmıştır.</p>',
+
+  '<h2>Veri sorumlusu</h2>',
+  `<p><strong>Akil Hukuk Bürosu</strong><br />Adres: ${SEED_SETTINGS.address}<br />Telefon: ${SEED_SETTINGS.phone} — ${SEED_SETTINGS.phoneSecondary}<br />E-posta: <a href="mailto:${SEED_SETTINGS.email}">${SEED_SETTINGS.email}</a></p>`,
+
+  '<h2>İşlenen kişisel veriler</h2>',
+  '<p>Bu internet sitesi üzerinden kişisel verileriniz yalnızca iletişim formunu doldurmanız hâlinde işlenir. Formu doldurmadığınız sürece siteyi gezmeniz nedeniyle kimliğinizi belirlenebilir kılan bir veri kaydedilmez.</p>',
+  '<p>İletişim formu aracılığıyla işlenen veriler şunlardır:</p>',
+  '<ul>',
+  '<li><strong>Kimlik verisi:</strong> ad ve soyad.</li>',
+  '<li><strong>İletişim verisi:</strong> e-posta adresi ve — bildirmeniz hâlinde — telefon numarası. Telefon alanı zorunlu değildir.</li>',
+  '<li><strong>Mesaj içeriği:</strong> formda yazdığınız konu başlığı ve mesaj metni. Bu alanlara ilettiğiniz her bilgi tarafımızca kaydedilir; hassas nitelikteki kişisel verilerinizi ve uyuşmazlığınıza ilişkin ayrıntıları form üzerinden değil, kuracağımız doğrudan iletişimde paylaşmanızı öneririz.</li>',
+  '<li><strong>İşlem güvenliği verisi:</strong> formun gönderildiği andaki IP adresi, tarayıcı bilgisi (user-agent) ve gönderim zamanı.</li>',
+  '<li><strong>Onay kaydı:</strong> bu aydınlatma metnini okuduğunuza dair verdiğiniz onayın tarih ve saati.</li>',
+  '</ul>',
+
+  '<h2>İşleme amaçları</h2>',
+  '<ul>',
+  '<li>İletmiş olduğunuz talep ve sorulara cevap verilmesi, sizinle iletişim kurulması.</li>',
+  '<li>Talebiniz hâlinde hukuki danışmanlık ve avukatlık hizmetlerine ilişkin ön görüşmenin yürütülmesi.</li>',
+  '<li>İşlem güvenliğinin sağlanması, kötüye kullanımın ve otomatik gönderimlerin (spam) önlenmesi.</li>',
+  '</ul>',
+  '<p>Kişisel verileriniz, tarafınızca ayrıca ve açıkça talep edilmedikçe pazarlama, tanıtım veya bülten gönderimi amacıyla kullanılmaz.</p>',
+
+  '<h2>Hukuki sebep ve toplama yöntemi</h2>',
+  '<p>Verileriniz, iletişim formunu doldurmanız suretiyle elektronik ortamda ve otomatik yolla toplanır.</p>',
+  '<p>Formu gönderebilmek için, kişisel verilerinizin bu aydınlatma metni kapsamında işlenmesine ilişkin onay kutusunu işaretlemeniz gerekir. Bu onay, Kanun’un 5. maddesinin 1. fıkrası anlamında <strong>açık rızanızı</strong> ifade eder; onayın verildiği tarih ve saat kayıt altına alınır. Ayrıca, talebiniz üzerine avukatlık ilişkisinin kurulması hâlinde işleme, Kanun’un 5. maddesinin 2. fıkrasının (c) bendi kapsamında sözleşmenin kurulması ve ifasıyla doğrudan ilgili hâle gelir; 1136 sayılı Avukatlık Kanunu ve ilgili mevzuattan doğan yükümlülüklerimiz bakımından (ç) bendi de uygulanır.</p>',
+  `<p><strong>Rızanızı her zaman geri alabilirsiniz.</strong> Geri alma talebinizi <a href="mailto:${SEED_SETTINGS.email}">${SEED_SETTINGS.email}</a> adresine iletmeniz hâlinde, yalnız rızaya dayanan işleme faaliyeti durdurulur ve ilgili kayıtlar silinir. Avukatlık ilişkisinin kurulmuş olması hâlinde, mevzuatın saklanmasını zorunlu kıldığı bilgiler bu talebin kapsamı dışında kalır.</p>`,
+
+  '<h2>Aktarım</h2>',
+  '<p>İletişim formu aracılığıyla elde edilen kişisel verileriniz üçüncü kişilere satılmaz, pazarlama amacıyla paylaşılmaz ve yurt dışına aktarılmaz. Veriler, sitenin barındırıldığı sunucu hizmet sağlayıcısının altyapısında saklanır. Kanunen yetkili kamu kurum ve kuruluşlarına, mahkemelere ve icra dairelerine mevzuattan doğan yükümlülükler çerçevesinde aktarım yapılabilir.</p>',
+
+  '<h2>Saklama süresi</h2>',
+  '<p>Mesajınız, iletilen talebin sonuçlandırılması için gereken süre boyunca saklanır. Avukatlık ilişkisi kurulmayan başvurulara ait kayıtlar, başvurunun niteliğine göre makul süre içinde silinir. Avukatlık ilişkisi kurulması hâlinde dosyaya ilişkin veriler, Avukatlık Kanunu ve ilgili mevzuatın öngördüğü saklama süreleri boyunca muhafaza edilir.</p>',
+
+  '<h2>İlgili kişi olarak haklarınız</h2>',
+  '<p>Kanun’un 11. maddesi uyarınca veri sorumlusuna başvurarak şu haklarınızı kullanabilirsiniz:</p>',
+  '<ul>',
+  '<li>Kişisel verinizin işlenip işlenmediğini öğrenme, işlenmişse buna ilişkin bilgi talep etme.</li>',
+  '<li>İşlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme.</li>',
+  '<li>Yurt içinde veya yurt dışında verilerin aktarıldığı üçüncü kişileri bilme.</li>',
+  '<li>Eksik veya yanlış işlenmiş olması hâlinde bunların düzeltilmesini isteme.</li>',
+  '<li>Kanun’un 7. maddesindeki şartlar çerçevesinde silinmesini veya yok edilmesini isteme.</li>',
+  '<li>Düzeltme, silme ve yok edilme işlemlerinin verilerin aktarıldığı üçüncü kişilere bildirilmesini isteme.</li>',
+  '<li>Münhasıran otomatik sistemler vasıtasıyla analiz edilmesi suretiyle aleyhinize bir sonucun ortaya çıkmasına itiraz etme.</li>',
+  '<li>Kanuna aykırı olarak işlenmesi sebebiyle zarara uğramanız hâlinde zararın giderilmesini talep etme.</li>',
+  '</ul>',
+
+  '<h2>Başvuru</h2>',
+  `<p>Haklarınıza ilişkin taleplerinizi, kimliğinizi tevsik edici bilgilerle birlikte yukarıda belirtilen adrese yazılı olarak veya <a href="mailto:${SEED_SETTINGS.email}">${SEED_SETTINGS.email}</a> adresine e-posta göndererek iletebilirsiniz. Başvurularınız, talebin niteliğine göre en kısa sürede ve her hâlükârda en geç otuz gün içinde sonuçlandırılır.</p>`,
+
+  '<p>Bu metin 27.08.2026 tarihinde güncellenmiştir.</p>',
+].join('')
+
+/** Çerez politikası. İçeriği koddan doğrulanarak yazıldı; gerekçe SEED_KVKK_PAGE'de. */
+export const SEED_COOKIE_PAGE = [
+  '<p>Bu politika, Akil Hukuk Bürosu internet sitesinde çerezlerin nasıl kullanıldığını açıklar.</p>',
+
+  '<h2>Çerez nedir?</h2>',
+  '<p>Çerez, ziyaret ettiğiniz internet sitelerinin tarayıcınız aracılığıyla cihazınıza kaydettiği küçük metin dosyasıdır. Çerezler bir sitenin çalışması için gerekli olabileceği gibi, ziyaretçi davranışını ölçmek veya reklam göstermek amacıyla da kullanılabilir.</p>',
+
+  '<h2>Bu sitede hangi çerezler kullanılıyor?</h2>',
+  '<p>Bu sitede yalnızca <strong>zorunlu çerezler</strong> kullanılır ve bunların tamamı, büro çalışanlarının kullandığı yönetim paneline aittir. Sitenin halka açık sayfalarını ziyaret ettiğinizde cihazınıza hiçbir çerez kaydedilmez.</p>',
+  '<p>Yönetim paneline ait zorunlu çerezler şunlardır:</p>',
+  '<ul>',
+  '<li><strong>Oturum çerezi.</strong> Panele giriş yapıldığında oluşturulur ve oturumun açık kalmasını sağlar. Çıkış yapıldığında veya oturum süresi dolduğunda geçerliliğini yitirir.</li>',
+  '<li><strong>Güvenlik (CSRF) çerezi.</strong> Giriş formunun sahte bir siteden gönderilmesini engellemek için kullanılır; giriş ekranı açıldığında oluşur.</li>',
+  '<li><strong>Yönlendirme çerezi.</strong> Giriş tamamlandıktan sonra kullanıcının hangi panel sayfasına döneceğini tutar; giriş ekranı açıldığında oluşur.</li>',
+  '</ul>',
+  '<p>Sitede <strong>analitik, reklam, pazarlama veya sosyal medya izleme çerezi bulunmamaktadır.</strong> Ziyaretçi davranışını ölçen üçüncü taraf hiçbir hizmet siteye eklenmemiştir; ziyaretiniz üçüncü kişilerle paylaşılmaz.</p>',
+
+  '<h2>Çerezleri yönetmek</h2>',
+  '<p>Çerezleri tarayıcınızın ayarlar bölümünden silebilir veya engelleyebilirsiniz. Bu sitedeki çerezlerin tamamı yönetim paneline ait olduğundan, çerezleri engellemeniz sitenin halka açık sayfalarını görüntülemenizi etkilemez; yalnızca panele giriş yapılmasını engeller.</p>',
+
+  '<h2>İletişim</h2>',
+  `<p>Çerez kullanımına ilişkin sorularınızı <a href="mailto:${SEED_SETTINGS.email}">${SEED_SETTINGS.email}</a> adresine iletebilirsiniz. Kişisel verilerinizin işlenmesine ilişkin ayrıntılı bilgi için <a href="/kvkk">KVKK Aydınlatma Metni</a> sayfasını inceleyebilirsiniz.</p>`,
+
+  '<p>Bu metin 27.08.2026 tarihinde güncellenmiştir.</p>',
+].join('')
+
 /** Makale kategorileri çalışma alanlarıyla aynı kümeden: yazılar bir alana bağlanacak. */
 export const SEED_CATEGORIES = SEED_PRACTICE_AREAS.map((area) => ({
   slug: area.slug,

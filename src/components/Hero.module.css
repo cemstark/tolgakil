@@ -102,35 +102,20 @@
   transition-duration: var(--dur-press);
 }
 
-/* Geçici yüzey — müşteriden ofis/portre görseli gelince burası <Image> ile değişecek.
-   Eskiden düz `var(--ink-2)` idi: ana sayfanın en büyük alanı boş gri bir dikdörtgendi.
-   Düz renk yerine ışık kaynağı kurgulanıyor — sağ üstten düşen altın bir aydınlanma,
-   sol altta onun zayıf yankısı. Radyal seçildi: 45 derecelik düz bir doğrusal gradyan
-   tam da "yapay zekâ şablonu" görünümünü veren şey. */
+/* Hero görselinin çerçevesi. Kenarlık, köşe yarıçapı, gölge ve alt perde artık global
+   `.mediaFrame` sınıfından geliyor (globals.css) — burada YALNIZ oran kalıyor.
+
+   Görünüm özellikleri bilerek buradan silindi: iki sınıf da aynı öğede ve ikisi de tek
+   sınıf özgüllüğünde, yani hangisinin kazandığını yalnız dosya yükleme sırası belirlerdi.
+   Böyle bir çakışmayı çözmek yerine hiç yaratmamak doğrusu.
+
+   Eskiden burada gradyan ve çizgi ritminden kurulu geçici bir yüzey vardı; o yüzeyin
+   varlık sebebi "müşteriden görsel gelene kadar boş gri dikdörtgen durmasın"dı. Görsel
+   geldi (public/gorsel/hero-themis.webp), dolayısıyla yüzey de gitti.
+
+   Mobilde 4/5 dikey oran ekranın yarısını yutuyor ve içeriği ilk ekrandan kovuyordu:
+   dar ekranda yatay şerit, ≥768px'te özgün dikey oran (aşağıda). */
 .visual {
-  border-radius: var(--radius-block);
-  background:
-    /* İnce dikey çizgi ritmi. Tek başına gradyan bırakıldığında yüzey "henüz yüklenmemiş
-       bir görsel" gibi okunuyordu; düzenli bir desen onu KASITLI bir yüzeye çeviriyor.
-       Aralık 46px — daha sıkısı ekranda moiré yapıyor, daha genişi desen olmaktan çıkıp
-       rastgele çizgilere dönüşüyor. */
-    repeating-linear-gradient(
-      90deg,
-      transparent 0 46px,
-      color-mix(in srgb, var(--gold) 8%, transparent) 46px 47px
-    ),
-    /* Işık kaynağı: sağ üstten düşen sıcak aydınlanma. Öncekinden dar ve yoğun —
-       geniş yayılınca zeminden ayırt edilemiyordu. */
-    radial-gradient(66% 48% at 74% 18%, color-mix(in srgb, var(--gold) 46%, transparent), transparent 72%),
-    radial-gradient(80% 60% at 8% 94%, color-mix(in srgb, var(--gold) 14%, transparent), transparent 62%),
-    linear-gradient(168deg, var(--ink-2), var(--ink));
-  border: 1px solid var(--line-ink);
-  /* Üst kenardaki iç ışık çizgisi yüzeye kalınlık verir; dış gölge onu sayfadan ayırır. */
-  box-shadow:
-    var(--shadow-card),
-    inset 0 1px 0 color-mix(in srgb, var(--gold) 14%, transparent);
-  /* Mobilde 4/5 dikey oran ekranın yarısını yutuyordu ve içeriği ilk ekrandan kovuyordu.
-     Dar ekranda yatay bir şerit, masaüstünde özgün dikey oran (aşağıda). */
   aspect-ratio: 16 / 10;
 }
 

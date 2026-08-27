@@ -14,7 +14,8 @@
     "db:migrate": "node scripts/migrate.mts",
     "db:seed": "node scripts/seed.mts",
     "db:backfill-search": "node scripts/backfill-search-text.mts",
-    "db:deploy": "npm run db:migrate && npm run db:seed && npm run db:backfill-search",
+    "db:backfill-legal": "node scripts/backfill-legal-pages.mts",
+    "db:deploy": "npm run db:migrate && npm run db:seed && npm run db:backfill-search && npm run db:backfill-legal",
     "prebuild": "node scripts/prebuild.mts",
     "db:studio": "drizzle-kit studio"
   },

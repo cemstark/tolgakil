@@ -12,22 +12,31 @@ import {
   SEED_ABOUT_PAGE,
   SEED_CATEGORIES,
   SEED_LAWYER,
+  SEED_COOKIE_PAGE,
+  SEED_KVKK_PAGE,
   SEED_PRACTICE_AREAS,
   SEED_SETTINGS,
 } from './seed-content.ts'
 
-// HUKUKİ METİN ÜRETİLMİYOR — bağlayıcı karar. KVKK aydınlatma metni ve çerez politikası
-// hukuki belgedir; model üretimi bir metin, gerçek bir belge gibi görüneceği için burada
-// yalnız yer tutucu duruyor. Müvekkilin gerçek metni panelden girmesi spec §13'te açık
-// madde olarak kayıtlı.
-const YER_TUTUCU = '<p>Bu metin büro tarafından panelden girilecektir.</p>'
-
+// KVKK VE ÇEREZ METNİ — ÖNCEKİ KARAR DEĞİŞTİ (27.08.2026).
+//
+// Burada eskiden "hukuki metin üretilmiyor" diye bağlayıcı bir karar ve tek satırlık bir
+// yer tutucu vardı; gerekçesi, üretilmiş bir metnin gerçek belge gibi görünme riskiydi.
+// Karar site sahibinin açık talimatıyla değişti: bir hukuk bürosunun sitesinde BOŞ bir
+// KVKK sayfası, eksik bir metinden daha kötü görünüyor ve site o hâliyle yayına çıkamıyordu.
+//
+// Riski azaltan şey metnin kaynağı — her cümle kodun gerçeğinden türetildi, şablondan
+// değil: işlenen veri kalemleri `messages` tablosunun sütunlarıyla birebir, çerez bölümü
+// ise kod taranarak yazıldı (sitede yalnız next-auth oturum çerezi var, analitik yok).
+// Ayrıntılı gerekçe `seed-content.ts` içinde SEED_KVKK_PAGE'in başında.
+//
+// METİN YİNE DE AVUKAT ONAYI BEKLİYOR: saklama süresi gibi kalemler büronun kendi
+// politikasına bağlı ve kod onu bilemez. Bu tohum idempotent olduğu için Av. Tolga Akil
+// panelden düzelttiği anda buradaki metin onun yazdığının üstüne YAZMAZ.
 const SEED_PAGES = [
-  // Hakkımızda YER_TUTUCU değil: metni büro teslim etti ve avukat onayladı. KVKK ve çerez
-  // politikası yer tutucu KALIYOR — onlar hukuki belge ve teslim edilen dosyada yoklar.
   { slug: 'hakkimizda', title: 'Hakkımızda', content: SEED_ABOUT_PAGE },
-  { slug: 'kvkk', title: 'KVKK Aydınlatma Metni', content: YER_TUTUCU },
-  { slug: 'cerez-politikasi', title: 'Çerez Politikası', content: YER_TUTUCU },
+  { slug: 'kvkk', title: 'KVKK Aydınlatma Metni', content: SEED_KVKK_PAGE },
+  { slug: 'cerez-politikasi', title: 'Çerez Politikası', content: SEED_COOKIE_PAGE },
 ]
 
 function requiredEnv(key: string): string {

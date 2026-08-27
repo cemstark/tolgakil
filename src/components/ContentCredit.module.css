@@ -1,0 +1,15 @@
+/* Metnin altındaki künye. Gövdeden ayrılması gerekiyor ama dikkat de çekmemeli: üstteki
+   ince çizgi ayrımı yapıyor, kısılmış renk ve küçük punto hiyerarşideki yerini gösteriyor.
+
+   Renk `--text-muted` yüzey sözleşmesinden geliyor, yani krem bölümde kendi karşılığına
+   dönüyor. Punto 14px'te bırakıldı — 13px ve altı, kısılmış renkle birleştiğinde okunurluk
+   sınırına iniyor; künye ikincil bilgi ama okunamaz olmamalı. */
+.credit {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  max-width: 68ch;
+}

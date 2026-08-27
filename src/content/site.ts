@@ -25,3 +25,47 @@ export const SITE = {
   email: 'akilavukatlik@gmail.com',
   emailHref: 'mailto:akilavukatlik@gmail.com',
 } as const
+
+/**
+ * Belgeden gelen sayfaların altında gösterilen hazırlayan/onaylayan künyesi.
+ *
+ * Müvekkil belgesi (07.08.2026) bunu açıkça istiyor:
+ * *"HER BİR BAŞLIK AVUKAT TOLGA AKİL TARAFINDAN HAZIRLANMIŞTIR. METİNLER AV TOLGA AKİL
+ * TARAFINDAN ONAYLANMIŞTIR. SON GÜNCELLEME TARİHİ 07.08.2026"*
+ *
+ * Tarih ISO biçiminde saklanıyor: `<time dateTime>` özniteliği ile ekrandaki Türkçe metin
+ * aynı kaynaktan üretilsin (biçimleme `src/lib/date.ts`). İki ayrı dize yazılsaydı biri
+ * güncellenip diğeri unutulurdu.
+ *
+ * Yalnız BELGEDEN GELEN sayfalar bu künyeyi taşır: yedi çalışma alanı ve /hakkimizda.
+ * /kvkk ile /cerez-politikasi belgeden gelmiyor, dolayısıyla 07.08.2026 tarihi onlar için
+ * yanlış olurdu — o sayfaların kendi güncelleme tarihi metnin içinde yazılı.
+ */
+export const CONTENT_APPROVAL = {
+  preparedBy: 'Av. Tolga Akil',
+  lastUpdatedIso: '2026-08-07',
+
+  /**
+   * Künyenin basılabileceği çalışma alanı slug'ları — belgede metni TESLİM EDİLMİŞ olan
+   * yedi alan.
+   *
+   * Bu liste olmadan künye her alan ayrıntı sayfasına koşulsuz basılıyordu ve panelden
+   * yeni bir çalışma alanı eklendiğinde (ki panel tam olarak bunun için var) sayfa,
+   * avukatın hiç görmediği bir metnin altında "Av. Tolga Akil tarafından hazırlanmış ve
+   * onaylanmıştır" diyordu. Bir hukuk bürosunun sitesinde yanlış bir onay beyanı,
+   * künyenin kendi varlık sebebini çürütür.
+   *
+   * BİLİNEN SINIR: tarih sabit. Avukat bu yedi metinden birini panelden düzenlerse künye
+   * hâlâ 07.08.2026 gösterir. Doğru çözüm `practice_areas` tablosuna `updated_at` sütunu
+   * eklemektir; bu iş şema değişikliği kapsam dışı bırakıldığı için yapılmadı.
+   */
+  practiceAreaSlugs: [
+    'gayrimenkul-hukuku',
+    'icra-ve-iflas-hukuku',
+    'is-hukuku',
+    'tazminat-hukuku',
+    'sigorta-hukuku',
+    'kira-hukuku',
+    'miras-hukuku',
+  ] as readonly string[],
+} as const

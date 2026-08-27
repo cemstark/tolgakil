@@ -1,14 +1,17 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import { cacheLife, cacheTag } from 'next/cache'
 import { notFound } from 'next/navigation'
+import { ContentCredit } from '@/components/ContentCredit'
 import { PageHeading } from '@/components/PageHeading'
+import { practiceAreaImage } from '@/content/practice-area-images'
 import {
   getPublicPracticeAreaBySlug,
   listPublicPracticeAreas,
 } from '@/db/queries/public/practice-areas'
 import { renderableHtml } from '@/lib/render-html'
 import { TAGS } from '@/lib/cache-tags'
-import { SITE } from '@/content/site'
+import { CONTENT_APPROVAL, SITE } from '@/content/site'
 import styles from './page.module.css'
 
 // params Next 16'da Promise; await edilmeden okunamaz.
@@ -46,10 +49,44 @@ export async function generateMetadata({ params }: AreaPageProps): Promise<Metad
   // geçiyor — konum, yönetmeliğin zaten yayımlanmasını beklediği iletişim bilgisidir ve
   // müşterinin talebi de "doğal şekilde" Samsun odaklı olmasıydı. Övgü sıfatı, üstünlük
   // veya başarı ifadesi hiçbir durumda eklenmiyor.
+  const description = `${area.summary} ${SITE.district} / ${SITE.city}’daki büromuz bu alanda avukatlık ve hukuki danışmanlık hizmeti sunmaktadır.`
+
   return {
     title: area.name,
-    description: `${area.summary} ${SITE.district} / ${SITE.city}’daki büromuz bu alanda avukatlık ve hukuki danışmanlık hizmeti sunmaktadır.`,
+    description,
     alternates: { canonical: `/calisma-alanlari/${slug}` },
+    // openGraph olmadan yedi alanın hepsi sosyal medyada kök layout'un tek kartıyla,
+    // yani yalnız büro adıyla paylaşılıyordu: WhatsApp'ta "Kira Hukuku" bağlantısı
+    // gönderen biri karşı tarafta "Akil Hukuk Bürosu" görüyordu. Sayfa başına başlık ve
+    // açıklama o karışıklığı bitiriyor.
+    //
+    // og:image BİLEREK yazılmıyor: kök dizindeki opengraph-image.tsx dosya varlığından
+    // bulunuyor ve her rotaya kendiliğinden uygulanıyor (kök layout'ta yazılı). Burada
+    // ikinci bir görsel bildirmek onu ezerdi.
+    openGraph: {
+      // siteName ve locale TEKRAR yazılıyor, ÖLÇÜLDÜ: Next `openGraph` nesnesini kökle
+      // derin birleştirmiyor, tümüyle DEĞİŞTİRİYOR. Yalnız title/description/url/type
+      // yazıldığında kök layout'un `og:site_name` ve `og:locale` etiketleri çıktıdan
+      // tümüyle düşüyordu (anasayfada var, alan sayfasında yok). Paylaşım kartının alt
+      // satırındaki büro adı ve dil bilgisi kaybolduğu için, başlığı düzeltirken başka
+      // bir eksik üretmiş oluyorduk.
+      siteName: SITE.name,
+      locale: 'tr_TR',
+      title: area.name,
+      description,
+      url: `/calisma-alanlari/${slug}`,
+      type: 'article',
+    },
+    // twitter ayrıca yazılmak ZORUNDA: kök layout açık bir `twitter` nesnesi tanımlıyor ve
+    // Next o durumda openGraph'tan türetmiyor, kökteki değerleri olduğu gibi bırakıyor.
+    // Ölçüldü — yalnız openGraph eklendiğinde og:title "Kira Hukuku" olurken twitter:title
+    // "Akil Hukuk Bürosu" kalıyordu, yani sorun X/Twitter tarafında aynen sürüyordu.
+    //
+    // `card` ve `images` de yazılmak zorunda, ÖLÇÜLDÜ: sayfada `twitter` nesnesi tanımlamak
+    // kökün tamamını eziyor, yalnız verilen alanlar kalıyordu. Kısmi yazıldığında kart
+    // summary_large_image'dan summary'ye düşüyor ve twitter:image tümüyle kayboluyordu —
+    // yani başlığı düzeltirken paylaşım görselini yok ediyorduk.
+    twitter: { card: 'summary_large_image', title: area.name, description },
   }
 }
 
@@ -68,15 +105,44 @@ export default async function PracticeAreaPage({ params }: AreaPageProps) {
   if (area === null) notFound()
 
   const hasContent = area.content !== null && area.content.trim() !== ''
+  const gorsel = practiceAreaImage(slug)
 
   return (
     <article className="pageShell">
       <PageHeading eyebrow="Çalışma Alanı" title={area.name} />
+      {/* Geniş bant görsel. Kartla AYNI dosyayı kullanıyor (16/10 üretiliyor) ve burada
+          masaüstünde 3/1'e kırpılıyor; ikinci bir varyant üretmek indirilen baytı iki
+          katına çıkarır, kırpma farkı ise bu fotoğraflarda gözle ayırt edilmiyor.
+
+          Sayfanın LCP öğesi bu: başlığın hemen altında, ilk ekranda. `priority` Next
+          16'da bırakıldığı için `loading="eager"` + `fetchPriority="high"` kullanılıyor
+          (gerekçe Hero.tsx'te uzun uzun yazılı).
+
+          Görseli olmayan alanda blok hiç çizilmiyor — panelden eklenen yeni alan kırık
+          kutu göstermesin. */}
+      {gorsel && (
+        <div className={`${styles.media} mediaFrame`}>
+          <Image
+            src={gorsel.src}
+            alt=""
+            fill
+            /* İçerik genişliği --max ile 1200px'te sabitleniyor; altında tam genişlik. */
+            sizes="(min-width: 1200px) 1200px, 100vw"
+            loading="eager"
+            fetchPriority="high"
+          />
+        </div>
+      )}
       <p className={styles.lead}>{area.summary}</p>
       {/* Ayrıntı metni girilmemiş alanda yalnız özet kalır; boş bir .prose kabı çizilmez. */}
       {hasContent ? (
         <div className="prose" dangerouslySetInnerHTML={renderableHtml(area.content!)} />
       ) : null}
+      {/* Künye YALNIZ belgeden gelen yedi alanda basılıyor. Koşulsuz basıldığında,
+          panelden sonradan eklenen bir çalışma alanı da "Av. Tolga Akil tarafından
+          hazırlanmış ve onaylanmıştır" diyordu — avukatın hiç görmediği bir metnin
+          altında yanlış bir onay beyanı. Kapsam listesi CONTENT_APPROVAL'da. */}
+      {CONTENT_APPROVAL.practiceAreaSlugs.includes(slug) && <ContentCredit />}
     </article>
   )
 }

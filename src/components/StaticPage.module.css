@@ -1,0 +1,19 @@
+/* Başlık ile gövde metni arasındaki dekoratif şerit. Yalnız /hakkimizda kullanıyor.
+
+   Oran ve mobil davranışı çalışma alanı ayrıntı sayfasıyla (calisma-alanlari/[slug]/
+   page.module.css) bilerek aynı: iki sayfa aynı kabuğu (.pageShell) paylaşıyor ve
+   aralarında gezinen biri şeridin yüksekliğinin değiştiğini fark ederdi. Oranın neden
+   3/1 olduğu (ve 16/7'nin neden elendiği) orada ölçümle birlikte yazılı.
+
+   Dar ekranda 3/1 fazla ince kalıyor (390px'te ~130px yükseklik), fotoğraf tanınmaz bir
+   kesite dönüşüyor; orada 16/10 korunuyor. */
+.media {
+  aspect-ratio: 16 / 10;
+  margin-bottom: 32px;
+}
+
+@media (min-width: 768px) {
+  .media {
+    aspect-ratio: 3 / 1;
+  }
+}
