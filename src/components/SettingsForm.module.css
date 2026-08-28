@@ -1,0 +1,37 @@
+/* ÜÇ KART (devir tasarımı 5d). On iki ayar alanı tek kolonda akıyordu; hangi alanın
+   hangi karara ait olduğu ancak etiketi okuyunca anlaşılıyordu.
+
+   auto-fit + minmax: sütun sayısını içerik belirliyor. 420px taban, kart içindeki
+   FieldRow'un iki alanı sıkışmadan yan yana durabildiği en dar ölçü — daha küçük bir
+   tabanda telefon ve e-posta alanları okunamayacak kadar daralıyordu. */
+.cards {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+}
+
+/* Dar ekranda tek sütun: minmax'in 420px tabanı 460px'in altında taşma yaratırdı. */
+@media (max-width: 460px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+  padding: 20px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+}
+
+.cardTitle {
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0;
+}

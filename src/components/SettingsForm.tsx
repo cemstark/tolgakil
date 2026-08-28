@@ -1,6 +1,7 @@
 'use client'
 
 import { EntityForm, FieldRow, TextAreaField, TextField, useEntityValues, type EntityAction } from './EntityForm'
+import styles from './SettingsForm.module.css'
 import { PublishChecklist } from './PublishChecklist'
 
 export type SettingsFormValues = {
@@ -37,15 +38,12 @@ export function SettingsForm({ action, values }: SettingsFormProps) {
     <EntityForm action={action}>
       {({ fieldError, state }) => (
         <>
-          <TextField
-            id="settings-office-name" name="officeName" label="Büro adı"
-            value={form.officeName} onChange={set('officeName')} error={fieldError('officeName')}
-          />
-
-          <TextAreaField
-            id="settings-address" name="address" label="Adres"
-            value={form.address} onChange={set('address')} error={fieldError('address')}
-          />
+          {/* ÜÇ KART (devir tasarımı 5d): on iki alan tek bir kolonda akıyordu ve hangi
+              alanın hangi karara ait olduğu okunmuyordu. Gruplama yalnızca SUNUM —
+              alan adları, sıraları FormData içinde önemsiz ve zod şeması aynen duruyor. */}
+          <div className={styles.cards}>
+          <section className={styles.card}>
+            <h2 className={styles.cardTitle}>İletişim</h2>
 
           <FieldRow>
             <TextField
@@ -65,22 +63,35 @@ export function SettingsForm({ action, values }: SettingsFormProps) {
               value={form.whatsapp} onChange={set('whatsapp')} error={fieldError('whatsapp')}
             />
             <TextField
-              id="settings-working-hours" name="workingHours" label="Çalışma saatleri"
-              value={form.workingHours} onChange={set('workingHours')} error={fieldError('workingHours')}
-              hint="Tek satır. Örnek: Hafta içi 08.00-18.00, Cumartesi 08.00-14.00, Pazar kapalı"
-            />
-          </FieldRow>
-
-          <FieldRow>
-            <TextField
               id="settings-email" name="email" label="E-posta" type="email"
               value={form.email} onChange={set('email')} error={fieldError('email')}
             />
-            <TextField
-              id="settings-kep" name="kep" label="KEP adresi"
-              value={form.kep} onChange={set('kep')} error={fieldError('kep')}
-            />
           </FieldRow>
+
+          <TextField
+            id="settings-kep" name="kep" label="KEP adresi"
+            value={form.kep} onChange={set('kep')} error={fieldError('kep')}
+          />
+          </section>
+
+          <section className={styles.card}>
+            <h2 className={styles.cardTitle}>Büro</h2>
+
+          <TextField
+            id="settings-office-name" name="officeName" label="Büro adı"
+            value={form.officeName} onChange={set('officeName')} error={fieldError('officeName')}
+          />
+
+          <TextAreaField
+            id="settings-address" name="address" label="Adres"
+            value={form.address} onChange={set('address')} error={fieldError('address')}
+          />
+
+          <TextField
+            id="settings-working-hours" name="workingHours" label="Çalışma saatleri"
+            value={form.workingHours} onChange={set('workingHours')} error={fieldError('workingHours')}
+            hint="Tek satır. Örnek: Hafta içi 08.00-18.00, Cumartesi 08.00-14.00, Pazar kapalı"
+          />
 
           <FieldRow>
             <TextField
@@ -94,6 +105,10 @@ export function SettingsForm({ action, values }: SettingsFormProps) {
               hint="Boş bırakılabilir. Örnek: 29.0270"
             />
           </FieldRow>
+          </section>
+
+          <section className={styles.card}>
+            <h2 className={styles.cardTitle}>Site metni</h2>
 
           <TextAreaField
             id="settings-social-links" name="socialLinks" label="Sosyal medya adresleri"
@@ -105,6 +120,8 @@ export function SettingsForm({ action, values }: SettingsFormProps) {
             id="settings-footer-text" name="footerText" label="Alt bilgi metni"
             value={form.footerText} onChange={set('footerText')} error={fieldError('footerText')}
           />
+          </section>
+          </div>
 
           {/* Büro adı ve alt bilgi metni sitenin her sayfasında görünüyor; reklam yasağı
               taraması makale/kadro/alan formlarıyla aynı onaylı uyarı desenini kullanıyor. */}

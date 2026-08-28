@@ -27,11 +27,16 @@
   min-width: 0;
 }
 
-/* next/image gerçek piksel ölçüsünü width/height olarak basıyor; oranı korumak için
-   yükseklik auto kalmalı, yoksa dik görseller eziliyor. */
+/* SABİT YÜKSEKLİK + cover (devir tasarımı 5d: ızgara görseli 140px). Önceki hâl
+   `height: auto` ile her görselin kendi oranını koruyordu; kitaplıkta yan yana duran
+   dik ve yatay görseller satırları tırtıklı yapıyor, kartların alt kenarları hiçbir
+   yerde hizalanmıyordu. Kırpma burada bilgi kaybı DEĞİL: kitaplık kartı görseli
+   tanımak için var, incelemek için değil — tam hâli medya adresinden açılıyor ve alt
+   metin zaten kartta yazılı. */
 .image {
   width: 100%;
-  height: auto;
+  height: 140px;
+  object-fit: cover;
   border-radius: var(--radius-card);
   border: 1px solid var(--line);
 }
