@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { girisYap, EDITOR } from './helpers/auth'
 import { panelGezinmesiniAc } from './helpers/panel-nav'
@@ -21,6 +21,20 @@ test.afterEach(async () => {
   await mevcut?.temizle()
 })
 
+// Editör ≤1100px'te üç adımlı bir sihirbaz (devir tasarımı 4a): kategori ve yazar
+// üçüncü adımda. Masaüstünde adım çubuğu hiç çizilmiyor, o yüzden yardımcı orada sessizce
+// hiçbir şey yapmıyor. Alanlar DOM'da kalıyor ama display:none ile gizlendiği için
+// Playwright onlara ancak adım açıkken erişebiliyor — gerçek kullanıcının yaşadığı akışın
+// aynısı.
+async function adimiAc(page: Page, ad: 'Metin' | 'Görsel' | 'Yayın'): Promise<void> {
+  const adim = page.getByRole('button', { name: ad })
+  if (await adim.isVisible()) await adim.click()
+}
+
+async function yayinAdiminiAc(page: Page): Promise<void> {
+  await adimiAc(page, 'Yayın')
+}
+
 function hazirIcerik(): TestIcerigi {
   if (icerik === null) throw new Error('Test içeriği hazırlanmadı; beforeEach düşmüş olmalı.')
   return icerik
@@ -42,6 +56,7 @@ test('giriş → makale yaz → taslak kaydet → yayımla → listede yayında 
   await expect(page.getByRole('status')).toHaveText('Makale taslak olarak kaydedildi.')
   await expect(page.getByLabel('Adres (slug)')).toHaveValue(new RegExp(`^kira-tespit-notu-${hazirIcerik().damga}$`))
 
+  await yayinAdiminiAc(page)
   await page.getByLabel('Kategori').selectOption({ label: hazirIcerik().kategoriAdi })
   await page.getByRole('button', { name: 'Yayımla' }).click()
   await expect(page.getByRole('status')).toHaveText('Makale yayımlandı.')
@@ -135,6 +150,7 @@ test('yasaklı ifade önce uyarı üretir, onaylanınca yayın tamamlanır', asy
   await page.getByLabel('Başlık').fill(baslik)
   await page.getByLabel('Özet').fill('Bu alanda uzman kadromuzla hizmet veriyoruz ifadesini içeren özet.')
   await page.locator('[contenteditable="true"]').fill('Gövde')
+  await yayinAdiminiAc(page)
   await page.getByLabel('Kategori').selectOption({ label: hazirIcerik().kategoriAdi })
   await page.getByRole('button', { name: 'Yayımla' }).click()
 
@@ -179,6 +195,7 @@ test('ikinci düzenlemede yeni yasaklı ifade uyarıyı yeniden çıkarır', asy
   const uyari = page.getByRole('main').getByRole('alert')
   const onay = page.getByLabel(/okudum, sorumluluk bende/i)
 
+  await yayinAdiminiAc(page)
   await page.getByLabel('Kategori').selectOption({ label: hazirIcerik().kategoriAdi })
   await page.getByRole('button', { name: 'Yayımla' }).click()
   await expect(uyari).toContainText('uzman')
@@ -189,6 +206,9 @@ test('ikinci düzenlemede yeni yasaklı ifade uyarıyı yeniden çıkarır', asy
   await expect(page.getByRole('status')).toHaveText('Makale yayımlandı.')
 
   // Metne BAŞKA bir yasaklı ifade ekleniyor. Tarama yeniden çalışmalı ve onay taşınmamalı.
+  // Özet BİRİNCİ adımda; uyarıdan sonra editör üçüncü adımda duruyor (hata/uyarı hangi
+  // adımdaysa oraya geçiliyor), o yüzden geri dönmek gerekiyor.
+  await adimiAc(page, 'Metin')
   await page.getByLabel('Özet').fill('Ücretsiz ilk görüşme sunduğumuzu duyuran yeni özet metni.')
   await page.getByRole('button', { name: 'Yayımla' }).click()
   await expect(uyari).toContainText('ücretsiz')
@@ -361,6 +381,7 @@ test('kaydetme sonrası sayfa tazelenir ve ilk yayım tarihi korunur', async ({ 
 
   // Yayımla artık DÜZENLEME yolu (kimlik var), yani yönlendirme yok. "İlk yayım"
   // satırının belirmesi, sunucu bileşeninin action'dan sonra yeniden çizildiğinin kanıtı.
+  await yayinAdiminiAc(page)
   await page.getByLabel('Kategori').selectOption({ label: hazirIcerik().kategoriAdi })
   await page.getByRole('button', { name: 'Yayımla' }).click()
   await expect(page.getByRole('status')).toHaveText('Makale yayımlandı.')

@@ -57,6 +57,14 @@ export function ArticleForm({
   authors,
   mediaOptions,
   initialMessage, aside }: ArticleFormProps) {
+  // ÜÇ ADIMLI SİHİRBAZ — YALNIZ MOBİLDE (devir tasarımı 4a; ≤1100px). Masaüstünde
+  // adımlar CSS ile kapatılıyor ve bütün alanlar iki bölmede birden görünüyor, yani bu
+  // durum orada hiçbir şeyi etkilemiyor.
+  //
+  // TEK FORM, TEK GÖNDERİM: adımlar yalnız GÖRÜNÜM. Alanlar her adımda DOM'da kalıyor
+  // (display:none ile gizleniyor), çünkü form gönderildiğinde hepsinin FormData'ya
+  // girmesi gerekiyor — adım başına ayrı form kurmak sunucu sözleşmesini üçe bölerdi.
+  const [step, setStep] = useState<1 | 2 | 3>(1)
   const [state, formAction, isPending] = useActionState(saveArticle, INITIAL_STATE)
 
   // Alanlar denetimli tutuluyor: React 19 form action'dan sonra denetimsiz alanları
@@ -90,6 +98,39 @@ export function ArticleForm({
   const authorError = fieldError('authorId')
   const coverError = fieldError('coverMediaId')
 
+  // HATALI ADIMA GERİ DÖN (yalnız mobilde bir etkisi var; masaüstünde bütün bölümler
+  // zaten görünür).
+  //
+  // Sihirbaz olmadan bu sorun yoktu: bütün alanlar tek kolonda duruyordu ve hata nerede
+  // olursa olsun görünüyordu. Adımlara bölününce kullanıcı "Yayımla"ya birinci adımdan
+  // basabiliyor, sunucu üçüncü adımdaki kategori alanına hata yazıyor ve ekranda HİÇBİR
+  // ŞEY değişmemiş gibi görünüyordu — düğme çalışmıyor sanılırdı.
+  //
+  // useEffect DEĞİL, RENDER SIRASINDA türetme: React 19 effect içinde senkron setState'i
+  // kaskad render olarak işaretliyor (lint kuralı). Kalıp PublishChecklist'teki
+  // "önceki değeri sakla, değiştiyse durumu düzelt" deseniyle birebir aynı.
+  //
+  // Tetikleyici `noticeKey`: her sunucu sonucunda artan sayaç (useResultCount). Kullanıcı
+  // adımı elle değiştirdiğinde sayaç değişmediği için buraya girilmiyor — yani seçim
+  // kullanıcının elinden alınmıyor.
+  const [previousResult, setPreviousResult] = useState(noticeKey)
+  if (previousResult !== noticeKey) {
+    setPreviousResult(noticeKey)
+    if (titleError !== undefined || excerptError !== undefined || contentError !== undefined) {
+      setStep(1)
+    } else if (coverError !== undefined) {
+      setStep(2)
+    } else if (
+      slugError !== undefined ||
+      categoryError !== undefined ||
+      authorError !== undefined ||
+      (state.warnings !== undefined && state.warnings.length > 0)
+    ) {
+      // Reklam yasağı uyarısı da üçüncü adımda: onay kutusu denetim listesinin içinde.
+      setStep(3)
+    }
+  }
+
   return (
     <form action={formAction} className={styles.form} noValidate>
       {values.id === null ? null : <input type="hidden" name="id" value={values.id} readOnly />}
@@ -110,8 +151,31 @@ export function ArticleForm({
           kararları. DOM SIRASI DEĞİŞMEDİ — sağ bölme klavye sırasında hâlâ içerikten
           SONRA geliyor ve gönderme düğmeleri en sonda. Görsel sıralama için DOM'u
           bozmak, klavye kullanıcısını formu doldurmadan "Yayımla"ya düşürürdü. */}
-      <div className={styles.split}>
-        <div className={styles.mainPane}>
+      {/* ADIM GEZİNMESİ — yalnız mobilde çiziliyor (CSS). Üç çip doğrudan hedef adıma
+          götürüyor; "Geri/İleri" çifti yerine bu seçildi çünkü kullanıcı çoğu zaman tek
+          bir alanı düzeltmek için geri dönüyor ve iki düğmeyle gezinmek onu ara adımdan
+          geçmeye zorluyordu.
+
+          Çipler <button type="button">: varsayılan submit olsaydı adım değiştirmek formu
+          gönderirdi. aria-current="step" ile etkin adım ekran okuyucuya da bildiriliyor —
+          renk tek başına taşımıyor (WCAG 1.4.1). */}
+      <nav className={styles.steps} aria-label="Editör adımları">
+        {([1, 2, 3] as const).map((n) => (
+          <button
+            key={n}
+            type="button"
+            className={styles.step}
+            aria-current={step === n ? 'step' : undefined}
+            onClick={() => setStep(n)}
+          >
+            <span className={styles.stepNo}>{n}</span>
+            {n === 1 ? 'Metin' : n === 2 ? 'Görsel' : 'Yayın'}
+          </button>
+        ))}
+      </nav>
+
+      <div className={styles.split} data-adim={step}>
+        <div className={styles.mainPane} data-bolum="1">
 
       <div className={styles.field}>
         <label htmlFor="article-title" className={styles.label}>
@@ -175,7 +239,7 @@ export function ArticleForm({
         </div>
 
         <aside className={styles.sidePane}>
-        <div className={styles.card}>
+        <div className={styles.card} data-bolum="3">
           <h2 className={styles.cardTitle}>Yayın bilgileri</h2>
 
       <div className={styles.field}>
@@ -270,7 +334,7 @@ export function ArticleForm({
 
         </div>
 
-        <div className={styles.card}>
+        <div className={styles.card} data-bolum="2">
       <div className={styles.field}>
         {/* Seçici de sonuç sayacına ihtiyaç duyuyor (radyolar sıfırlanıyor); ArticleForm
             EntityForm kabuğunu kullanmadığı için sağlayıcı burada, tek alanın çevresinde. */}
@@ -292,10 +356,15 @@ export function ArticleForm({
 
         </div>
 
-      <PublishChecklist warnings={state.warnings} />
+      <div data-bolum="3">
+        <PublishChecklist warnings={state.warnings} />
+      </div>
 
       {/* İki gönderme düğmesi: basılan düğmenin name/value çifti FormData'ya girer ve
           durumu belirler. Gönderim sırasında ikisi de kilitleniyor. */}
+      {/* Eylemler HİÇBİR ADIMA bağlı değil: metni yazan kullanıcı üçüncü adıma geçmeden
+          taslak kaydedebilmeli. Adımlara kilitlenmiş bir "kaydet", yarım kalan yazıyı
+          kaybetmenin en kolay yolu olurdu. */}
       <div className={styles.actions}>
         <button type="submit" name="status" value="draft" className={styles.secondary} disabled={isPending}>
           Taslak olarak kaydet

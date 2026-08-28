@@ -194,3 +194,70 @@
     top: 20px;
   }
 }
+
+/* ——— ADIM SİHİRBAZI: YALNIZ MOBİL (≤1100px) ———
+   Masaüstünde adım çubuğu gizli ve bütün bölümler görünür; sihirbaz orada hiçbir şeyi
+   etkilemiyor. Alanlar her adımda DOM'da KALIYOR (display:none ile gizleniyor) çünkü
+   form gönderildiğinde hepsinin FormData'ya girmesi gerekiyor. */
+.steps {
+  display: none;
+}
+
+@media (max-width: 1099px) {
+  .steps {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .step {
+    flex: 1;
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid var(--field-border);
+    border-radius: var(--radius-pill);
+    /* 44px dokunma hedefi (WCAG 2.5.8). */
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition:
+      background-color var(--dur-hover) var(--ease-out),
+      border-color var(--dur-hover) var(--ease-out),
+      color var(--dur-hover) var(--ease-out);
+  }
+
+  /* Etkin adım: zemin + kenarlık + numaranın rengi. Durum aria-current="step" ile de
+     taşınıyor, yani ayrım yalnız renge bağlı değil. */
+  .step[aria-current='step'] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--surface);
+  }
+
+  .stepNo {
+    font-variant-numeric: tabular-nums;
+    opacity: .7;
+  }
+
+  /* Aktif olmayan bölümler gizleniyor. `display: none` bilinçli: alanlar DOM'da kalıyor
+     ama erişilebilirlik ağacından ve klavye sırasından düşüyor — görünmeyen bir alana
+     sekmeyle girmek, kullanıcının nerede olduğunu kaybettirirdi. Gizli alanlar yine de
+     gönderiliyor; `display:none` bir <input>'un FormData'ya girmesini engellemez. */
+  .split[data-adim='1'] [data-bolum]:not([data-bolum='1']),
+  .split[data-adim='2'] [data-bolum]:not([data-bolum='2']),
+  .split[data-adim='3'] [data-bolum]:not([data-bolum='3']) {
+    display: none;
+  }
+
+  /* Sağ bölme mobilde kart kabuğu olmaktan çıkıyor: tek görünür bölüm zaten kendi
+     kartını taşıyor, ikinci bir çerçeve gereksiz iç içe kutu üretiyordu. */
+  .sidePane {
+    gap: 0;
+  }
+}
