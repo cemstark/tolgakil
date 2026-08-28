@@ -142,7 +142,7 @@ export default async function PracticeAreaPage({ params }: AreaPageProps) {
           görsel kutusu göstermektense bandı hiç çizmemek doğrusu. Her iki dalda da
           sayfanın tek <h1>'i çiziliyor. */}
       {gorsel !== undefined ? (
-        <PageHero gorsel={gorsel} eyebrow={eyebrow} title={area.name} lead={area.summary} boy="orta" />
+        <PageHero src={gorsel.src} eyebrow={eyebrow} title={area.name} lead={area.summary} boy="orta" />
       ) : (
         <div className="pageShell">
           <PageHeading eyebrow={eyebrow} title={area.name} />

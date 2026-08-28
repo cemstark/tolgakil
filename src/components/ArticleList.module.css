@@ -1,0 +1,116 @@
+.wrap {
+  display: grid;
+  gap: 8px;
+}
+
+/* Öne çıkan yazı: listenin geri kalanından görsel olarak ayrışıyor ama ayrı bir kart
+   kutusu DEĞİL — kutu, krem gövdenin içinde ikinci bir yüzey katmanı yaratıp okuma
+   akışını bölüyordu. Ayrımı görsel bant ve büyük başlık sağlıyor. */
+.featured {
+  display: grid;
+  gap: 12px;
+  padding: 0 16px 28px;
+  margin-inline: -16px;
+  border-radius: var(--radius-inner);
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    color var(--dur-hover) var(--ease-out);
+}
+
+.featuredMedia {
+  display: block;
+  aspect-ratio: 16 / 9;
+  margin-bottom: 4px;
+  border-radius: var(--radius-media);
+}
+
+/* 40px tavan devir tasarımından; alt uç 26px. */
+.featuredTitle {
+  font-size: clamp(26px, 3vw, 40px);
+  line-height: 1.1;
+  letter-spacing: -.02em;
+  text-wrap: balance;
+  margin: 0;
+  transition: color var(--dur-hover) var(--ease-out);
+}
+
+.list {
+  list-style: none;
+}
+
+.item {
+  border-top: 1px solid var(--line);
+}
+
+.row {
+  display: grid;
+  gap: 8px;
+  /* Yatay dolgu + eşit negatif kenar boşluğu: satır hover'da zemin kazanıyor ama metin
+     hizası hover'sız hâliyle birebir aynı kalıyor. */
+  padding: 22px 16px;
+  margin-inline: -16px;
+  border-radius: var(--radius-inner);
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    color var(--dur-hover) var(--ease-out);
+}
+
+/* 30px tavan devir tasarımından. */
+.rowTitle {
+  font-size: clamp(21px, 2.2vw, 30px);
+  line-height: 1.16;
+  margin: 0;
+  transition: color var(--dur-hover) var(--ease-out);
+}
+
+/* Kategori ve tarih tek satırda, başlığın üstünde — künye tek parça okunuyor. */
+.meta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.category {
+  color: var(--accent);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.date {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  /* Tarihler alt alta; oransal rakamlarda sütun tırtıklı görünüyordu. */
+  font-variant-numeric: tabular-nums;
+}
+
+.excerpt {
+  color: var(--text-muted);
+  font-size: 14.5px;
+  line-height: 1.6;
+  max-width: 68ch;
+}
+
+/* Tonlama oranı ArticleStrip ile AYNI gerekçeyle %4: %6 tonlama krem zemini
+   rgb(226,224,216)'ya indiriyor ve hover'da --accent'e dönen başlıkla kontrastı 4,52:1'e
+   düşürüyordu; başlıklar font-weight 300 olduğu için "büyük metin" istisnası geçerli
+   değil, eşik 4,5:1. %4 tonlamada oran 4,66:1. */
+@media (hover: hover) and (pointer: fine) {
+  .featured:hover,
+  .row:hover {
+    background: color-mix(in srgb, var(--text) 4%, transparent);
+  }
+
+  .featured:hover .featuredTitle,
+  .row:hover .rowTitle {
+    color: var(--accent);
+  }
+}
+
+.featured:active,
+.row:active {
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+  transition-duration: var(--dur-press);
+}

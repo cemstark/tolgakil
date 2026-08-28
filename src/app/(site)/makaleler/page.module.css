@@ -1,0 +1,329 @@
+/* KOYU BAŞLIK BANDI → KREM GÖVDE (devir tasarımı 6a). Bandın kendi zemini yok; sayfanın
+   koyu zemini üzerinde yalnız boşluk açıyor. Gezinme hapı bandın üstünde yüzdüğü için
+   üst dolgu --header-h'den türetiliyor — ana sayfa ve PageHero ile aynı mekanik. */
+.head {
+  padding: calc(var(--header-h) + 24px) var(--pad) var(--section);
+}
+
+.headInner {
+  max-width: var(--max);
+  margin: 0 auto;
+}
+
+.headLead {
+  color: var(--text-ink-muted);
+  font-size: clamp(15px, 1.4vw, 17px);
+  line-height: 1.7;
+  max-width: 62ch;
+  margin-top: 18px;
+}
+
+/* Krem gövde. Yuvarlak köşe YOK: bant ile gövde arasında kesintisiz bir yüzey geçişi
+   isteniyor, ada değil. Yüzey sözleşmesi data-surface="paper" ile geliyor. */
+.body {
+  padding: var(--section) var(--pad);
+}
+
+.bodyInner {
+  max-width: var(--max);
+  margin: 0 auto;
+}
+
+/* ——— Arama ——— */
+
+.search {
+  margin-bottom: 24px;
+}
+
+/* Etiket görünür: yalnız placeholder'a dayanan bir arama alanı, alan doldurulduğunda ne
+   aradığını söyleyen bağlamı kaybediyor (WCAG 3.3.2). */
+.searchLabel {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.searchRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  /* 50px: devir tasarımının arama alanı ölçüsü, 44px dokunma hedefinin üstünde. */
+  min-height: 50px;
+  padding: 0 16px;
+  border-radius: var(--radius-field);
+  border: 1px solid var(--field-border);
+  background: var(--surface-input, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+}
+
+.searchInput::placeholder {
+  color: var(--text-muted);
+}
+
+.searchButton {
+  min-height: 50px;
+  padding: 0 24px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  background: var(--text);
+  color: var(--surface);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    transform var(--dur-hover) var(--ease-out);
+}
+
+.searchButton:active {
+  transform: scale(.98);
+  transition-duration: var(--dur-press);
+}
+
+/* ——— Kategori çipleri ——— */
+
+.chips {
+  margin-bottom: 32px;
+}
+
+.chipList {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  /* 44px dokunma hedefi: çip bir bağlantı ve dar ekranda parmakla seçiliyor. */
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-pill);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: inherit;
+  white-space: nowrap;
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out),
+    color var(--dur-hover) var(--ease-out);
+}
+
+/* Etkin filtre aria-current'ten stilleniyor, ayrı bir sınıftan değil: durumun tek
+   kaynağı erişilebilirlik özniteliği olsun — böylece görsel durum ile ekran okuyucunun
+   duyduğu durum ayrışamaz (WCAG 1.4.1: durum yalnız renkle taşınmıyor). */
+.chip[aria-current='page'] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--surface);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .chip:hover {
+    border-color: var(--accent);
+  }
+
+  .chip[aria-current='page']:hover {
+    border-color: var(--text);
+  }
+}
+
+/* ——— Gövde ızgarası ——— */
+
+.split {
+  display: grid;
+  gap: 40px;
+}
+
+.main {
+  min-width: 0;
+}
+
+.count {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.empty {
+  color: var(--text-muted);
+}
+
+/* ——— Sayfalama ——— */
+
+.pager {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.pagerLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  color: inherit;
+  transition:
+    border-color var(--dur-hover) var(--ease-out),
+    background-color var(--dur-hover) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pagerLink:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--text) 4%, transparent);
+  }
+}
+
+.pagerState {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  /* Sayfa göstergesi iki bağlantının ORTASINDA kalıyor; "Önceki" yokken de sağa
+     yaslanmasın diye otomatik kenar boşluğu değil, sıralama kullanılıyor. */
+  order: 1;
+}
+
+/* ——— Yan kolon ——— */
+
+.side {
+  min-width: 0;
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+.sideTitle {
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+/* Konu başlıkları kartı krem yüzeyin bir tık açığında (--paper-2): aynı zeminde
+   kenarlıksız duran bir liste, gövdenin devamı gibi okunuyordu. */
+.topics {
+  padding: 20px;
+  border-radius: var(--radius-card);
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+}
+
+.topicList {
+  list-style: none;
+  display: grid;
+}
+
+.topicLink {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+  font-size: 14.5px;
+  border-top: 1px solid var(--line);
+  transition: color var(--dur-hover) var(--ease-out);
+}
+
+.topicList li:first-child .topicLink {
+  border-top: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .topicLink:hover {
+    color: var(--accent);
+  }
+}
+
+/* İletişim kartı KOYU: krem gövdenin içinde tek koyu yüzey olarak duruyor ve sayfanın
+   tek eylem çağrısını taşıyor. data-surface geçişi olmadığı için renkler doğrudan koyu
+   token'lardan yazılıyor. */
+.ask {
+  padding: 22px 20px;
+  border-radius: var(--radius-card);
+  background: var(--ink-2);
+  color: var(--text-ink);
+}
+
+.askTitle {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 23px;
+  font-weight: 300;
+  line-height: 1.2;
+  margin: 0 0 8px;
+}
+
+.askText {
+  color: var(--text-ink-muted);
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin: 0 0 16px;
+}
+
+.askPhone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  padding: 0 20px;
+  border-radius: var(--radius-pill);
+  background: var(--gold);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    box-shadow var(--dur-hover) var(--ease-out),
+    transform var(--dur-hover) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .askPhone:hover {
+    background: color-mix(in srgb, var(--gold) 88%, white);
+    box-shadow: var(--shadow-lift);
+    transform: translateY(calc(-1 * var(--lift)));
+  }
+}
+
+.askPhone:active {
+  transform: translateY(0) scale(.98);
+  transition-duration: var(--dur-press);
+}
+
+/* 900px: gövde iki sütuna ayrılıyor (7fr/5fr) — site boyunca tek "geniş ekran" eşiği. */
+@media (min-width: 900px) {
+  .split {
+    grid-template-columns: 7fr 5fr;
+    gap: 56px;
+  }
+
+  .side {
+    position: sticky;
+    top: calc(var(--header-h) + 20px);
+  }
+}

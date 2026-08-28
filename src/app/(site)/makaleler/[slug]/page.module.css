@@ -1,0 +1,137 @@
+/* Krem okuma gövdesi (devir tasarımı 6a). Sinematik banttan sonra metin krem zemine
+   geçiyor; yüzey sözleşmesi data-surface="paper" ile geliyor. */
+.body {
+  padding: var(--section) var(--pad);
+}
+
+.bodyInner {
+  max-width: var(--max);
+  margin: 0 auto;
+}
+
+.split {
+  display: grid;
+  gap: 40px;
+}
+
+.main {
+  min-width: 0;
+}
+
+.meta {
+  color: var(--text-muted);
+  font-size: 13px;
+  /* Tarih ve yazar adı yan yana; rakamlar oransal kalırsa tarih tırtıklı duruyor. */
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 20px;
+}
+
+/* Özet gövdeden büyük ve koyu: yazının girişi olarak okunuyor, ilk paragrafla
+   karışmıyor. */
+.lead {
+  font-size: clamp(17px, 1.7vw, 20px);
+  line-height: 1.65;
+  max-width: 64ch;
+  margin-bottom: 32px;
+}
+
+/* Okuma sütunu 760px'e sabitleniyor (devir tasarımının ölçüsü). Global .prose 68ch
+   veriyor; bu, 18px'lik gövdede ~1000px'e kadar çıkabiliyor ve satır uzunluğu okuma
+   konforunun üstüne taşıyor. Punto ve satır aralığı da tasarımın verdiği değerlerde:
+   18px/1.85. */
+.prose {
+  max-width: 760px;
+  font-size: clamp(16px, 1.5vw, 18px);
+  line-height: 1.85;
+}
+
+.prose :global(h2) {
+  font-size: clamp(24px, 2.6vw, 34px);
+  line-height: 1.2;
+  letter-spacing: -.018em;
+}
+
+.prose :global(h3) {
+  font-size: clamp(20px, 2vw, 26px);
+  line-height: 1.25;
+}
+
+/* Alıntı çizgisi krem zeminin vurgu rengiyle: düz altın krem üzerinde 1.91:1 ile
+   WCAG 1.4.11'i geçmiyor, --accent orada --gold-ink'e (#7d5f26) dönüyor. */
+.prose :global(blockquote) {
+  border-left: 3px solid var(--accent);
+}
+
+/* Hukuki uyarı kutusu. Gövdeden ayrı bir yüzeyde ve daha küçük puntoda: metnin parçası
+   değil, metin hakkında bir not. Kenarlık + kısılmış renk, dikkat çekmeden ayırıyor. */
+.disclaimer {
+  max-width: 760px;
+  margin-top: 40px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-inner);
+  background: var(--paper-2);
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.side {
+  min-width: 0;
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+.sideBlock {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--paper-2);
+}
+
+.sideTitle {
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+.sidePill {
+  display: inline-flex;
+  align-items: center;
+  /* 44px dokunma hedefi. */
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-pill);
+  font-size: 13.5px;
+  color: inherit;
+  transition:
+    border-color var(--dur-hover) var(--ease-out),
+    background-color var(--dur-hover) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sidePill:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+  }
+}
+
+/* 900px: gövde iki sütuna ayrılıyor. Okuma sütunu 760px tavanında kaldığı için oran
+   7fr/5fr yerine `minmax` ile yazılıyor — metin sütunu kendi tavanını aşmıyor, yan
+   kolon kalan alanı alıyor. */
+@media (min-width: 900px) {
+  .split {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+    gap: 56px;
+  }
+
+  .side {
+    position: sticky;
+    top: calc(var(--header-h) + 20px);
+  }
+}

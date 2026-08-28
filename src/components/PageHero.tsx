@@ -1,9 +1,11 @@
 import Image from 'next/image'
-import type { StokGorsel } from '@/content/practice-area-images'
 import styles from './PageHero.module.css'
 
 type PageHeroProps = {
-  gorsel: StokGorsel
+  /** Görselin adresi. Yalnız `src` isteniyor çünkü bant `fill` ile çiziliyor; ölçü
+      CSS'ten geliyor. Böylece hem statik stok görseller (practice-area-images.ts) hem
+      panelden yüklenmiş kapaklar (mediaUrl) aynı bileşene verilebiliyor. */
+  src: string
   eyebrow: string
   title: string
   lead?: string
@@ -19,7 +21,7 @@ type PageHeroProps = {
 //
 // Sayfanın tek <h1>'i buradan geliyor — PageHeading ile aynı sözleşme. Görselli sayfalar
 // bunu, görselsizler PageHeading'i kullanır.
-export function PageHero({ gorsel, eyebrow, title, lead, boy = 'orta' }: PageHeroProps) {
+export function PageHero({ src, eyebrow, title, lead, boy = 'orta' }: PageHeroProps) {
   return (
     <header className={`${styles.hero} ${styles[boy]}`}>
       {/* Dekoratif: alan görseli metnin söylemediği bir şey söylemiyor, kaş ve başlık
@@ -29,7 +31,7 @@ export function PageHero({ gorsel, eyebrow, title, lead, boy = 'orta' }: PageHer
           lehine bırakıldı ve belge ikisinin BİRLİKTE kullanılmamasını söylüyor. Bu görsel
           ilk ekranda ve LCP adayı. */}
       <div className={styles.media} aria-hidden="true">
-        <Image src={gorsel.src} alt="" fill sizes="100vw" loading="eager" fetchPriority="high" />
+        <Image src={src} alt="" fill sizes="100vw" loading="eager" fetchPriority="high" />
       </div>
       <div className={styles.inner}>
         <p className={styles.eyebrow}>{eyebrow}</p>
