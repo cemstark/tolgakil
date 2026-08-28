@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { MESSAGE_LIST_LIMIT, listMessages, splitMessagePage } from '@/db/queries/messages'
 import { requireAccess } from '@/lib/auth-guards'
 import { formatDateTime } from '@/lib/date'
@@ -17,7 +18,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-type MessagePageProps = { searchParams: Promise<PanelNoticeQuery> }
+// `sec` = önizleme bölmesinde gösterilecek mesajın kimliği; seçim adres çubuğunda
+// taşınıyor, istemci durumunda DEĞİL (makale listesiyle aynı sözleşme).
+type MessagePageProps = { searchParams: Promise<PanelNoticeQuery & { sec?: string }> }
 
 export default async function MessagePage({ searchParams }: MessagePageProps) {
   await requireAccess('messages')
@@ -28,6 +31,13 @@ export default async function MessagePage({ searchParams }: MessagePageProps) {
     saved: 'Mesaj okundu olarak işaretlendi.',
     deleted: 'Mesaj silindi.',
   })
+
+  // Seçili kayıt: adres çubuğundaki `sec` geçerli bir kimliği gösteriyorsa o, aksi hâlde
+  // listenin ilki. Kullanıcı yazabildiği için değer sayıya çevrilip listede ARANIYOR.
+  // Gövde zaten liste sorgusunda geliyor (listMessages tam satırı döndürüyor), yani
+  // önizleme için ikinci bir okuma gerekmiyor.
+  const secilenId = Number.parseInt(query.sec ?? '', 10)
+  const secili = messages.find((m) => m.id === secilenId) ?? messages[0] ?? null
 
   return (
     <>
@@ -49,13 +59,15 @@ export default async function MessagePage({ searchParams }: MessagePageProps) {
       {messages.length === 0 ? (
         <PanelEmptyState>Henüz mesaj yok.</PanelEmptyState>
       ) : (
+        <div className={styles.split}>
         <PanelTable
           label="Mesaj listesi"
           caption="Geliş tarihine göre yeniden eskiye dizili mesajlar"
           columns={['Tarih', 'Gönderen', 'Konu', 'Durum', 'İşlem']}
         >
           {messages.map((message) => (
-            <tr key={message.id}>
+            // aria-current="true": seçili satır ekran okuyucuya da bildiriliyor.
+            <tr key={message.id} aria-current={secili?.id === message.id ? 'true' : undefined}>
               {/* Veritabanı oturumu UTC; @/lib/date biçimlendiricileri timeZone'u açıkça
                   veriyor, ham toLocaleString sunucunun dilimine bağlı çıkardı. */}
               <td className={styles.dateCell}>{formatDateTime(message.createdAt)}</td>
@@ -73,18 +85,14 @@ export default async function MessagePage({ searchParams }: MessagePageProps) {
                 )}
               </th>
               <td>
-                {/* Yerleşik açılır bölüm: klavye erişimi ve durum duyurusu tarayıcıdan
-                    geliyor. Gövde React tarafından kaçırılıyor — mesaj güvenilmez veridir
-                    ve HTML olarak basılmıyor. */}
-                <details className={styles.detail}>
-                  <summary className={styles.summary}>{message.subject}</summary>
-                  <p className={styles.body}>{message.body}</p>
-                  <p className={styles.consent}>
-                    {message.kvkkAcceptedAt === null
-                      ? 'KVKK onayı kaydedilmemiş.'
-                      : `KVKK onayı: ${formatDateTime(message.kvkkAcceptedAt)}`}
-                  </p>
-                </details>
+                {/* Gövde artık satır içindeki <details> yerine SAĞDAKİ ÖNİZLEME
+                    bölmesinde (devir tasarımı 5d): beş sütunlu tabloda açılan uzun bir
+                    metin satırı, tablonun kendi ızgarasını bozuyordu. Konu bağlantısı
+                    seçimi değiştiriyor. scroll={false}: seçim değişince sayfa başa
+                    sıçramasın. */}
+                <Link href={`?sec=${message.id}`} scroll={false} className={styles.subjectLink}>
+                  {message.subject}
+                </Link>
               </td>
               <td>
                 {/* Durum yalnız renkle değil metinle de ayrışıyor (WCAG 1.4.1). */}
@@ -109,6 +117,44 @@ export default async function MessagePage({ searchParams }: MessagePageProps) {
             </tr>
           ))}
         </PanelTable>
+
+        {/* ÖNİZLEME BÖLMESİ (5d). Gövde React tarafından kaçırılıyor — mesaj güvenilmez
+            veridir ve HTML olarak BASILMIYOR. `white-space: pre-wrap` gönderenin satır
+            sonlarını koruyor. */}
+        {secili !== null ? (
+          <aside className={styles.preview} aria-label="Seçili mesajın önizlemesi">
+            <p className={styles.previewEyebrow}>Mesaj</p>
+            <h2 className={styles.previewSubject}>{secili.subject}</h2>
+            <p className={styles.previewMeta}>{formatDateTime(secili.createdAt)}</p>
+
+            <div className={styles.previewCard}>
+              <p className={styles.previewName}>{secili.name}</p>
+              {/* Yanıt gönderme yok; büro kendi posta istemcisiyle dönüyor, bu yüzden
+                  adres ve numara tıklanabilir. */}
+              <a href={`mailto:${secili.email}`} className={styles.contact}>
+                {secili.email}
+              </a>
+              {secili.phone === null ? null : (
+                <a href={`tel:${secili.phone}`} className={styles.contact}>
+                  {secili.phone}
+                </a>
+              )}
+            </div>
+
+            <p className={styles.body}>{secili.body}</p>
+
+            <p className={styles.consent}>
+              {secili.kvkkAcceptedAt === null
+                ? 'KVKK onayı kaydedilmemiş.'
+                : `KVKK onayı: ${formatDateTime(secili.kvkkAcceptedAt)}`}
+            </p>
+
+            <p className={styles.previewNote}>
+              Yanıtlar büro posta hesabından gönderilir; bu ekrandan yanıt gönderilmez.
+            </p>
+          </aside>
+        ) : null}
+        </div>
       )}
     </>
   )

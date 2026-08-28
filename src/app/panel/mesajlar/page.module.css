@@ -23,15 +23,6 @@
   text-underline-offset: 3px;
 }
 
-.detail {
-  max-width: 46ch;
-}
-
-.summary {
-  cursor: pointer;
-  font-weight: 500;
-}
-
 /* Kullanıcının yazdığı metin satır sonlarını koruyor; aksi hâlde paragrafları tek bloğa
    yapışık okunurdu. */
 .body {
@@ -44,4 +35,94 @@
   margin-top: 12px;
   color: var(--text-muted);
   font-size: 15px;
+}
+
+/* ——— İKİ BÖLMELİ MESAJ LİSTESİ (devir tasarımı 5d) ———
+   Solda tablo, sağda seçili mesajın tamamı. Gövde eskiden satır içindeki <details>
+   içinde açılıyordu; beş sütunlu bir tabloda açılan uzun metin ızgarayı bozuyordu. */
+.split {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* Konu hücresi artık seçim bağlantısı. */
+.subjectLink {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  /* Satır yüksekliği zaten 44px'in üstünde; bağlantının kendi hedefi de hücreyi
+     dolduruyor. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.preview {
+  min-width: 0;
+  padding: 22px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+}
+
+.previewEyebrow {
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.previewSubject {
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1.2;
+  letter-spacing: -.018em;
+  margin: 0 0 6px;
+}
+
+.previewMeta {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 16px;
+}
+
+/* Gönderen künyesi ayrı bir yüzeyde: gövdeyle karışmasın. */
+.previewCard {
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-inner);
+  margin-bottom: 18px;
+}
+
+.previewName {
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.previewNote {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* 1100px: panelin yan sütuna geçtiği eşik. Önizleme 440px — devir tasarımının ölçüsü. */
+@media (min-width: 1100px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr) 440px;
+    gap: 32px;
+    align-items: start;
+  }
+
+  .preview {
+    position: sticky;
+    top: 20px;
+  }
 }

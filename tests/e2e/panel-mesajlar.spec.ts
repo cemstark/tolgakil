@@ -63,7 +63,7 @@ test('admin mesajı okundu işaretler ve siler', async ({ page }) => {
 })
 
 // Mesaj gövdesi kullanıcı verisi: HTML olarak DEĞİL, metin olarak basılmalı.
-test('mesaj gövdesi açılır bölümde metin olarak gösterilir', async ({ page }) => {
+test('mesaj gövdesi önizleme bölmesinde metin olarak gösterilir', async ({ page }) => {
   const konu = `Betikli konu ${damga}`
   await hazirTemizlik().calistir(
     'INSERT INTO messages (name, email, subject, body, is_read) VALUES (?, ?, ?, ?, ?)',
@@ -72,19 +72,25 @@ test('mesaj gövdesi açılır bölümde metin olarak gösterilir', async ({ pag
 
   await girisYap(page, ADMIN)
   await page.goto('/panel/mesajlar')
-  // Konu metni satırda iki kez geçiyor (açılır bölüm başlığı ve silme onayının gövdesi);
-  // seçici doğrudan açılır bölümün başlığını hedefliyor.
-  await page.getByRole('row', { name: new RegExp(damga) }).locator('summary').click()
+  // Gövde artık satır içindeki <details>'te değil, sağdaki önizleme bölmesinde (devir
+  // tasarımı 5d). Konu bağlantısı seçimi değiştiriyor.
+  await page
+    .getByRole('row', { name: new RegExp(damga) })
+    .getByRole('link', { name: konu })
+    .click()
 
+  const onizleme = page.getByRole('complementary', { name: 'Seçili mesajın önizlemesi' })
   // React kaçışı sayesinde etiket metin olarak görünüyor; çalıştırılmış olsaydı görünmezdi.
-  await expect(page.getByText('<script>alert(1)</script> Merhaba')).toBeVisible()
+  await expect(onizleme.getByText('<script>alert(1)</script> Merhaba')).toBeVisible()
   // KVKK onayı kaydedilmemişse bu açıkça yazılmalı; boş bırakmak "onay var" izlenimi verirdi.
-  await expect(page.getByText('KVKK onayı kaydedilmemiş.')).toBeVisible()
+  await expect(onizleme.getByText('KVKK onayı kaydedilmemiş.')).toBeVisible()
+  // Panelden yanıt gönderilmediği ekranda da yazılı olmalı (repodaki davranış).
+  await expect(onizleme.getByText(/Yanıtlar büro posta hesabından gönderilir/)).toBeVisible()
 })
 
 // Tarama BURADA, kadro dosyasında değil: anlamlı olması için listede gerçek bir mesaj
 // satırı bulunmalı. Boş bir tabloyu taramak satır içi eylemler ("Okundu işaretle" düğmesi,
-// açılır gövde, silme tetikleyicisi) hakkında hiçbir şey söylemez.
+// önizleme bölmesi, silme tetikleyicisi) hakkında hiçbir şey söylemez.
 test('mesajlar listesinde erişilebilirlik ihlali yok', async ({ page }) => {
   await mesajEkle(`Okunmamış ${damga}`, false)
   await mesajEkle(`Okunmuş ${damga}`, true)
@@ -96,9 +102,12 @@ test('mesajlar listesinde erişilebilirlik ihlali yok', async ({ page }) => {
   const sonuc = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
   expect(sonuc.violations).toEqual([])
 
-  // Açılır gövde açıkken de taranıyor: <details> açıldığında içerik erişilebilirlik
-  // ağacına giriyor ve kapalıyken taranmış olması onu kapsamıyor.
-  await page.getByRole('row', { name: new RegExp(damga) }).first().locator('summary').click()
+  // Başka bir satır seçiliyken de taranıyor: önizleme bölmesi seçime göre yeniden
+  // çiziliyor ve ilk taramada gösterilen kayıt farklıydı.
+  await page
+    .getByRole('row', { name: new RegExp(`Okunmuş ${damga}`) })
+    .getByRole('link', { name: `Okunmuş ${damga}` })
+    .click()
   const acikSonuc = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
   expect(acikSonuc.violations).toEqual([])
 })
