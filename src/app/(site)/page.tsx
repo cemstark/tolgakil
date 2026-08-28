@@ -41,9 +41,12 @@ const HOME_ARTICLE_COUNT = 3
  * güvenilmiyor: dıştaki giriş o etiketle geçersizleşmezse ayar değişince başlık tazelenir
  * ama hero'daki ad bayat kalırdı.
  *
- * cacheLife('max') (bayat 5 dk, tazeleme 30 gün, ömür 1 yıl): süre değil OLAY tazeliyor —
- * panelin server action'ları ilgili etiket için updateTag(...) çağırıyor. O çağrının neden
- * revalidateTag olmadığı ve nasıl ölçüldüğü lib/cache-tags.ts başında yazılı.
+ * cacheLife('max'): profilin YERLEŞİK değerleri değil, next.config.ts'te EZİLMİŞ olanları
+ * geçerli (bayat 5 dk, tazeleme 5 dk, ömür 1 saat). Tazelemenin birincil yolu hâlâ süre
+ * değil OLAY: panelin server action'ları ilgili etiket için updateTag(...) çağırıyor. O
+ * çağrının neden revalidateTag olmadığı ve nasıl ölçüldüğü lib/cache-tags.ts başında yazılı.
+ * Süredeki 30 gün -> 5 dk indirimi sunucu için değil ÖNDEKİ CDN için: gerekçesi ve üretimde
+ * nasıl ölçüldüğü next.config.ts'teki cacheLife bloğunda yazılı.
  */
 export default async function HomePage() {
   'use cache'
