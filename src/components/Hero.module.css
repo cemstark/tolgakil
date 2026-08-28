@@ -1,18 +1,73 @@
+/* SİNEMATİK HERO (devir tasarımı 5b).
+
+   Hero, gezinme hapının YÜKSEKLİĞİ KADAR yukarı çekiliyor ve aynı kadar içeriden
+   dolduruluyor: hap hero'nun üstünde yüzüyor ama hero'nun kendi metnini örtmüyor. İki
+   değer de --header-h'den okunuyor (globals.css); ayrı ayrı yazılsalardı hap yüksekliği
+   değiştiğinde biri güncellenip diğeri unutulurdu.
+
+   `isolation: isolate`: içerideki z-index'ler kendi yığma bağlamında kalsın, sayfanın
+   geri kalanıyla (özellikle z-index:50 olan yapışkan başlık) yarışmasın. Bu olmadan
+   .media'nın negatif z-index'i hero'nun arkasına, yani sayfa zeminine düşüyordu. */
 .hero {
-  padding: var(--section) var(--pad);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin-top: calc(-1 * var(--header-h));
+  padding: calc(var(--header-h) + 32px) var(--pad) 44px;
+  display: flex;
+  align-items: flex-end;
+  /* Mobilde 460px: 660px'lik masaüstü ölçüsü dar ekranda çalışma alanlarını yine ilk
+     ekranın dışına iterdi. Mobilin kendi ölçüsü (2a: 238px) duyarlı tur geldiğinde
+     ayarlanacak; buradaki değer masaüstü turunun geçici mobil karşılığı. */
+  min-height: 460px;
+}
+
+/* Görsel katmanı. z-index negatif: metin ve gradyan onun üstünde. */
+.media {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.media img {
+  object-fit: cover;
+  /* Heykelin yüzü kadrajın üst yarısında; %50 50% ortalamada çene hizasından kesiliyordu. */
+  object-position: 50% 30%;
+}
+
+/* Okunabilirlik perdesi. Renkler --ink'ten TÜRETİLİYOR (color-mix), elle yazılmış rgba
+   değil: yeni renk sabiti eklemeden aynı gradyan elde ediliyor ve zemin rengi bir gün
+   değişirse perde onunla birlikte değişir.
+
+   Dört durak, çünkü perdenin işi iki farklı yerde farklı: ÜSTTE gezinme hapının
+   arkasını koyulaştırmak (%72), ORTADA fotoğrafı göstermek (%25), ALTTA başlık ve
+   düğmelerin altını tam kapatmak (%90 → düz --ink). Alt durak düz renge oturuyor ki
+   hero bir sonraki bölümle dikişsiz birleşsin. */
+.media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ink) 72%, transparent) 0%,
+    color-mix(in srgb, var(--ink) 25%, transparent) 42%,
+    color-mix(in srgb, var(--ink) 90%, transparent) 88%,
+    var(--ink) 100%
+  );
 }
 
 .inner {
+  width: 100%;
   max-width: var(--max);
   margin: 0 auto;
   display: grid;
-  gap: var(--section);
-  align-items: center;
+  gap: 32px;
 }
 
-/* Grid içindeki öğe kendi intrinsic minimum genişliğiyle taşabilir (özellikle uzun
-   başlık satırları); min-width: 0 sütunu grid hücresinin gerçek genişliğine sıkıştırır. */
-.copy {
+/* Grid öğesi kendi intrinsic minimum genişliğiyle taşabilir (uzun başlık satırları);
+   min-width: 0 sütunu hücrenin gerçek genişliğine sıkıştırır. */
+.copy,
+.aside {
   min-width: 0;
 }
 
@@ -22,17 +77,28 @@
   letter-spacing: 3px;
   text-transform: uppercase;
   font-weight: 600;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
+/* 76px masaüstü tavanı devir tasarımından. clamp'in alt ucu 34px: 360px'lik bir ekranda
+   bu başlık üç satır sürüyor ve daha büyüğü hero'yu tek başına dolduruyordu.
+   `text-wrap: balance` satır sonlarını dengeliyor — üç kelimelik son satır bırakmıyor. */
 .title {
-  margin-bottom: 20px;
+  /* 5.94vw: masaüstü test genişliği olan 1280px'te tam olarak 76px'lik tasarım tavanına
+     oturuyor (1280 × .0594 ≈ 76). 5.6vw'de 71,68px kalıyordu — tavan yalnız ~1360px
+     üstünde yakalanıyor, yani tasarımın verdiği ölçü çoğu masaüstü ekranda hiç
+     görünmüyordu. Alt uç 34px: 360px'lik bir ekranda başlık üç satır sürüyor. */
+  font-size: clamp(34px, 5.94vw, 76px);
+  line-height: 1.02;
+  letter-spacing: -.028em;
+  text-wrap: balance;
+  margin: 0;
 }
 
 .lead {
   color: var(--text-ink-muted);
-  max-width: 40ch;
-  margin-bottom: 32px;
+  max-width: 44ch;
+  margin-bottom: 24px;
 }
 
 .actions {
@@ -76,14 +142,18 @@
   box-shadow: var(--shadow-card);
 }
 
+/* Kenarlık --line-ink değil daha okunur bir tonlama: düğme artık fotoğrafın üstünde
+   duruyor ve %12 saydamlıktaki çizgi değişken bir zeminde kayboluyordu. */
 .pillOutline {
-  border-color: var(--line-ink);
+  border-color: color-mix(in srgb, var(--text-ink) 22%, transparent);
+  background: color-mix(in srgb, var(--ink) 55%, transparent);
+  backdrop-filter: blur(var(--blur-glass));
 }
 
 @media (hover: hover) and (pointer: fine) {
   .pillFilled:hover {
-    /* Altın zaten kontrast ölçülerek seçildi; tonu kaydırmak yerine hafifçe
-       açılıyor ve yükseliyor — okunabilirlik hesabı bozulmuyor. */
+    /* Altın zaten kontrast ölçülerek seçildi; tonu kaydırmak yerine hafifçe açılıyor ve
+       yükseliyor — okunabilirlik hesabı bozulmuyor. */
     background: color-mix(in srgb, var(--gold) 88%, white);
     box-shadow: var(--shadow-lift);
     transform: translateY(calc(-1 * var(--lift)));
@@ -91,7 +161,7 @@
 
   .pillOutline:hover {
     border-color: var(--gold);
-    background: color-mix(in srgb, var(--text-ink) 6%, transparent);
+    background: color-mix(in srgb, var(--ink) 72%, transparent);
   }
 }
 
@@ -102,29 +172,23 @@
   transition-duration: var(--dur-press);
 }
 
-/* Hero görselinin çerçevesi. Kenarlık, köşe yarıçapı, gölge ve alt perde artık global
-   `.mediaFrame` sınıfından geliyor (globals.css) — burada YALNIZ oran kalıyor.
-
-   Görünüm özellikleri bilerek buradan silindi: iki sınıf da aynı öğede ve ikisi de tek
-   sınıf özgüllüğünde, yani hangisinin kazandığını yalnız dosya yükleme sırası belirlerdi.
-   Böyle bir çakışmayı çözmek yerine hiç yaratmamak doğrusu.
-
-   Eskiden burada gradyan ve çizgi ritminden kurulu geçici bir yüzey vardı; o yüzeyin
-   varlık sebebi "müşteriden görsel gelene kadar boş gri dikdörtgen durmasın"dı. Görsel
-   geldi (public/gorsel/hero-themis.webp), dolayısıyla yüzey de gitti.
-
-   Mobilde 4/5 dikey oran ekranın yarısını yutuyor ve içeriği ilk ekrandan kovuyordu:
-   dar ekranda yatay şerit, ≥768px'te özgün dikey oran (aşağıda). */
-.visual {
-  aspect-ratio: 16 / 10;
-}
-
-@media (min-width: 768px) {
-  .inner {
-    grid-template-columns: 1.1fr 1fr;
+/* 900px: hero iki sütuna ayrılıyor — solda başlık, sağda özet ve eylemler. Kırılma
+   noktası 768 değil 900, çünkü 768px'lik bir tablette 76px'lik başlık ile 44ch'lik
+   paragraf yan yana sıkışıp ikisi de okunmaz oluyordu. */
+@media (min-width: 900px) {
+  .hero {
+    min-height: 660px;
+    padding-bottom: 56px;
   }
 
-  .visual {
-    aspect-ratio: 4 / 5;
+  .inner {
+    grid-template-columns: 1.25fr 1fr;
+    align-items: end;
+    gap: 56px;
+  }
+
+  /* Özet sütunu başlıkla aynı taban çizgisine oturuyor; eylemler onun altında kalıyor. */
+  .aside {
+    padding-bottom: 6px;
   }
 }

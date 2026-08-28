@@ -4,8 +4,18 @@ import AxeBuilder from '@axe-core/playwright'
 test('tek h1 ve beklenen bölümler var', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
-  await expect(page.getByRole('heading', { name: 'Çalışma Alanları' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Makaleler' })).toBeVisible()
+  // `exact` ŞART: makale bölümünün yeni başlığı da "Çalışma alanlarına ilişkin
+  // bilgilendirme yazıları" ve varsayılan (substring) eşleşmede ikisi birden bulunup
+  // strict mode ihlali veriyordu.
+  await expect(
+    page.getByRole('heading', { name: 'Çalışma alanları', exact: true }),
+  ).toBeVisible()
+  // Makale bölümünün başlığı artık "Makaleler" DEĞİL (devir tasarımı 5b): o sözcük
+  // bölümün kaşına, <p> olarak indi; başlık bölümün ne anlattığını söylüyor. Bölüm
+  // kimliği #articles ile ayrıca sabit ve krem zemin testi onu zaten doğruluyor.
+  await expect(
+    page.getByRole('heading', { name: /bilgilendirme yazıları/ }),
+  ).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Kadro' })).toBeVisible()
 })
 
@@ -25,16 +35,20 @@ test('çalışma alanı kartları doğru rotaya bağlanır', async ({ page }) =>
   await expect(page.locator('a[href^="/calisma-alanlari/"]').first()).toBeVisible()
 })
 
-test('h1 masaüstünde 56px çizilir', async ({ page }, testInfo) => {
+// Ölçüler sinematik hero ile büyüdü (devir tasarımı 5b: masaüstü tavanı 76px). clamp'in
+// vw katsayısı, masaüstü projesinin 1280px genişliğinde tam tavana oturacak şekilde
+// seçildi — tasarımın verdiği sayı çoğu masaüstü ekranda gerçekten görünsün diye.
+test('h1 masaüstünde 76px çizilir', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'masaustu', 'yalnızca masaüstü projede')
   await page.goto('/')
-  await expect(page.getByRole('heading', { level: 1 })).toHaveCSS('font-size', '56px')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCSS('font-size', '76px')
 })
 
-test('h1 mobilde 36px çizilir', async ({ page }, testInfo) => {
+// Mobilde clamp'in ALT ucu geçerli (412px × .0594 ≈ 24px, tabana kırpılıyor).
+test('h1 mobilde 34px çizilir', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobil', 'yalnızca mobil projede')
   await page.goto('/')
-  await expect(page.getByRole('heading', { level: 1 })).toHaveCSS('font-size', '36px')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCSS('font-size', '34px')
 })
 
 test('erişilebilirlik ihlali yok', async ({ page }) => {

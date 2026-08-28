@@ -56,6 +56,35 @@
   /* Yuvarlaklık hiyerarşisi: dış kapsayıcı yumuşak, iç öğe daha sıkı. Her şeyin aynı
      yarıçapta olması düzeni tekdüzeleştiriyordu. */
   --radius-inner: 12px;
+  /* Devir tasarımının (design_handoff_mobil_uygulama) getirdiği ara ölçüler. Yukarıdaki
+     dörtlü hiyerarşiyi bozmuyorlar, aralarını dolduruyorlar: --radius-media geniş görsel
+     bandı için block ile card arasında, --radius-tile ızgara karosu için card'ın bir
+     kademe altında, --radius-field arama/giriş alanı, --radius-tool ise editörün küçük
+     araç düğmesi. Sayı olarak bileşenlere dağıtılmak yerine buraya toplandılar; global
+     kısıt zaten bileşenin kendi sabitini yazmasını yasaklıyor. */
+  --radius-media: 24px;
+  --radius-tile: 16px;
+  --radius-field: 14px;
+  --radius-tool: 10px;
+
+  /* Cam yüzeylerin bulanıklığı tek yerden. İki değer var çünkü tasarım ikisini ayırıyor:
+     gezinme hapı ve eylem çubuğu gibi İNCE yüzeyler 12px, tam ekran menü gibi ARDINI
+     tümüyle kapatması gereken yüzeyler 16px. */
+  --blur-glass: 12px;
+  --blur-veil: 16px;
+
+  /* Yüzen çubuk ve alta yapışan çekmece için. --shadow-card/lift ışığı TEPEDEN düşürüyor;
+     çekmece ekranın altından geldiği için gölgesi YUKARI vurmak zorunda (negatif y) —
+     mevcut ikisi bu iş için kullanılamıyor. */
+  --shadow-bar: 0 10px 30px -12px rgba(11, 15, 21, .7);
+  --shadow-sheet: 0 -12px 40px -16px rgba(11, 15, 21, .8);
+
+  /* Gezinme hapının kapladığı toplam yükseklik: .header'ın 16px dikey dolgusu + hapın
+     kendi 10px dolgusu + içindeki 44px'lik dokunma hedefi. Hero bu kadar YUKARI çekilip
+     aynı kadar İÇERİDEN dolduruluyor; böylece hap hero'nun üstünde yüzerken hero'nun
+     kendi metni hapın altında kalmıyor. Sayı iki dosyada birbirinden habersiz durmasın
+     diye token: SiteHeader yüksekliği değişirse hero da onunla birlikte kayar. */
+  --header-h: 96px;
 
   --max: 1200px;
   --pad: clamp(1.25rem, 4vw, 2.5rem);
@@ -492,15 +521,31 @@ a.card:active {
    Eğri `linear`: zaman tabanlı bir animasyon değil, ilerleme kullanıcının kaydırma
    konumuna bağlı. Yumuşatmayı kullanıcının kendi kaydırma ivmesi zaten sağlıyor;
    üstüne easing koymak hareketi kaydırmadan KOPARIR. */
+/* OPACITY YOK, YALNIZ KONUM — ölçülerek kaldırıldı (29.08.2026).
+   Animasyon eskiden opacity 0'dan 1'e de geçiyordu. Ara karelerde metin yarı saydam
+   kalıyor ve zeminle karışıyordu: axe, ana sayfada 0.867 opaklıktaki bir kartın özet
+   metnini #818893 olarak ölçtü — --text-ink-muted (#aab1bc) doğru tanımlı olmasına
+   rağmen efektif kontrast 4,37:1'e düşüyordu (eşik 4,5:1, WCAG 1.4.3 ihlali).
+
+   Sorun ÖNCEDEN DE VARDI ama görünmüyordu: kartlar uzun hero'nun altında, ilk ekranın
+   çok aşağısındaydı; orada opaklık 0 olduğu için axe onları "görünmez" sayıp hiç
+   ölçmüyordu. Hero sinematik düzene geçip kısalınca kartlar ilk ekrana girdi ve ihlal
+   görünür oldu.
+
+   Fade'i kısaltmak veya daha yüksek bir opaklıktan başlatmak çözüm DEĞİL: 4,5:1 eşiğini
+   geçmek için başlangıcın ~0,95 olması gerekiyor, o da fade'i gözle algılanamaz kılıyor.
+   Yani fade ya anlamlı olur ya erişilebilir; ikisi birden olmuyor. Devir tasarımının
+   kendi tarifi de zaten yalnız konumdan söz ediyor ("18px yükselme").
+
+   `prefers-reduced-motion` bloğundaki `opacity: 1 !important` savunma olarak DURUYOR:
+   zararsız ve bu kural ileride yeniden opacity kazanırsa içeriğin kaybolmasını önler. */
 @keyframes reveal-rise {
   from {
-    opacity: 0;
     /* scale(0) değil, hiç ölçek yok: 18px'lik ölçülü bir yükselme. Hukuk bürosunda
        büyüyerek beliren kart fazla gösterişli kaçıyor. */
     transform: translateY(18px);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }

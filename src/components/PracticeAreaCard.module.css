@@ -39,7 +39,11 @@
 
 .name {
   font-family: var(--font-display), Georgia, serif;
-  font-size: 22px;
+  /* Varsayılan 22px, /calisma-alanlari ızgarasının ölçüsü. Ana sayfadaki üç öne çıkan
+     kart bunu 28px'e yükseltiyor; değeri PracticeAreas.module.css'teki .grid kuralı
+     --area-card-title ile veriyor. Geri düşüş değeri burada olduğu için kart, o
+     property'yi hiç tanımlamayan her bağlamda (alan listesi sayfası) doğru çiziliyor. */
+  font-size: var(--area-card-title, 22px);
   line-height: 1.2;
 }
 
