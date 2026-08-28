@@ -1,68 +1,149 @@
-.newLink {
-  display: inline-block;
-  font-weight: 500;
-  background: var(--accent);
-  color: var(--ink);
-  border-radius: var(--radius-pill);
-  padding: 12px 24px;
+/* İKİ BÖLMELİ LİSTE (devir tasarımı 5d): solda tablo, sağda seçili kaydın önizlemesi.
+   Dar ekranda alt alta; önizleme tablonun altına düşüyor. */
+.split {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
 }
 
-.empty {
-  color: var(--text-muted);
-}
-
-/* Beş sütunlu tablo dar ekrana sığmıyor; sarmalayıcı yatay kaydırılabilir ve klavyeyle
-   odaklanabilir (WCAG 2.1.1 — fare olmadan da kaydırılabilmeli). */
-.tableWrap {
-  overflow-x: auto;
+.preview {
+  min-width: 0;
+  padding: 22px 20px;
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
+  /* Bölme, tablonun durduğu yüzeyden bir kademe ayrışıyor: iki bölme aynı zeminde
+     olduğunda seçili kaydın nerede bittiği okunmuyordu. */
+  background: var(--surface-raised);
 }
 
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 16px;
-  /* Kaydırma gerekiyorsa sütunlar ezilmesin. */
-  min-width: 720px;
-}
-
-.caption {
-  text-align: left;
-  color: var(--text-muted);
-  font-size: 15px;
-  padding: 14px 18px;
-}
-
-.table th,
-.table td {
-  text-align: left;
-  padding: 14px 18px;
-  border-top: 1px solid var(--line);
-  vertical-align: middle;
-}
-
-.table thead th {
-  border-top: 0;
-  font-weight: 500;
-  color: var(--text-muted);
-  font-size: 15px;
-}
-
-.titleCell {
-  font-weight: 500;
-}
-
-.titleLink {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-/* Durum yalnız renkle taşınmıyor; metnin kendisi "Yayında"/"Taslak" yazıyor. */
-.published {
+.previewEyebrow {
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  font-weight: 600;
   color: var(--accent);
+  margin-bottom: 12px;
 }
 
-.draft {
+.previewTitle {
+  font-size: clamp(22px, 2.2vw, 30px);
+  line-height: 1.15;
+  letter-spacing: -.018em;
+  margin: 0 0 10px;
+}
+
+.previewMeta {
   color: var(--text-muted);
+  font-size: 12.5px;
+  /* Tarih sütunuyla aynı sözleşme: oransal rakamlarda künye tırtıklı duruyordu. */
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 14px;
+}
+
+.previewExcerpt {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.65;
+  margin-bottom: 20px;
+}
+
+.previewActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.previewPrimary,
+.previewSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 44px dokunma hedefi (WCAG 2.5.8). */
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out);
+}
+
+.previewPrimary {
+  background: var(--accent);
+  color: var(--surface);
+}
+
+.previewSecondary {
+  border-color: var(--text-muted);
+  color: var(--text);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .previewPrimary:hover {
+    background: var(--accent-hover);
+  }
+
+  .previewSecondary:hover {
+    border-color: var(--accent);
+  }
+}
+
+/* İşlem sütunu: "Düzenle" bağlantısı ile silme düğmesi yan yana. */
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* Sütun içeriği sarmasın; dar ekranda tablo zaten yatay kaydırılıyor. */
+  white-space: nowrap;
+}
+
+.editLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--text-muted);
+  border-radius: var(--radius-pill);
+  font-size: 13.5px;
+  color: var(--text);
+  transition:
+    border-color var(--dur-hover) var(--ease-out),
+    background-color var(--dur-hover) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .editLink:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--text) 6%, transparent);
+  }
+}
+
+/* Ekran okuyucuya okunur, ekranda görünmez. `display: none` bunu yapmaz — o, içeriği
+   erişilebilirlik ağacından da siler. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* 1100px: panel yan sütuna geçtiği eşik. İki bölme ancak orada yan yana sığıyor —
+   260px gezinme + tablo + önizleme. Önizleme genişliği devir tasarımının verdiği
+   360-440px aralığında. */
+@media (min-width: 1100px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 32px;
+    align-items: start;
+  }
+
+  /* Uzun listede önizleme ekrandan çıkmasın. */
+  .preview {
+    position: sticky;
+    top: 20px;
+  }
 }

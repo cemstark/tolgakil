@@ -61,3 +61,20 @@
   gap: 12px;
   align-items: center;
 }
+
+/* SEÇİLİ SATIR (devir tasarımı 5d) — liste + önizleme düzeninde hangi kaydın sağdaki
+   bölmede gösterildiğini işaretler.
+
+   İki sinyal birden: sol kenardaki 3px'lik şerit ve hafif bir zemin. Şerit `box-shadow
+   inset` ile çiziliyor, `border-left` ile DEĞİL — kenarlık hücrenin genişliğini
+   değiştirip seçim değiştikçe sütunları 3px oynatırdı.
+
+   Durum ayrıca `aria-current="true"` ile taşınıyor (sayfanın kendi TSX'inde), yani
+   ayrım yalnız renge bağlı değil (WCAG 1.4.1). */
+.table tr[aria-current='true'] {
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+}
+
+.table tr[aria-current='true'] th {
+  box-shadow: inset 3px 0 0 var(--accent);
+}

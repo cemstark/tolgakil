@@ -418,3 +418,38 @@ test('silme onayı kip penceresi açıkken erişilebilirlik ihlali yok', async (
   const sonuc = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
   expect(sonuc.violations).toEqual([])
 })
+
+// Liste + önizleme düzeni (devir tasarımı 5d) "masaüstü panel" turunda kuruldu: başlık
+// bağlantısı artık editöre değil önizlemeye gidiyor, düzenlemeye satırdaki "Düzenle" ile
+// geçiliyor. Seçim adres çubuğunda (?sec=) taşındığı için sayfa sunucu bileşeni kalıyor.
+test('liste satırı seçilince önizleme o kaydı gösterir ve Düzenle editöre gider', async ({ page }) => {
+  const baslik = `Onizleme notu ${hazirIcerik().damga}`
+  await girisYap(page, EDITOR)
+  await page.goto('/panel/makaleler/yeni')
+  await page.getByLabel('Başlık').fill(baslik)
+  await page.getByLabel('Özet').fill('Önizleme bölmesinde görünmesi beklenen özet metni.')
+  await page.locator('[contenteditable="true"]').fill('Gövde metni.')
+  await page.getByRole('button', { name: 'Taslak olarak kaydet' }).click()
+  await expect(page.getByRole('status')).toHaveText('Makale taslak olarak kaydedildi.')
+
+  await page.goto('/panel/makaleler')
+
+  // Tek kayıt varken önizleme kendiliğinden ilk satıra düşüyor: bölme boş açılmamalı.
+  const onizleme = page.getByRole('complementary', { name: 'Seçili makalenin önizlemesi' })
+  await expect(onizleme).toBeVisible()
+  await expect(onizleme.getByRole('heading', { name: baslik })).toBeVisible()
+  await expect(onizleme.getByText('Önizleme bölmesinde görünmesi beklenen özet metni.')).toBeVisible()
+
+  // Taslak kayıtta "Sitede gör" ÇIKMAZ: taslağın herkese açık adresi 404 verir.
+  await expect(onizleme.getByRole('link', { name: 'Sitede gör' })).toHaveCount(0)
+
+  // Satır seçili olarak işaretlenmeli — durum yalnız zeminle değil aria ile de taşınıyor.
+  await expect(page.getByRole('row', { name: new RegExp(baslik) })).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+
+  // "Düzenle" editöre götürür.
+  await onizleme.getByRole('link', { name: 'Düzenle' }).click()
+  await expect(page.getByLabel('Başlık')).toHaveValue(baslik)
+})

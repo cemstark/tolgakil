@@ -1,6 +1,11 @@
 /* Mobile-first: dar ekranda yalnız marka satırı ve menü düğmesi durur, bağlantılar
-   açılır panelde. Genişlik yettiğinde (768px) panel kalıcı olarak açılır, 900px'te de
-   panel layout'u gezinmeyi yan sütuna alır. */
+   açılır panelde. TEK EŞİK 1100px: orada hem menü düğmesi kalkıyor hem de panel layout'u
+   gezinmeyi yan sütuna alıyor.
+   Eşik 768/900'den 1100'e çıkarıldı (devir tasarımı): panelin yan sütunu 260px ve
+   yanındaki iki bölmeli içerik (tablo + önizleme) 1100px'in altında sıkışıyor. Devir
+   belgesi de kırılımı 1100 olarak veriyor — o değerin altı mobil panel düzenine ait.
+   Bu yüzden burada SiteHeader'ın 768px eşiğinden bilerek ayrılıyoruz: sitenin gezinmesi
+   dört bağlantı taşıyor, panelinki dokuz bölüm + hesap bloğu. */
 .nav {
   display: flex;
   flex-direction: column;
@@ -56,12 +61,15 @@
   gap: 4px;
 }
 
+/* 44px: devir tasarımının verdiği pil yüksekliği ve WCAG 2.5.8 dokunma hedefi. Eski
+   hâli (8px dolgu + 15px metin) ~39px veriyordu. */
 .link {
   display: inline-flex;
   align-items: center;
-  padding: 8px 14px;
+  min-height: 44px;
+  padding: 0 14px;
   border-radius: var(--radius-pill);
-  font-size: 15px;
+  font-size: 14.5px;
   border: 1px solid transparent;
 }
 
@@ -99,10 +107,9 @@
   padding: 8px 18px;
 }
 
-/* Menü düğmesi burada kayboluyor, SiteHeader ile aynı kırılım noktasında: iki kabuk
-   arasında farklı eşik kullanmak, aynı cihazda birinin açılır birinin sabit olmasına
-   yol açardı. */
-@media (min-width: 768px) {
+/* Menü düğmesi ve yan sütun AYNI eşikte devreye giriyor; ikisi arasında ara bir aralık
+   bırakmak, menünün açık ama sütunun yatay olduğu üçüncü bir düzen üretirdi. */
+@media (min-width: 1100px) {
   .menuButton {
     display: none;
   }
@@ -112,7 +119,7 @@
   }
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1100px) {
   .nav {
     gap: 20px;
     padding: 20px var(--pad);

@@ -20,7 +20,9 @@
   margin-inline: auto;
 }
 
-@media (min-width: 900px) {
+/* Eşik PanelNav ile AYNI (1100px): gezinme yan sütuna geçtiği an layout da satıra
+   dönmeli, aksi hâlde sütun içeriğin üstünde yatay kalırdı. */
+@media (min-width: 1100px) {
   .layout {
     flex-direction: row;
   }
