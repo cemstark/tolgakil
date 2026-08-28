@@ -1,0 +1,139 @@
+/* İki bölmeli gövde (devir tasarımı 6a): solda büro metni ve kadro, sağda çalışma
+   alanları ve büro künyesi. Alan detayı ve makale arşiviyle aynı ızgara sözleşmesi. */
+.body {
+  padding: var(--section) var(--pad);
+}
+
+.split {
+  max-width: var(--max);
+  margin: 0 auto;
+  display: grid;
+  gap: 40px;
+}
+
+.main {
+  min-width: 0;
+}
+
+.team {
+  margin-top: var(--section);
+}
+
+.teamTitle {
+  font-size: clamp(26px, 3vw, 38px);
+  line-height: 1.1;
+  letter-spacing: -.02em;
+  margin: 0 0 24px;
+}
+
+/* Tek avukatlı büroda kart tam genişlik kalıyor; kadro büyürse iki sütuna geçiyor.
+   auto-fit + minmax: sütun sayısını içerik belirliyor, kırılma noktası değil. */
+.teamGrid {
+  list-style: none;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.side {
+  min-width: 0;
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+.block {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.blockTitle {
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 14px;
+}
+
+.pills {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  /* 44px dokunma hedefi: pil bir bağlantı ve dar ekranda parmakla açılıyor. */
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  font-size: 13.5px;
+  color: inherit;
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pill:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+  }
+}
+
+.pill:active {
+  transform: scale(.98);
+  transition-duration: var(--dur-press);
+}
+
+/* <address> tarayıcı varsayılanında italik; künye burada düz metin olarak okunmalı. */
+.address {
+  display: grid;
+  gap: 6px;
+  font-style: normal;
+}
+
+.addressLine {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 4px;
+}
+
+.contactLink {
+  /* 44px dokunma hedefi: numara ve e-posta telefonda doğrudan aranıyor. */
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--accent);
+  font-size: 14.5px;
+  /* Numaralar alt alta; oransal rakamlarda sütun tırtıklı duruyordu. */
+  font-variant-numeric: tabular-nums;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.hours {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.6;
+  margin-top: 10px;
+}
+
+/* 900px: gövde iki sütuna ayrılıyor — site boyunca tek "geniş ekran" eşiği. */
+@media (min-width: 900px) {
+  .split {
+    grid-template-columns: 7fr 5fr;
+    gap: 56px;
+  }
+
+  .side {
+    position: sticky;
+    top: calc(var(--header-h) + 20px);
+  }
+}
