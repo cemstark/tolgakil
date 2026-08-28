@@ -1,0 +1,57 @@
+.form {
+  display: grid;
+  gap: 4px;
+}
+
+.group {
+  display: flex;
+  gap: 6px;
+}
+
+.button {
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text);
+  background: transparent;
+  /* Düz --line (0.12 saydamlık) düğme kenarlığı için 3:1'i geçmiyor; --field-border
+     panel yüzeyinde ölçülmüş değer. */
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-inner);
+  /* Kare 44px dokunma hedefi (WCAG 2.5.8): içerik tek bir ok işareti olduğu için dolgu
+     tek başına bu ölçüyü vermiyor. */
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    border-color var(--dur-hover) var(--ease-out),
+    background-color var(--dur-hover) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--text) 6%, transparent);
+  }
+}
+
+.button:disabled {
+  opacity: .55;
+  cursor: default;
+}
+
+.error {
+  color: var(--danger);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Başarı durumu: hata gibi kırmızı değil, kısılmış nötr bir satır. */
+.status {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}

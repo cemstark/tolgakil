@@ -9,8 +9,9 @@
   padding: calc(var(--header-h) + 32px) var(--pad) 40px;
   display: flex;
   align-items: flex-end;
-  /* Dar ekran ortak tabanı; masaüstü boyları aşağıdaki kırılma noktasında ayrışıyor. */
-  min-height: 360px;
+  /* Dar ekran ortak tabanı; masaüstü boyları aşağıdaki kırılma noktasında ayrışıyor.
+     Ana sayfa hero'suyla aynı gerekçe (2a): bant içeriği ilk ekrandan kovmamalı. */
+  min-height: 300px;
 }
 
 .media {

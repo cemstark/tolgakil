@@ -8,6 +8,7 @@ import { PanelActionLink, PanelEmptyState } from '@/components/PanelActionLink'
 import { PanelHeading } from '@/components/PanelHeading'
 import { PanelNotice } from '@/components/PanelNotice'
 import { PanelTable, panelTableStyles as table } from '@/components/PanelTable'
+import { MoveButtons } from './MoveButtons'
 import { deletePracticeArea } from './actions'
 
 export const metadata: Metadata = {
@@ -45,14 +46,29 @@ export default async function PracticeAreaListPage({ searchParams }: PracticeAre
           caption="Sıra numarasına, eşitlikte ada göre dizili çalışma alanları"
           columns={['Alan adı', 'Sıra', 'Durum', 'İşlem']}
         >
-          {areas.map((area) => (
+          {areas.map((area, index) => (
             <tr key={area.id}>
               <th scope="row" className={table.nameCell}>
                 <Link href={`/panel/calisma-alanlari/${area.id}`} className={table.nameLink}>
                   {area.name}
                 </Link>
               </th>
-              <td>{area.sortOrder}</td>
+              {/* Sıra sütunu artık yalnız sayıyı göstermiyor, taşıma düğmelerini de
+                  taşıyor: sırayı değiştirmek için iki kaydı açıp iki sayıyı elle
+                  düzenlemek gerekiyordu (devir tasarımı 4a). Düğmeler sürükle-bırak
+                  YERİNE: sürükleme klavyeyle ve ekran okuyucuyla yapılamaz (WCAG 2.5.7).
+                  Sayı görünür kalıyor — hangi kaydın nerede olduğunu okumanın tek yolu o. */}
+              <td>
+                <div className={table.rowActions}>
+                  <span>{area.sortOrder}</span>
+                  <MoveButtons
+                    areaId={area.id}
+                    name={area.name}
+                    isFirst={index === 0}
+                    isLast={index === areas.length - 1}
+                  />
+                </div>
+              </td>
               <td>
                 {/* Durum yalnız renkle değil metinle de ayrışıyor (WCAG 1.4.1). */}
                 <span className={area.isPublished ? table.on : table.off}>

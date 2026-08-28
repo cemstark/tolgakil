@@ -203,3 +203,24 @@ test('giriş sayfasında erişilebilirlik ihlali yok', async ({ page }) => {
   const sonuc = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
   expect(sonuc.violations).toEqual([])
 })
+
+// "Göster" düğmesi mobil için eklenen bir kolaylık (devir tasarımı 2.1). Tümüyle istemci
+// tarafı: alanın yalnız `type`ı değişiyor, gönderilen FormData ve sunucu sözleşmesi aynı.
+test('parola alanı Göster düğmesiyle görünür olur ve durum aria ile taşınır', async ({ page }) => {
+  await page.goto('/panel/giris')
+  const parola = page.getByLabel('Parola')
+  const dugme = page.getByRole('button', { name: 'Göster' })
+
+  await expect(parola).toHaveAttribute('type', 'password')
+  await expect(dugme).toHaveAttribute('aria-pressed', 'false')
+
+  await dugme.click()
+  await expect(parola).toHaveAttribute('type', 'text')
+  // Etiket de durumla birlikte değişiyor: yalnız aria'ya bakmayan yardımcı teknolojide
+  // de anlam kaybolmasın.
+  await expect(page.getByRole('button', { name: 'Gizle' })).toHaveAttribute('aria-pressed', 'true')
+
+  // Düğme form GÖNDERMEMELİ: göndermiş olsaydı parolayı görmek bir giriş denemesi sayılır
+  // ve hız sınırını tüketirdi.
+  await expect(page).toHaveURL(/\/panel\/giris/)
+})

@@ -63,3 +63,49 @@
   background: var(--text-ink-muted);
   cursor: not-allowed;
 }
+
+/* Parola alanı + "Göster" düğmesi. Düğme alanın İÇİNE bindirilmiyor, yanına konuyor:
+   bindirilen bir düğme uzun parolada metnin üstüne biner ve dar ekranda dokunma hedefi
+   alanın kendi tıklama bölgesiyle çakışır. */
+.passwordRow {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.passwordInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.reveal {
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text);
+  background: transparent;
+  /* Düz --line (0.12 saydamlık) düğme kenarlığı için 3:1'i geçmiyor; --field-border
+     panel yüzeyinde ölçülmüş değer. */
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-inner);
+  /* 44px dokunma hedefi (WCAG 2.5.8) — bu düğme özellikle telefonda kullanılıyor. */
+  min-height: 44px;
+  padding: 0 14px;
+  transition:
+    border-color var(--dur-hover) var(--ease-out),
+    background-color var(--dur-hover) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .reveal:hover {
+    border-color: var(--accent);
+  }
+}
+
+/* Basılı (görünür) durumda düğme yalnız metinle değil kenarlıkla da ayrışıyor. */
+.reveal[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}

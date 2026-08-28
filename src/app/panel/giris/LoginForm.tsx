@@ -24,6 +24,10 @@ export function LoginForm() {
   // denemeler hız sınırına takılır" testini rastgele kırmızıya düşürüyordu.
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  // Parolayı görünür kılan kolaylık (devir tasarımı 2.1). Tümüyle İSTEMCİ tarafı: alanın
+  // yalnız `type`ı değişiyor, gönderilen FormData ve sunucu sözleşmesi aynı kalıyor.
+  // Telefonda uzun bir parolayı görmeden yazmak en sık giriş hatası sebebi.
+  const [passwordVisible, setPasswordVisible] = useState(false)
 
   const usernameError = state.errors.username?.join(' ')
   const passwordError = state.errors.password?.join(' ')
@@ -70,18 +74,33 @@ export function LoginForm() {
         <label htmlFor="password" className={styles.label}>
           Parola
         </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          className={styles.input}
-          aria-invalid={passwordError ? true : undefined}
-          aria-describedby={passwordError ? 'password-error' : undefined}
-        />
+        <div className={styles.passwordRow}>
+          <input
+            id="password"
+            name="password"
+            type={passwordVisible ? 'text' : 'password'}
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className={`${styles.input} ${styles.passwordInput}`}
+            aria-invalid={passwordError ? true : undefined}
+            aria-describedby={passwordError ? 'password-error' : undefined}
+          />
+          {/* aria-pressed: düğme bir AÇMA/KAPAMA anahtarı, ekran okuyucu durumu duymalı.
+              Etiket de durumla birlikte değişiyor ki yalnız aria'ya bakmayan yardımcı
+              teknolojide de anlam kaybolmasın. Düğme form GÖNDERMEZ (type="button");
+              varsayılan type submit olsaydı parolayı göstermek giriş denemesi sayılır ve
+              hız sınırını tüketirdi. */}
+          <button
+            type="button"
+            className={styles.reveal}
+            aria-pressed={passwordVisible}
+            onClick={() => setPasswordVisible((v) => !v)}
+          >
+            {passwordVisible ? 'Gizle' : 'Göster'}
+          </button>
+        </div>
         {passwordError ? (
           <p id="password-error" role="alert" className={styles.fieldError}>
             {passwordError}

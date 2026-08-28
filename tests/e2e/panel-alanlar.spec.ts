@@ -132,3 +132,39 @@ test('kısa özet alan hatası verir ve kayıt yapılmaz', async ({ page }) => {
   await expect(page.getByRole('status')).toHaveCount(0)
   await expect(page).toHaveURL(/\/panel\/calisma-alanlari\/yeni$/)
 })
+
+// Sıralama düğmeleri "mobil" turunda eklendi ve YENİ BİR SUNUCU EYLEMİ gerektirdi
+// (movePracticeArea): sortOrder panelde elle girilen bir sayıydı, sırayı değiştirmek iki
+// kaydı açıp iki sayıyı düzenlemek demekti. Sürükle-bırak yerine iki düğme seçildi;
+// sürükleme klavyeyle ve ekran okuyucuyla yapılamaz (WCAG 2.5.7).
+test('çalışma alanı listede yukarı taşınır ve sıra kalıcı olur', async ({ page }) => {
+  await girisYap(page, ADMIN)
+  await page.goto('/panel/calisma-alanlari')
+
+  const satirlar = page.getByRole('row')
+  // Başlık satırı hariç ilk iki kaydın adını al.
+  const adlar = await page.getByRole('rowheader').allInnerTexts()
+  test.skip(adlar.length < 2, 'sıralama için en az iki kayıt gerekli')
+
+  const ikinci = adlar[1].trim()
+  await page.getByRole('button', { name: `Yukarı taşı: ${ikinci}` }).click()
+  // Sıra değişimi görsel bir olay; ekran okuyucu için role="status" ile duyuruluyor.
+  await expect(page.getByText('Sıra güncellendi.')).toBeVisible()
+
+  // Taşınan kayıt artık ilk sırada.
+  const yeniAdlar = await page.getByRole('rowheader').allInnerTexts()
+  expect(yeniAdlar[0].trim()).toBe(ikinci)
+
+  // Sayfa yenilendiğinde de aynı: sıra veritabanına yazıldı, yalnız ekranda değişmedi.
+  await page.reload()
+  const yenidenAdlar = await page.getByRole('rowheader').allInnerTexts()
+  expect(yenidenAdlar[0].trim()).toBe(ikinci)
+
+  // İlk sıradaki kaydın "yukarı" düğmesi ÇİZİLMEZ (devre dışı değil, yok).
+  await expect(page.getByRole('button', { name: `Yukarı taşı: ${ikinci}` })).toHaveCount(0)
+
+  // Eski hâline döndür ki sonraki testler tohum sırasını görsün.
+  await page.getByRole('button', { name: `Aşağı taşı: ${ikinci}` }).click()
+  await expect(page.getByText('Sıra güncellendi.')).toBeVisible()
+  expect(satirlar).toBeTruthy()
+})

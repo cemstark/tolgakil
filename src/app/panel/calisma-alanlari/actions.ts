@@ -2,7 +2,7 @@
 
 import { revalidatePath, updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { eq } from 'drizzle-orm'
+import { asc, eq } from 'drizzle-orm'
 import { db } from '@/db/client'
 import { practiceAreas } from '@/db/schema'
 import {
@@ -124,4 +124,68 @@ export async function deletePracticeArea(_prev: FormState, formData: FormData): 
   // Silinen kaydın kimliği adreste taşınıyor ki ardışık silmelerde bildirim yeniden
   // kurulup duyurulsun (bkz. lib/panel-notice.ts).
   redirect(`/panel/calisma-alanlari?silindi=${id}`)
+}
+
+/**
+ * Bir çalışma alanını listede bir sıra yukarı veya aşağı taşır.
+ *
+ * **Neden yeni bir eylem gerekti:** `sortOrder` panelde elle girilen bir sayıydı; sırayı
+ * değiştirmek için iki kaydı açıp iki sayıyı elle düzenlemek gerekiyordu. Devir tasarımı
+ * (4a) sıralamayı doğrudan liste üzerinde istiyor ve bu, sütunu toplu güncelleyen bir
+ * sunucu eylemi olmadan yapılamıyor.
+ *
+ * **Neden sürükle-bırak DEĞİL, iki düğme:** sürükleme tek başına klavyeyle ve ekran
+ * okuyucuyla yapılamaz; WCAG 2.5.7 (Dragging Movements) sürükleme ile yapılan her işlem
+ * için tek işaretçili bir alternatif istiyor. "Yukarı/Aşağı" düğmeleri fare, dokunmatik
+ * VE klavyede aynı şekilde çalışıyor, yani alternatif değil doğrudan çözüm.
+ *
+ * **Neden tüm liste yeniden numaralanıyor:** `sortOrder` eşit olabiliyor (liste eşitlikte
+ * ada göre diziliyor). Yalnız iki satırın değerini takas etmek, eşit değerli üçüncü bir
+ * kaydın araya girmesiyle sessizce yanlış sonuç verirdi. Sıra 0..n olarak baştan yazılınca
+ * sonuç her durumda listede görünenle birebir aynı oluyor.
+ */
+export async function movePracticeArea(_prev: FormState, formData: FormData): Promise<FormState> {
+  // proxy.ts ilk savunma hattı, tek hattı değil (global kısıt).
+  await requireAccess('practiceAreas')
+
+  const id = parseFormId(formData.get('id'))
+  if (id === 'invalid' || id === null) return INVALID_ID
+
+  const direction = formData.get('direction')
+  if (direction !== 'up' && direction !== 'down') {
+    return { ok: false, errors: {}, message: 'Taşıma yönü okunamadı; sayfayı yenileyip tekrar deneyin.' }
+  }
+
+  // Ekranda görünen sırayla BİREBİR aynı sorgu: sortOrder, eşitlikte ad.
+  const rows = await db
+    .select({ id: practiceAreas.id })
+    .from(practiceAreas)
+    .orderBy(asc(practiceAreas.sortOrder), asc(practiceAreas.name))
+
+  const index = rows.findIndex((r) => r.id === id)
+  if (index === -1) {
+    return { ok: false, errors: {}, message: 'Çalışma alanı bulunamadı; sayfayı yenileyin.' }
+  }
+
+  const hedef = direction === 'up' ? index - 1 : index + 1
+  // Uçtaki kaydı dışarı taşımak sessizce hiçbir şey yapmasın: düğme zaten çizilmiyor,
+  // buraya ancak eşzamanlı bir değişiklikten sonra gelinir.
+  if (hedef < 0 || hedef >= rows.length) {
+    return { ok: true, errors: {}, message: 'Kayıt zaten listenin ucunda.' }
+  }
+
+  const sirali = [...rows]
+  const [tasinan] = sirali.splice(index, 1)
+  sirali.splice(hedef, 0, tasinan)
+
+  // Tek tek UPDATE: kayıt sayısı yedi-on bandında ve toplu bir CASE ifadesi bu ölçekte
+  // okunabilirlikten başka bir şey kazandırmıyor.
+  for (const [yeniSira, row] of sirali.entries()) {
+    await db.update(practiceAreas).set({ sortOrder: yeniSira }).where(eq(practiceAreas.id, row.id))
+  }
+
+  // updateTag, revalidateTag DEĞİL: gerekçesi ve ölçümü lib/cache-tags.ts başında.
+  updateTag(TAGS.practiceAreas)
+  revalidatePath('/panel/calisma-alanlari')
+  return { ok: true, errors: {}, message: 'Sıra güncellendi.' }
 }

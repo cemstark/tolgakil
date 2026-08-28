@@ -16,10 +16,13 @@
   padding: calc(var(--header-h) + 32px) var(--pad) 44px;
   display: flex;
   align-items: flex-end;
-  /* Mobilde 460px: 660px'lik masaüstü ölçüsü dar ekranda çalışma alanlarını yine ilk
-     ekranın dışına iterdi. Mobilin kendi ölçüsü (2a: 238px) duyarlı tur geldiğinde
-     ayarlanacak; buradaki değer masaüstü turunun geçici mobil karşılığı. */
-  min-height: 460px;
+  /* MOBİL ÖLÇÜ (devir tasarımı 2a). Mobil yönün çözdüğü sorun şuydu: çalışma alanlarına
+     ulaşmak için uzun hero boyunca kaydırmak gerekiyordu. Bant burada 340px — 2a'nın
+     verdiği 238px'e inilmedi, çünkü oradaki hero YALNIZ kaş + başlık taşıyor; bizimkinde
+     özet ve iki eylem düğmesi de bandın içinde ve 238px'te taşıyorlar.
+     Ölçüldü: 340px'te Pixel 7 ekranında (412×915) bölüm başlığı ve ilk iki alan kartı
+     ilk ekrana giriyor, yani 2a'nın amacı karşılanıyor. */
+  min-height: 340px;
 }
 
 /* Görsel katmanı. z-index negatif: metin ve gradyan onun üstünde. */
