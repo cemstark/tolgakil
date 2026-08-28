@@ -1,3 +1,13 @@
+/* Başlık ile kart ızgarası arasındaki giriş paragrafı. Ölçü ve punto, alan AYRINTI
+   sayfasının .lead sınıfıyla bilerek aynı: iki sayfa arasında gezinen okur için giriş
+   metni aynı ağırlıkta görünsün. */
+.lead {
+  max-width: 68ch;
+  margin-bottom: 40px;
+  font-size: 19px;
+  color: var(--text-muted);
+}
+
 .grid {
   list-style: none;
   display: grid;

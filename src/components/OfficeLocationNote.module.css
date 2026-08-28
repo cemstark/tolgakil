@@ -1,0 +1,15 @@
+/* Metnin sonundaki konum notu. Künyeden (ContentCredit) AYRI durmalı: o, metni kimin
+   onayladığını söyleyen ikincil bir ibare ve üstünde ayırıcı çizgi taşıyor. Bu ise
+   sayfanın kendi bilgisinin parçası, dolayısıyla gövde puntosunda ve çizgisiz kalıyor —
+   arka arkaya iki kısılmış küçük paragraf, ikisini de okunmayan bir dipnot yığınına
+   çevirirdi.
+
+   Renk `--text-muted` DEĞİL, gövde rengi: not gövdeden sonra gelse de bilgilendirici bir
+   cümle ve kısılmış renkte 16px, krem zeminde kontrast sınırına yaklaşıyor. Ölçü
+   sözleşmesi (68ch) diğer metin bloklarıyla aynı ki satır uzunluğu sayfa boyunca
+   değişmesin. */
+.note {
+  margin-top: 32px;
+  max-width: 68ch;
+  line-height: 1.7;
+}

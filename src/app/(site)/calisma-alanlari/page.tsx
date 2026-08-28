@@ -25,6 +25,17 @@ export default async function PracticeAreasPage() {
   return (
     <div className="pageShell">
       <PageHeading eyebrow="Hizmet Alanları" title="Çalışma Alanları" />
+      {/* Sayfanın giriş paragrafı. Daha önce başlıkla kart ızgarası arasında hiç metin
+          yoktu; sayfayı arama sonucundan açan biri büronun nerede olduğunu göremiyordu.
+
+          Cümle müşteri belgesinin (07.08.2026) anasayfa metninden alınmıştır, uydurulmuş
+          bir tanıtım değil. Konum bilgisi yönetmeliğin yayımlanmasını beklediği büro
+          adresidir; alan adlarıyla birleştirilmiş bir anahtar kelime kalıbı KURULMUYOR
+          (spec §2.1) — hangi alanlarda çalışıldığını zaten aşağıdaki kartlar söylüyor. */}
+      <p className={styles.lead}>
+        {SITE.name}, {SITE.city} ili {SITE.district} ilçesinde faaliyet gösteren ve farklı
+        hukuk alanlarında hukuki danışmanlık ve avukatlık hizmetleri sunan bir hukuk bürosudur.
+      </p>
       {areas.length === 0 ? (
         <p className={styles.empty}>Çalışma alanları yakında yayımlanacak.</p>
       ) : (

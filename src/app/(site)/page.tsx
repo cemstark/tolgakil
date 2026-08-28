@@ -10,14 +10,22 @@ import { listPublicLawyers } from '@/db/queries/public/lawyers'
 import { getPublicSiteIdentity } from '@/db/queries/public/site-identity'
 import { TAGS } from '@/lib/cache-tags'
 import { buroYapilandirilmisVerisi, jsonLdMetni } from '@/lib/structured-data'
-import { SITE } from '@/content/site'
+import { HOME_TITLE } from '@/app/layout'
 
 // Ana sayfanın kendi metadata'sı YOKTU; kök layout'un varsayılanına düşüyordu, yani
 // başlık yalnız büro adıydı. Arama sonucunda tıklanmayı belirleyen tek satır o başlık ve
 // konum bilgisi taşımıyordu. `absolute` şart: kök layout'un `%s | Akil Hukuk Bürosu`
 // şablonu buraya uygulansaydı büro adı iki kez yazılırdı.
+//
+// BAŞLIK DEĞİŞTİ (28.08.2026) — burada `${SITE.name} | ${SITE.city} Avukat` yazıyordu,
+// yani "Akil Hukuk Bürosu | Samsun Avukat". Spec §2.1 bu kalıbı ÖRNEK VEREREK yasaklıyor:
+// "Şehir + hukuk dalı kombinasyonlarının yoğun kullanımı (ör. 'Samsun Avukat' kalıbı) iş
+// sağlama sayılabileceği için kullanılmayacaktır." Konum başlıktan çıkarılmadı, yalnız
+// yasak kalıptan çıkarılıp yönetmeliğin açıkça yayımlanabilir saydığı ADRES biçimine
+// (ilçe / il) çevrildi. Sabit kök layout'tan geliyor ki sekme başlığı ile paylaşım
+// kartının og:title'ı ayrışmasın.
 export const metadata: Metadata = {
-  title: { absolute: `${SITE.name} | ${SITE.city} Avukat` },
+  title: { absolute: HOME_TITLE },
   alternates: { canonical: '/' },
 }
 

@@ -27,9 +27,22 @@ const body = Outfit({
 const DESCRIPTION =
   'Samsun İlkadım’da gayrimenkul, icra ve iflas, iş, tazminat, sigorta, kira ve miras hukuku alanlarında avukatlık ve hukuki danışmanlık hizmeti.'
 
+// Anasayfa sekmesinde ve arama sonucunda görünen başlık. Büro adının yanına İLÇE + İL
+// ekleniyor: konum, yönetmeliğin yayımlanmasını zaten beklediği büro adresi bilgisidir
+// (spec §2.1'in "izin verilen içerik" listesi) ve site sahibinin isteği büronun Samsun'da
+// çalıştığının görünür olmasıydı.
+//
+// `template` BİLEREK dokunulmadan bırakıldı — oraya şehir eklemek her alt sayfada
+// "Gayrimenkul Hukuku | Samsun ..." gibi ŞEHİR + HUKUK DALI kalıbı üretirdi; spec §2.1 bu
+// kombinasyonun yoğun kullanımını iş sağlama sayılabileceği için açıkça yasaklıyor.
+// Konum bu yüzden yalnız anasayfada, alan adından ayrı duruyor.
+// Anasayfa da bu sabiti IMPORT ediyor ((site)/page.tsx): başlık iki dosyada ayrı ayrı
+// yazıldığında sekmedeki başlık ile paylaşım kartının og:title'ı birbirinden ayrışmıştı.
+export const HOME_TITLE = `${SITE.name} | ${SITE.district} / ${SITE.city}`
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: SITE.name, template: `%s | ${SITE.name}` },
+  title: { default: HOME_TITLE, template: `%s | ${SITE.name}` },
   description: DESCRIPTION,
   // Paylaşım kartı meta'sı hiç yoktu: WhatsApp, LinkedIn ve X'te bağlantı çıplak adres
   // olarak, başlıksız ve görselsiz görünüyordu. Görsel opengraph-image.tsx'ten geliyor,
@@ -38,13 +51,13 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'tr_TR',
     siteName: SITE.name,
-    title: SITE.name,
+    title: HOME_TITLE,
     description: DESCRIPTION,
     url: SITE_URL,
   },
   twitter: {
     card: 'summary_large_image',
-    title: SITE.name,
+    title: HOME_TITLE,
     description: DESCRIPTION,
   },
   // Meslek etiği gereği reklam yasağı var ama site DİZİNE GİRMELİ: yasak tanıtımı

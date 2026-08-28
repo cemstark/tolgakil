@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { cacheLife, cacheTag } from 'next/cache'
 import { notFound } from 'next/navigation'
 import { ContentCredit } from '@/components/ContentCredit'
+import { OfficeLocationNote } from '@/components/OfficeLocationNote'
 import { PageHeading } from '@/components/PageHeading'
 import { practiceAreaImage } from '@/content/practice-area-images'
 import {
@@ -138,6 +139,11 @@ export default async function PracticeAreaPage({ params }: AreaPageProps) {
       {hasContent ? (
         <div className="prose" dangerouslySetInnerHTML={renderableHtml(area.content!)} />
       ) : null}
+      {/* Konum notu KOŞULSUZ: künyenin aksine bir onay beyanı değil, büronun nerede
+          faaliyet gösterdiğini söyleyen bir olgu — panelden sonradan eklenen bir alan için
+          de doğru. Alanın adını içermiyor; gerekçesi bileşenin kendi başında (spec §2.1,
+          şehir + hukuk dalı kalıbı yasak). */}
+      <OfficeLocationNote />
       {/* Künye YALNIZ belgeden gelen yedi alanda basılıyor. Koşulsuz basıldığında,
           panelden sonradan eklenen bir çalışma alanı da "Av. Tolga Akil tarafından
           hazırlanmış ve onaylanmıştır" diyordu — avukatın hiç görmediği bir metnin

@@ -15,6 +15,7 @@
     "db:seed": "node scripts/seed.mts",
     "db:backfill-search": "node scripts/backfill-search-text.mts",
     "db:backfill-legal": "node scripts/backfill-legal-pages.mts",
+    "db:unpublish-extra": "node scripts/unpublish-extra-practice-areas.mts",
     "db:deploy": "npm run db:migrate && npm run db:seed && npm run db:backfill-search && npm run db:backfill-legal",
     "prebuild": "node scripts/prebuild.mts",
     "db:studio": "drizzle-kit studio"
