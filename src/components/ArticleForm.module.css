@@ -1,11 +1,14 @@
 /* Hata rengi (--danger) ve form kenarlığı (--field-border) globals.css'te; ölçümleri de
    orada. Bileşen renk sabiti yazmaz, token okur (global kısıt). */
+/* max-width KALDIRILDI (devir tasarımı 5d): form artık kendi içinde iki bölmeli ve
+   760px'lik tavan sağ bölme eklendiğinde yazma alanını 304px'e düşürüyordu. Okuma
+   genişliği sınırı artık gerekmiyor — sol bölme zaten sağ bölmenin payını çıkardıktan
+   sonra kalan alanı alıyor. */
 .form {
   display: flex;
   flex-direction: column;
   gap: 24px;
   margin-top: 28px;
-  max-width: 760px;
 }
 
 .field {
@@ -116,4 +119,78 @@
   color: var(--ink);
   border-color: var(--text-muted);
   cursor: not-allowed;
+}
+
+/* ——— İKİ BÖLMELİ EDİTÖR (devir tasarımı 5d) ———
+   Solda yazının kendisi (başlık, özet, gövde), sağda yayın kararları (adres, kategori,
+   yazar, kapak, denetim, gönderme düğmeleri). Dar ekranda tek sütun; bölmeler DOM
+   sırasında zaten doğru sırada olduğu için orada hiçbir şey değişmiyor. */
+.split {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+.mainPane,
+.sidePane {
+  min-width: 0;
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+/* Sağ bölmedeki gruplar kart oluyor: adres/kategori/yazar bir arada "yayın bilgileri",
+   kapak ayrı. Kartsız hâlinde altı alan tek bir kolonda sıralanıyor ve hangisinin
+   hangi karara ait olduğu okunmuyordu. */
+.card {
+  display: grid;
+  gap: 16px;
+  padding: 18px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+}
+
+.cardTitle {
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0;
+}
+
+/* Başlık alanı yazının kendisi gibi görünüyor: kutu değil, altı çizili bir satır.
+   Cormorant 40px devir tasarımının ölçüsü; clamp'in alt ucu 24px, dar ekranda kutuyu
+   taşırmasın. */
+.titleInput {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(24px, 3vw, 40px);
+  font-weight: 300;
+  line-height: 1.15;
+  letter-spacing: -.02em;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid var(--field-border);
+  border-radius: 0;
+  background: transparent;
+}
+
+.titleInput:focus-visible {
+  border-bottom-color: var(--accent);
+}
+
+/* 1100px: panelin yan sütuna geçtiği eşik. Sağ bölme 380px — devir tasarımının ölçüsü. */
+@media (min-width: 1100px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 32px;
+    align-items: start;
+  }
+
+  /* Uzun bir gövde yazarken yayın kararları ve "Yayımla" ekrandan çıkmasın. */
+  .sidePane {
+    position: sticky;
+    top: 20px;
+  }
 }

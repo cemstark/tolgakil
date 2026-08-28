@@ -1,5 +1,7 @@
 'use client'
 
+import type { ReactNode } from 'react'
+
 import { useActionState, useState } from 'react'
 import { saveArticle } from '@/app/panel/makaleler/actions'
 import type { SelectOption } from '@/db/queries/articles'
@@ -39,6 +41,14 @@ type ArticleFormProps = {
   mediaOptions: MediaOption[]
   /** Yeni kayıttan sonraki yönlendirmeyle taşınan bildirim. */
   initialMessage?: string
+  /**
+   * Sağ bölmenin sonuna yerleştirilen sunucu tarafı blok — reklam yasağı hatırlatması
+   * (AdBanNotice) buradan geliyor. Slot olarak geçiriliyor çünkü bu bileşen 'use client':
+   * doğrudan import etmek sunucu bileşenini istemci paketine sürüklerdi. Devir tasarımı
+   * (5d) o bloğu formun SAĞ bölmesinde istiyor; daha önce sayfa düzeyinde ayrı bir üçüncü
+   * sütundu ve editör 1440px'te üç sütuna bölünüp yazma alanı 304px'e iniyordu.
+   */
+  aside?: ReactNode
 }
 
 export function ArticleForm({
@@ -46,8 +56,7 @@ export function ArticleForm({
   categories,
   authors,
   mediaOptions,
-  initialMessage,
-}: ArticleFormProps) {
+  initialMessage, aside }: ArticleFormProps) {
   const [state, formAction, isPending] = useActionState(saveArticle, INITIAL_STATE)
 
   // Alanlar denetimli tutuluyor: React 19 form action'dan sonra denetimsiz alanları
@@ -97,6 +106,13 @@ export function ArticleForm({
         </p>
       ) : null}
 
+      {/* İKİ BÖLMELİ EDİTÖR (devir tasarımı 5d): solda yazının kendisi, sağda yayın
+          kararları. DOM SIRASI DEĞİŞMEDİ — sağ bölme klavye sırasında hâlâ içerikten
+          SONRA geliyor ve gönderme düğmeleri en sonda. Görsel sıralama için DOM'u
+          bozmak, klavye kullanıcısını formu doldurmadan "Yayımla"ya düşürürdü. */}
+      <div className={styles.split}>
+        <div className={styles.mainPane}>
+
       <div className={styles.field}>
         <label htmlFor="article-title" className={styles.label}>
           Başlık
@@ -106,7 +122,7 @@ export function ArticleForm({
           name="title"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          className={styles.input}
+          className={`${styles.input} ${styles.titleInput}`}
           aria-invalid={titleError ? true : undefined}
           aria-describedby={titleError ? 'article-title-error' : undefined}
         />
@@ -115,29 +131,6 @@ export function ArticleForm({
         {titleError ? (
           <p id="article-title-error" role="alert" className={styles.fieldError}>
             {titleError}
-          </p>
-        ) : null}
-      </div>
-
-      <div className={styles.field}>
-        <label htmlFor="article-slug" className={styles.label}>
-          Adres (slug)
-        </label>
-        <input
-          id="article-slug"
-          name="slug"
-          value={slug}
-          onChange={(event) => setSlug(event.target.value)}
-          className={styles.input}
-          aria-invalid={slugError ? true : undefined}
-          aria-describedby={slugError ? 'article-slug-error' : 'article-slug-hint'}
-        />
-        <p id="article-slug-hint" className={styles.hint}>
-          Boş bırakılırsa başlıktan üretilir.
-        </p>
-        {slugError ? (
-          <p id="article-slug-error" role="alert" className={styles.fieldError}>
-            {slugError}
           </p>
         ) : null}
       </div>
@@ -175,6 +168,35 @@ export function ArticleForm({
         {contentError ? (
           <p id="article-content-error" role="alert" className={styles.fieldError}>
             {contentError}
+          </p>
+        ) : null}
+      </div>
+
+        </div>
+
+        <aside className={styles.sidePane}>
+        <div className={styles.card}>
+          <h2 className={styles.cardTitle}>Yayın bilgileri</h2>
+
+      <div className={styles.field}>
+        <label htmlFor="article-slug" className={styles.label}>
+          Adres (slug)
+        </label>
+        <input
+          id="article-slug"
+          name="slug"
+          value={slug}
+          onChange={(event) => setSlug(event.target.value)}
+          className={styles.input}
+          aria-invalid={slugError ? true : undefined}
+          aria-describedby={slugError ? 'article-slug-error' : 'article-slug-hint'}
+        />
+        <p id="article-slug-hint" className={styles.hint}>
+          Boş bırakılırsa başlıktan üretilir.
+        </p>
+        {slugError ? (
+          <p id="article-slug-error" role="alert" className={styles.fieldError}>
+            {slugError}
           </p>
         ) : null}
       </div>
@@ -246,6 +268,9 @@ export function ArticleForm({
         </div>
       </div>
 
+        </div>
+
+        <div className={styles.card}>
       <div className={styles.field}>
         {/* Seçici de sonuç sayacına ihtiyaç duyuyor (radyolar sıfırlanıyor); ArticleForm
             EntityForm kabuğunu kullanmadığı için sağlayıcı burada, tek alanın çevresinde. */}
@@ -265,6 +290,8 @@ export function ArticleForm({
         ) : null}
       </div>
 
+        </div>
+
       <PublishChecklist warnings={state.warnings} />
 
       {/* İki gönderme düğmesi: basılan düğmenin name/value çifti FormData'ya girer ve
@@ -276,6 +303,10 @@ export function ArticleForm({
         <button type="submit" name="status" value="published" className={styles.primary} disabled={isPending}>
           Yayımla
         </button>
+      </div>
+
+      {aside}
+        </aside>
       </div>
     </form>
   )

@@ -6,6 +6,7 @@ import { requireAccess } from '@/lib/auth-guards'
 import { formatDateTime } from '@/lib/date'
 import { isRouteId } from '@/lib/form-id'
 import { sanitizeArticleHtml } from '@/lib/sanitize'
+import { AdBanNotice } from '@/components/AdBanNotice'
 import { ArticleForm } from '@/components/ArticleForm'
 import { PanelHeading } from '@/components/PanelHeading'
 import { saveMessageFor } from '../save-messages'
@@ -56,6 +57,9 @@ export default async function EditArticlePage({ params, searchParams }: EditArti
         authors={authors}
         mediaOptions={mediaOptions}
         initialMessage={saveMessageFor(query.kaydedildi)}
+        // Hatırlatma düzenleme ekranında da duruyor: yasaklı ifade en çok metni SONRADAN
+        // genişletirken giriyor.
+        aside={<AdBanNotice />}
         values={{
           id: article.id,
           title: article.title,
