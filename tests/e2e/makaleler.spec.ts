@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { adimiAc } from './helpers/editor'
 import { girisYap, ADMIN } from './helpers/auth'
 import { testIcerigiHazirla, type TestIcerigi } from './helpers/test-content'
 
@@ -35,6 +36,7 @@ test('yayımlanan makale arşivde, aramada ve ayrıntı sayfasında görünür',
   await page.getByLabel('Başlık').fill(baslik)
   await page.getByLabel('Özet').fill(ozet)
   await page.locator('[contenteditable="true"]').fill('Kiracının hakları, süreler ve başvuru yolları.')
+  await adimiAc(page, 'Yayın')
   await page.getByLabel('Kategori').selectOption({ label: hazir().kategoriAdi })
   await page.getByRole('button', { name: 'Yayımla' }).click()
   await expect(page.getByRole('status')).toHaveText('Makale yayımlandı.')

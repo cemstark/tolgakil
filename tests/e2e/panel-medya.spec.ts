@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { adimiAc } from './helpers/editor'
 import { girisYap, EDITOR } from './helpers/auth'
 import { benzersizGorsel, medyaTemizle } from './helpers/test-media'
 import { testIcerigiHazirla, type TestIcerigi } from './helpers/test-content'
@@ -186,6 +187,7 @@ test('yüklenen görsel makaleye kapak olarak bağlanır ve seçim korunur', asy
     await page.getByLabel('Başlık').fill(baslik)
     await page.getByLabel('Özet').fill('Kapak görseli seçiminin kaydedildiğini ölçen taslak özeti.')
     await page.locator('[contenteditable="true"]').fill('Gövde metni.')
+    await adimiAc(page, 'Görsel')
     await page.getByRole('radio', { name: alt }).check()
     await page.getByRole('button', { name: 'Taslak olarak kaydet' }).click()
     await expect(page.getByRole('status')).toBeVisible()
@@ -199,15 +201,18 @@ test('yüklenen görsel makaleye kapak olarak bağlanır ve seçim korunur', asy
 
     // Seçim veritabanından geliyor; yalnız istemci durumu olsaydı kapak sessizce kaybolur
     // ve kimse fark etmezdi.
+    await adimiAc(page, 'Görsel')
     await expect(page.getByRole('radio', { name: alt })).toBeChecked()
 
     // GÜNCELLEME yolu ayrıca ölçülüyor: kapak alanı yalnız insert'e konsaydı buradaki
     // "Kapak yok" seçimi sessizce yok sayılır, alan yalnız update'e konsaydı yukarıdaki
     // ilk kayıt kapaksız kalırdı.
+    await adimiAc(page, 'Görsel')
     await page.getByRole('radio', { name: 'Kapak yok' }).check()
     await page.getByRole('button', { name: 'Taslak olarak kaydet' }).click()
     await expect(page.getByRole('status')).toHaveText('Makale taslak olarak kaydedildi.')
     await page.reload()
+    await adimiAc(page, 'Görsel')
     await expect(page.getByRole('radio', { name: 'Kapak yok' })).toBeChecked()
     await expect(page.getByRole('radio', { name: alt })).not.toBeChecked()
   } finally {
@@ -271,6 +276,7 @@ test('silinmiş kapak görseliyle kaydetme yazıyı kaybettirmez', async ({ page
     await page.getByLabel('Başlık').fill(baslik)
     await page.getByLabel('Özet').fill('Kapağı silinen makalenin kaydedilişini ölçen özet metni.')
     await page.locator('[contenteditable="true"]').fill(govde)
+    await adimiAc(page, 'Görsel')
     await page.getByRole('radio', { name: alt }).check()
 
     // Editör B aynı oturumda görseli siliyor.
@@ -289,6 +295,7 @@ test('silinmiş kapak görseliyle kaydetme yazıyı kaybettirmez', async ({ page
     await expect(page.locator('[contenteditable="true"]')).toContainText(govde)
 
     // Kapağı kaldırıp kaydetmek çalışmalı: kullanıcı çıkmaza sokulmuyor.
+    await adimiAc(page, 'Görsel')
     await page.getByRole('radio', { name: 'Kapak yok' }).check()
     await page.getByRole('button', { name: 'Taslak olarak kaydet' }).click()
     await expect(page.getByRole('status')).toBeVisible()
@@ -349,6 +356,9 @@ test('yüklenemeyen küçük resmin yerine anlamlı bir yedek çizilir', async (
     await route.continue()
   })
   await page.goto('/panel/makaleler/yeni')
+  // Kapak seçimi mobilde ikinci adımda (üç adımlı sihirbaz); masaüstünde bu çağrı
+  // sessizce hiçbir şey yapmıyor.
+  await adimiAc(page, 'Görsel')
 
   // Seçenek hâlâ seçilebilir olmalı: kullanıcı çıkmaza sokulmuyor, yalnız durumu görüyor.
   const secenek = page.getByRole('radio', { name: alt })

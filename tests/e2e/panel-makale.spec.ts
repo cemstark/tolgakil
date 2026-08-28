@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { adimiAc } from './helpers/editor'
 import { girisYap, EDITOR } from './helpers/auth'
 import { panelGezinmesiniAc } from './helpers/panel-nav'
 import { testIcerigiHazirla, type TestIcerigi } from './helpers/test-content'
@@ -20,16 +21,6 @@ test.afterEach(async () => {
   icerik = null
   await mevcut?.temizle()
 })
-
-// Editör ≤1100px'te üç adımlı bir sihirbaz (devir tasarımı 4a): kategori ve yazar
-// üçüncü adımda. Masaüstünde adım çubuğu hiç çizilmiyor, o yüzden yardımcı orada sessizce
-// hiçbir şey yapmıyor. Alanlar DOM'da kalıyor ama display:none ile gizlendiği için
-// Playwright onlara ancak adım açıkken erişebiliyor — gerçek kullanıcının yaşadığı akışın
-// aynısı.
-async function adimiAc(page: Page, ad: 'Metin' | 'Görsel' | 'Yayın'): Promise<void> {
-  const adim = page.getByRole('button', { name: ad })
-  if (await adim.isVisible()) await adim.click()
-}
 
 async function yayinAdiminiAc(page: Page): Promise<void> {
   await adimiAc(page, 'Yayın')

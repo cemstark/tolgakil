@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { adimiAc } from './helpers/editor'
 import { girisYap, ADMIN } from './helpers/auth'
 import { testIcerigiHazirla, type TestIcerigi } from './helpers/test-content'
 import { temizlikciAc, type Temizlikci } from './helpers/db-cleanup'
@@ -51,6 +52,7 @@ test('yayımlanan makale ve avukat ana sayfada görünür', async ({ page }) => 
   await page.getByLabel('Başlık').fill(makaleBasligi)
   await page.getByLabel('Özet').fill('Kira bedelinin belirlenmesinde uygulanan ölçütler üzerine kısa not.')
   await page.locator('[contenteditable="true"]').fill('Kiracının hakları ve süreler.')
+  await adimiAc(page, 'Yayın')
   await page.getByLabel('Kategori').selectOption({ label: hazir().kategoriAdi })
   await page.getByRole('button', { name: 'Yayımla' }).click()
   await expect(page.getByRole('status')).toHaveText('Makale yayımlandı.')
