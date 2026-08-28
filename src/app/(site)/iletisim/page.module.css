@@ -1,40 +1,73 @@
+/* Sayfa hero taşımıyor (devir tasarımı 6a): başlık sol sütunun içinde, künyenin üstünde
+   duruyor. Üst dolgu yine gezinme hapının yüksekliğinden türetiliyor. */
+.page {
+  padding: calc(var(--header-h) + 24px) var(--pad) var(--section);
+}
+
 /* Bilgi sütunu ile form yan yana; dar ekranda alt alta. Form daha geniş pay alıyor —
-   sayfanın asıl eylemi o. */
-.layout {
+   sayfanın asıl eylemi o ve alan genişliğini gerçekten kullanan taraf. */
+.split {
+  max-width: var(--max);
+  margin: 0 auto;
   display: grid;
-  gap: var(--section);
+  gap: 40px;
   align-items: start;
 }
 
-@media (min-width: 900px) {
-  .layout {
-    grid-template-columns: 1fr 1.2fr;
-    gap: 64px;
-  }
+.aside {
+  min-width: 0;
+}
+
+/* Künye kartı: başlıktan sonra ayrı bir yüzey. Önceki düzende bilgiler serbest akıyordu
+   ve formun yanında dağınık duruyordu. */
+.card {
+  margin-top: 32px;
+  padding: 22px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
 }
 
 .blockTitle {
-  font-size: 22px;
-  margin-bottom: 16px;
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 14px;
 }
 
 .address {
+  display: grid;
+  gap: 4px;
   font-style: normal;
-  line-height: 1.9;
 }
 
-/* Alt bilgideki adres bloğuyla aynı düzeltme ve aynı değer (SiteFooter.module.css):
+.addressLine {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+
+/* Alt bilgideki adres bloğuyla aynı düzeltme ve aynı gerekçe (SiteFooter.module.css):
    bağlantılar ölçüldüğünde 22px yükseklik veriyordu, WCAG 2.5.8'in 24px alt sınırının
-   altında. 32px eşiği geçerken satır ritmini de koruyor (44px, AAA rakamı, bloğu şişiriyordu).
-   Bu sayfada önemi daha da büyük — kullanıcı buraya zaten ARAMAK için geliyor. */
-.address a {
+   altında. Burada 44px'e çıkarıldı — bu sayfada önemi daha da büyük, kullanıcı buraya
+   zaten ARAMAK için geliyor. */
+.contactLink {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
+  min-height: 44px;
+  color: var(--accent);
+  font-size: 14.5px;
+  /* Numaralar alt alta; oransal rakamlarda sütun tırtıklı duruyordu. */
+  font-variant-numeric: tabular-nums;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .whatsapp {
-  margin-top: 24px;
+  margin-top: 20px;
+  margin-bottom: 0;
 }
 
 /* WhatsApp bağlantısı bir düğme gibi çiziliyor: telefon ve e-postadan farklı bir eylem
@@ -68,12 +101,38 @@
 }
 
 .hours {
-  margin-top: 40px;
+  margin-top: 28px;
+}
+
+.hours p {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* KREM FORM KARTI. Yüzey sözleşmesi data-surface="paper" ile geliyor; ContactForm zaten
+   o sözleşmeden okuyor (--surface/--text/--line/--field-border/--danger) ve krem
+   zemindeki kontrastları ölçülmüş, yani kartın rengini değiştirmek formun içinde hiçbir
+   şeyi bozmuyor. */
+.formCard {
+  padding: clamp(24px, 4vw, 36px);
+  border-radius: var(--radius-block);
+  box-shadow: var(--shadow-card);
+}
+
+.formTitle {
+  font-size: clamp(24px, 2.6vw, 34px);
+  line-height: 1.15;
+  letter-spacing: -.018em;
+  margin: 0 0 10px;
 }
 
 .formNote {
   color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.65;
   max-width: 60ch;
+  margin-bottom: 24px;
 }
 
 /* Ekran okuyucuya okunur, ekranda görünmez. `display: none` bunu yapmaz — o, içeriği
@@ -85,4 +144,19 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* 900px: 5fr/7fr — künye solda dar, form sağda geniş. Site boyunca tek "geniş ekran"
+   eşiği. */
+@media (min-width: 900px) {
+  .split {
+    grid-template-columns: 5fr 7fr;
+    gap: 56px;
+  }
+
+  /* Künye kaydırma boyunca yerinde kalıyor: uzun formda telefon ekrandan çıkmasın. */
+  .aside {
+    position: sticky;
+    top: calc(var(--header-h) + 20px);
+  }
 }

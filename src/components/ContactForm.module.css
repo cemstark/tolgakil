@@ -139,7 +139,9 @@
 
 @media (hover: hover) and (pointer: fine) {
   .submit:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--accent) 88%, white);
+    /* Yön yüzeye bağlı: koyu zeminde açılır, krem zeminde koyulaşır. Tek yönlü
+       karışım krem kartta kontrastı 3,9:1'e düşürüyordu (globals.css'te ölçüm). */
+    background: var(--accent-hover);
     box-shadow: var(--shadow-lift);
     transform: translateY(calc(-1 * var(--lift)));
   }

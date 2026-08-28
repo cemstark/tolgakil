@@ -103,6 +103,10 @@
   --text-muted: var(--text-ink-muted);
   --line: var(--line-ink);
   --accent: var(--gold);
+  /* Vurgu renginin HOVER karşılığı. Yön yüzeye bağlı: koyu zeminde altın AÇILARAK
+     parlıyor, üstündeki koyu metinle kontrastı artıyor. Krem yüzeyde aynı hareket ters
+     çalışıyor — gerekçesi ve ölçümü aşağıdaki [data-surface="paper"] bloğunda. */
+  --accent-hover: color-mix(in srgb, var(--gold) 88%, white);
 
   /* Site tek koyu temayla çalışır; tarayıcı kaydırma çubuğu ve form kontrolleri
      açık işletim sistemi temasında bile koyu çizilsin. */
@@ -118,6 +122,13 @@
   --text-muted: var(--text-paper-muted);
   --line: var(--line-paper);
   --accent: var(--gold-ink);
+  /* HOVER YÖNÜ TERS — ÖLÇÜLDÜ (29.08.2026, iletişim formu krem karta alınınca).
+     Kök blok altını beyazla açıyor; krem yüzeyde --accent zaten koyu altın (#7d5f26) ve
+     aynı karışım onu #8c713e'ye TAŞIYOR. Buton metni --surface, yani krem (#efece3):
+     kontrast 3,9:1'e düşüyordu ve axe bunu WCAG 1.4.3 ihlali olarak yakaladı.
+     Krem zeminde doğru hareket koyulaşmak; #6e5321 aynı metinle 4,5:1'in belirgin
+     üstünde kalıyor. */
+  --accent-hover: color-mix(in srgb, var(--gold-ink) 88%, black);
   --focus-ring: var(--gold-ink);
 
   /* Koyu yüzeyin --danger/--field-border değerleri krem zeminde çalışmıyor: #f0a6a0

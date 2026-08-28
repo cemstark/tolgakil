@@ -34,54 +34,65 @@ export default async function ContactPage() {
   const identity = await getPublicSiteIdentity()
 
   return (
-    <article className="pageShell">
-      <PageHeading eyebrow="Bize Ulaşın" title="İletişim" />
+    <article className={styles.page}>
+      <div className={styles.split}>
+        {/* SOL SÜTUN — başlık ve büro künyesi (devir tasarımı 6a: 5fr/7fr). Önceki düzende
+            künye ile form eşit iki sütundu ve form alanları dar kalıyordu; formun daha
+            geniş sütuna alınması alan genişliğini gerçekten kullanan tarafa veriyor. */}
+        <div className={styles.aside}>
+          <PageHeading eyebrow="Bize Ulaşın" title="İletişim" />
 
-      <div className={styles.layout}>
-        <div>
-          <h2 className={styles.blockTitle}>Büro bilgileri</h2>
-          <address className={styles.address}>
-            {identity.address}
-            <br />
-            <a href={identity.phoneHref} className="textLink">{identity.phone}</a>
-            {identity.phoneSecondary !== null && identity.phoneSecondaryHref !== null ? (
-              <>
-                <br />
-                <a href={identity.phoneSecondaryHref} className="textLink">{identity.phoneSecondary}</a>
-              </>
-            ) : null}
-            <br />
-            <a href={identity.emailHref} className="textLink">{identity.email}</a>
-          </address>
-
-          {identity.whatsappHref !== null ? (
-            <p className={styles.whatsapp}>
-              {/* rel="noopener": target="_blank" ile açılan sayfa window.opener üzerinden
-                  bu sekmeyi yönlendirebilir. noreferrer ayrıca gönderen adresi gizler. */}
-              <a
-                href={identity.whatsappHref}
-                className={styles.whatsappLink}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                WhatsApp ile yazın
-                {/* Yeni sekmede açıldığı ekran okuyucuya da söyleniyor; yalnız görsel bir
-                    simge, bağlantının davranışını duyurmaz. */}
-                <span className={styles.visuallyHidden}> (yeni sekmede açılır)</span>
+          <div className={styles.card}>
+            <h2 className={styles.blockTitle}>Büro bilgileri</h2>
+            {/* <address> tarayıcı varsayılanında italik; künye burada düz metin okunmalı. */}
+            <address className={styles.address}>
+              <span className={styles.addressLine}>{identity.address}</span>
+              <a href={identity.phoneHref} className={styles.contactLink}>
+                {identity.phone}
               </a>
-            </p>
-          ) : null}
+              {identity.phoneSecondary !== null && identity.phoneSecondaryHref !== null ? (
+                <a href={identity.phoneSecondaryHref} className={styles.contactLink}>
+                  {identity.phoneSecondary}
+                </a>
+              ) : null}
+              <a href={identity.emailHref} className={styles.contactLink}>
+                {identity.email}
+              </a>
+            </address>
 
-          {identity.workingHours !== null ? (
-            <div className={styles.hours}>
-              <h2 className={styles.blockTitle}>Çalışma saatleri</h2>
-              <p>{identity.workingHours}</p>
-            </div>
-          ) : null}
+            {identity.whatsappHref !== null ? (
+              <p className={styles.whatsapp}>
+                {/* rel="noopener": target="_blank" ile açılan sayfa window.opener üzerinden
+                    bu sekmeyi yönlendirebilir. noreferrer ayrıca gönderen adresi gizler. */}
+                <a
+                  href={identity.whatsappHref}
+                  className={styles.whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  WhatsApp ile yazın
+                  {/* Yeni sekmede açıldığı ekran okuyucuya da söyleniyor; yalnız görsel bir
+                      simge, bağlantının davranışını duyurmaz. */}
+                  <span className={styles.visuallyHidden}> (yeni sekmede açılır)</span>
+                </a>
+              </p>
+            ) : null}
+
+            {identity.workingHours !== null ? (
+              <div className={styles.hours}>
+                <h2 className={styles.blockTitle}>Çalışma saatleri</h2>
+                <p>{identity.workingHours}</p>
+              </div>
+            ) : null}
+          </div>
         </div>
 
-        <div>
-          <h2 className={styles.blockTitle}>Mesaj gönderin</h2>
+        {/* SAĞ SÜTUN — krem form kartı. data-surface="paper" yüzey sözleşmesini çeviriyor;
+            ContactForm zaten o sözleşmeden okuyor (--surface/--text/--line/--field-border/
+            --danger) ve krem zemindeki kontrastları ölçülmüş, yani kart rengini
+            değiştirmek formun içinde hiçbir şeyi bozmuyor. */}
+        <div data-surface="paper" className={styles.formCard}>
+          <h2 className={styles.formTitle}>Mesaj gönderin</h2>
           <p className={styles.formNote}>
             Aşağıdaki formu doldurarak büromuza ulaşabilirsiniz. Formla iletilen mesajlar
             değerlendirilerek en kısa sürede dönüş yapılır.
