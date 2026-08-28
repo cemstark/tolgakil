@@ -1,28 +1,173 @@
-/* Başlık ile özet arasındaki sinematik şerit. Sayfanın işi metin okutmak; görsel araya
-   nefes koyar ama içeriği ilk ekrandan kovmamalı. Kaynak dosya 16/10 üretiliyor, buradaki
-   oran farkını `object-fit: cover` kapatıyor (.mediaFrame img).
-
-   ORAN ÖLÇÜLEREK SEÇİLDİ: önce 16/7 denendi, ekran görüntüsünde 1200px genişlikte 525px
-   yükseklik verdi — 1000px'lik bir masaüstü penceresinde özet paragrafı katlamanın altına
-   düşüyor ve sayfa "başlık + dev fotoğraf" gibi okunuyordu. 3/1 aynı genişlikte 400px
-   veriyor; şerit hâlâ geniş ama altındaki ilk paragraf ekrana giriyor.
-
-   Mobilde 3/1 fazla ince kalıyor — 390px genişlikte yüksekliği 130px'e iniyor ve fotoğraf
-   "şerit" olmaktan çıkıp tanınmaz bir kesite dönüşüyor; dar ekranda 16/10 korunuyor. */
-.media {
-  aspect-ratio: 16 / 10;
-  margin-bottom: 32px;
+/* İKİ BÖLMELİ GÖVDE (devir tasarımı 6a): solda okuma sütunu, sağda görüşme ve ilgili
+   alanlar. Önceki düzen tek sütundu ve metin 1200px boyunca uzuyordu; 7fr/5fr bölünme
+   gövdeyi kendi okunur genişliğine oturtuyor, yan kolon da o sırada boşa giden sağ
+   kenarı değerlendiriyor. */
+.body {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: var(--section) var(--pad);
+  display: grid;
+  gap: 40px;
 }
 
-@media (min-width: 768px) {
-  .media {
-    aspect-ratio: 3 / 1;
-  }
+.main {
+  min-width: 0;
 }
 
+/* Görseli olmayan alanın (sinematik bant çizilmeyen dal) özeti. Bantlı dalda bu metin
+   PageHero'nun kendi lead'i olarak çiziliyor. */
 .lead {
   max-width: 68ch;
   margin-bottom: 40px;
   font-size: 19px;
   color: var(--text-muted);
+}
+
+.side {
+  min-width: 0;
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+/* Görüşme kartı. Kenarlık altın: sayfanın tek eylem çağrısı ve yan kolondaki diğer
+   bloktan ayrışması gerekiyor. Zemin --ink-2 değil --ink'ten türetiliyor — kart koyu
+   bölümün üstünde duruyor ve --ink-2 ile arasındaki fark yeterince okunmuyordu. */
+.cta {
+  padding: 22px 20px;
+  border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--gold) 7%, transparent);
+}
+
+.ctaTitle {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 23px;
+  font-weight: 300;
+  line-height: 1.2;
+  margin: 0 0 8px;
+}
+
+.ctaText {
+  color: var(--text-muted);
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin: 0 0 16px;
+}
+
+.ctaPhone,
+.ctaAlt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Birincil eylem; 44px dokunma hedefinin üstünde tutuluyor. */
+  min-height: 50px;
+  padding: 0 20px;
+  border-radius: var(--radius-pill);
+  font-size: 15px;
+  border: 1px solid transparent;
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out),
+    box-shadow var(--dur-hover) var(--ease-out),
+    transform var(--dur-hover) var(--ease-out);
+}
+
+.ctaPhone {
+  background: var(--gold);
+  color: var(--ink);
+  font-weight: 500;
+  /* Rakamlar tek satırda; oransal rakamlarda numara aralıkları tırtıklı duruyordu. */
+  font-variant-numeric: tabular-nums;
+}
+
+.ctaAlt {
+  margin-top: 10px;
+  border-color: var(--line);
+  color: inherit;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ctaPhone:hover {
+    background: color-mix(in srgb, var(--gold) 88%, white);
+    box-shadow: var(--shadow-lift);
+    transform: translateY(calc(-1 * var(--lift)));
+  }
+
+  .ctaAlt:hover {
+    border-color: var(--gold);
+    background: color-mix(in srgb, var(--text) 6%, transparent);
+  }
+}
+
+.ctaPhone:active,
+.ctaAlt:active {
+  transform: translateY(0) scale(.98);
+  transition-duration: var(--dur-press);
+}
+
+.related {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.relatedTitle {
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 14px;
+}
+
+.pills {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  /* Pil de bir bağlantı ve dar ekranda parmakla açılıyor: 44px alt sınır. */
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  font-size: 13.5px;
+  color: inherit;
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pill:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+  }
+}
+
+.pill:active {
+  transform: scale(.98);
+  transition-duration: var(--dur-press);
+}
+
+/* 900px: gövde iki sütuna ayrılıyor. Kırılma noktası ana sayfa ve hero ile AYNI — site
+   boyunca tek bir "geniş ekran" eşiği olsun, bölümler sırayla düzen değiştirmesin. */
+@media (min-width: 900px) {
+  .body {
+    grid-template-columns: 7fr 5fr;
+    gap: 56px;
+  }
+
+  /* Yan kolon kaydırma boyunca yerinde kalıyor: uzun bir alan metninde telefon ekrandan
+     çıkmasın. top değeri yapışkan gezinme hapının altında duracak şekilde --header-h'den
+     türetiliyor. */
+  .side {
+    position: sticky;
+    top: calc(var(--header-h) + 20px);
+  }
 }

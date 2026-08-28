@@ -70,3 +70,14 @@ test('olmayan çalışma alanı adresi 404 verir', async ({ page }) => {
   const yanit = await page.goto('/calisma-alanlari/hic-boyle-bir-alan-yok')
   expect(yanit?.status()).toBe(404)
 })
+
+// Alan ayrıntı sayfası Görev "masaüstü 6a"da iki bölmeli sinematik düzene geçti: başlık
+// artık fotoğrafın üstünde, yanında yapışkan bir görüşme kartı ve pil listesi var. Bu
+// testin ölçtüğü şey o düzenin kontrast ve ad/rol sözleşmesini bozmadığı: metin
+// fotoğrafın üstüne çıktığı için kontrast, pil ve düğmeler eklendiği için de dokunma
+// hedefi ve erişilebilir ad riski doğdu.
+test('çalışma alanı ayrıntı sayfasında erişilebilirlik ihlali yok', async ({ page }) => {
+  await page.goto('/calisma-alanlari/kira-hukuku')
+  const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
+  expect(result.violations).toEqual([])
+})

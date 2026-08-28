@@ -1,0 +1,96 @@
+/* İç sayfaların sinematik başlık bandı. Ana sayfa hero'suyla AYNI mekanik: gezinme hapı
+   kadar yukarı çekilip aynı kadar içeriden dolduruluyor, böylece hap bandın üstünde
+   yüzerken başlığı örtmüyor. Ölçü tek kaynaktan (--header-h). */
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin-top: calc(-1 * var(--header-h));
+  padding: calc(var(--header-h) + 32px) var(--pad) 40px;
+  display: flex;
+  align-items: flex-end;
+  /* Dar ekran ortak tabanı; masaüstü boyları aşağıdaki kırılma noktasında ayrışıyor. */
+  min-height: 360px;
+}
+
+.media {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.media img {
+  object-fit: cover;
+  object-position: 50% 42%;
+}
+
+/* Okunabilirlik perdesi — ana sayfadakiyle aynı gerekçe ve aynı türetme (color-mix ile
+   --ink'ten), ama alan görselleri hero-themis'ten AÇIK olduğu için üst durak daha koyu:
+   %78. Kaş ve başlık bandın altında duruyor, orada perde %92'ye çıkıp düz --ink'e
+   oturuyor; band bir sonraki bölümle dikişsiz birleşsin. */
+.media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ink) 78%, transparent) 0%,
+    color-mix(in srgb, var(--ink) 32%, transparent) 45%,
+    color-mix(in srgb, var(--ink) 92%, transparent) 86%,
+    var(--ink) 100%
+  );
+}
+
+.inner {
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  min-width: 0;
+}
+
+.eyebrow {
+  color: var(--gold);
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+/* 72px tavan devir tasarımından (alan detayı). Katsayı 1280px'te tam tavana oturuyor
+   (1280 × .0563 ≈ 72), ana sayfa h1'iyle aynı mantık. Alt uç 32px. */
+.title {
+  font-size: clamp(32px, 5.63vw, 72px);
+  line-height: 1.03;
+  letter-spacing: -.028em;
+  text-wrap: balance;
+  margin: 0;
+}
+
+.lead {
+  color: var(--text-ink-muted);
+  font-size: clamp(16px, 1.5vw, 19px);
+  line-height: 1.65;
+  max-width: 52ch;
+  margin: 18px 0 0;
+}
+
+@media (min-width: 900px) {
+  .hero {
+    padding-bottom: 52px;
+  }
+
+  /* Üç boy: makale detayı 440, alan detayı 520, hakkımızda 560. Değerler devir
+     tasarımının kendi ölçüleri; sayfa tipine göre bandın ağırlığı değişiyor. */
+  .kisa {
+    min-height: 440px;
+  }
+
+  .orta {
+    min-height: 520px;
+  }
+
+  .uzun {
+    min-height: 560px;
+  }
+}

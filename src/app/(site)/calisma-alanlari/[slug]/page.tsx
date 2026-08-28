@@ -1,15 +1,17 @@
 import type { Metadata } from 'next'
-import Image from 'next/image'
+import Link from 'next/link'
 import { cacheLife, cacheTag } from 'next/cache'
 import { notFound } from 'next/navigation'
 import { ContentCredit } from '@/components/ContentCredit'
 import { OfficeLocationNote } from '@/components/OfficeLocationNote'
 import { PageHeading } from '@/components/PageHeading'
+import { PageHero } from '@/components/PageHero'
 import { practiceAreaImage } from '@/content/practice-area-images'
 import {
   getPublicPracticeAreaBySlug,
   listPublicPracticeAreas,
 } from '@/db/queries/public/practice-areas'
+import { getPublicSiteIdentity } from '@/db/queries/public/site-identity'
 import { renderableHtml } from '@/lib/render-html'
 import { TAGS } from '@/lib/cache-tags'
 import { CONTENT_APPROVAL, SITE } from '@/content/site'
@@ -27,6 +29,11 @@ type AreaPageProps = { params: Promise<{ slug: string }> }
 // bilerek üretilemeyecek bir biçimde yazıldı); sayfa gövdesindeki
 // getPublicPracticeAreaBySlug onu bulamayınca zaten notFound()'a düşüyor.
 const YER_TUTUCU_SLUG = '__henuz-calisma-alani-yok__'
+
+// Sağ kolondaki "İlgili alanlar" listesinin uzunluğu. Yedi alanın altısını birden
+// listelemek yan kolonu sayfadan uzun yapıyordu; dördü, sticky kolonun ekrana sığdığı
+// en büyük sayı.
+const RELATED_COUNT = 4
 
 // Yalnız yayımlanmış alanlar ön üretilir; taslak adresleri derleme çıktısında görünmez.
 export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
@@ -98,57 +105,112 @@ export default async function PracticeAreaPage({ params }: AreaPageProps) {
   // derlemesinde 200 döndürüyordu (Görev 5'te ölçüldü). Varlık denetimi bu yüzden akan bir
   // çocuğa değil, doğrudan sayfa gövdesine yazılıyor.
   'use cache'
-  cacheTag(TAGS.practiceAreas)
+  // settings ETİKETİ EKLENDİ: sağ kolondaki görüşme kartı telefon ve WhatsApp bağlantısını
+  // ayarlardan okuyor. Etiket yazılmasaydı panelden numara değiştiğinde bu yedi sayfa eski
+  // numarayı göstermeye devam ederdi.
+  cacheTag(TAGS.practiceAreas, TAGS.settings)
   cacheLife('max')
 
   const { slug } = await params
   const area = await getPublicPracticeAreaBySlug(slug)
   if (area === null) notFound()
 
+  // İki sorgu paralel; sıralı await'te gecikme ikisinin toplamı olurdu.
+  const [areas, identity] = await Promise.all([
+    listPublicPracticeAreas(),
+    getPublicSiteIdentity(),
+  ])
+
   const hasContent = area.content !== null && area.content.trim() !== ''
   const gorsel = practiceAreaImage(slug)
 
+  // Kaştaki sıra numarası alanın YAYIMLANMIŞ liste içindeki yeri; liste sortOrder'a göre
+  // dizili, yani numara panelden yapılan sıralamayı yansıtıyor. Bulunamazsa kaş yalnız
+  // "Çalışma alanı" kalıyor — uydurma bir numara basmaktansa eksik bırakmak doğrusu.
+  const index = areas.findIndex((a) => a.slug === slug)
+  const eyebrow =
+    index === -1
+      ? 'Çalışma alanı'
+      : `Çalışma alanı · ${String(index + 1).padStart(2, '0')} / ${String(areas.length).padStart(2, '0')}`
+
+  const ilgili = areas.filter((a) => a.slug !== slug).slice(0, RELATED_COUNT)
+
   return (
-    <article className="pageShell">
-      <PageHeading eyebrow="Çalışma Alanı" title={area.name} />
-      {/* Geniş bant görsel. Kartla AYNI dosyayı kullanıyor (16/10 üretiliyor) ve burada
-          masaüstünde 3/1'e kırpılıyor; ikinci bir varyant üretmek indirilen baytı iki
-          katına çıkarır, kırpma farkı ise bu fotoğraflarda gözle ayırt edilmiyor.
-
-          Sayfanın LCP öğesi bu: başlığın hemen altında, ilk ekranda. `priority` Next
-          16'da bırakıldığı için `loading="eager"` + `fetchPriority="high"` kullanılıyor
-          (gerekçe Hero.tsx'te uzun uzun yazılı).
-
-          Görseli olmayan alanda blok hiç çizilmiyor — panelden eklenen yeni alan kırık
-          kutu göstermesin. */}
-      {gorsel && (
-        <div className={`${styles.media} mediaFrame`}>
-          <Image
-            src={gorsel.src}
-            alt=""
-            fill
-            /* İçerik genişliği --max ile 1200px'te sabitleniyor; altında tam genişlik. */
-            sizes="(min-width: 1200px) 1200px, 100vw"
-            loading="eager"
-            fetchPriority="high"
-          />
+    <article>
+      {/* Görseli olan alan sinematik bandı, olmayan sade başlığı alır. Panelden eklenen
+          yeni bir alanın eşlemede karşılığı olmaz (practice-area-images.ts); kırık bir
+          görsel kutusu göstermektense bandı hiç çizmemek doğrusu. Her iki dalda da
+          sayfanın tek <h1>'i çiziliyor. */}
+      {gorsel !== undefined ? (
+        <PageHero gorsel={gorsel} eyebrow={eyebrow} title={area.name} lead={area.summary} boy="orta" />
+      ) : (
+        <div className="pageShell">
+          <PageHeading eyebrow={eyebrow} title={area.name} />
+          <p className={styles.lead}>{area.summary}</p>
         </div>
       )}
-      <p className={styles.lead}>{area.summary}</p>
-      {/* Ayrıntı metni girilmemiş alanda yalnız özet kalır; boş bir .prose kabı çizilmez. */}
-      {hasContent ? (
-        <div className="prose" dangerouslySetInnerHTML={renderableHtml(area.content!)} />
-      ) : null}
-      {/* Konum notu KOŞULSUZ: künyenin aksine bir onay beyanı değil, büronun nerede
-          faaliyet gösterdiğini söyleyen bir olgu — panelden sonradan eklenen bir alan için
-          de doğru. Alanın adını içermiyor; gerekçesi bileşenin kendi başında (spec §2.1,
-          şehir + hukuk dalı kalıbı yasak). */}
-      <OfficeLocationNote />
-      {/* Künye YALNIZ belgeden gelen yedi alanda basılıyor. Koşulsuz basıldığında,
-          panelden sonradan eklenen bir çalışma alanı da "Av. Tolga Akil tarafından
-          hazırlanmış ve onaylanmıştır" diyordu — avukatın hiç görmediği bir metnin
-          altında yanlış bir onay beyanı. Kapsam listesi CONTENT_APPROVAL'da. */}
-      {CONTENT_APPROVAL.practiceAreaSlugs.includes(slug) && <ContentCredit />}
+      <div className={styles.body}>
+        <div className={styles.main}>
+          {/* Ayrıntı metni girilmemiş alanda yalnız özet (banttaki lead) kalır; boş bir
+              .prose kabı çizilmez. */}
+          {hasContent ? (
+            <div className="prose" dangerouslySetInnerHTML={renderableHtml(area.content!)} />
+          ) : null}
+          {/* Konum notu KOŞULSUZ: künyenin aksine bir onay beyanı değil, büronun nerede
+              faaliyet gösterdiğini söyleyen bir olgu — panelden sonradan eklenen bir alan
+              için de doğru. Alanın adını içermiyor; gerekçesi bileşenin kendi başında
+              (spec §2.1, şehir + hukuk dalı kalıbı yasak). */}
+          <OfficeLocationNote />
+          {/* Künye YALNIZ belgeden gelen yedi alanda basılıyor. Koşulsuz basıldığında,
+              panelden sonradan eklenen bir çalışma alanı da "Av. Tolga Akil tarafından
+              hazırlanmış ve onaylanmıştır" diyordu — avukatın hiç görmediği bir metnin
+              altında yanlış bir onay beyanı. Kapsam listesi CONTENT_APPROVAL'da. */}
+          {CONTENT_APPROVAL.practiceAreaSlugs.includes(slug) && <ContentCredit />}
+        </div>
+
+        <aside className={styles.side}>
+          {/* Görüşme kartı. Numara ayarlardan geliyor — elle yazılmış bir numara ikinci
+              bir gerçek kaynağı olurdu. Metin TBB reklam yasağına uygun: iddia, üstünlük,
+              başarı veya ücret ifadesi yok, yalnız iletişim daveti. */}
+          <div className={styles.cta}>
+            <h2 className={styles.ctaTitle}>Bu konuda görüşme</h2>
+            <p className={styles.ctaText}>
+              Konunuzu iletirseniz çalışma saatleri içinde dönüş yapılır.
+            </p>
+            <a href={identity.phoneHref} className={styles.ctaPhone}>
+              {identity.phone}
+            </a>
+            {identity.whatsappHref !== null ? (
+              <a
+                href={identity.whatsappHref}
+                className={styles.ctaAlt}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                WhatsApp
+              </a>
+            ) : null}
+          </div>
+
+          {/* <nav> + aria-label: ekran okuyucu bunu sayfa içeriğinin devamı değil ayrı bir
+              gezinme bölgesi olarak duyursun. Tek alan yayındaysa liste boş kalır ve blok
+              hiç çizilmez. */}
+          {ilgili.length > 0 ? (
+            <nav className={styles.related} aria-label="İlgili çalışma alanları">
+              <h2 className={styles.relatedTitle}>İlgili alanlar</h2>
+              <ul className={styles.pills}>
+                {ilgili.map((a) => (
+                  <li key={a.slug}>
+                    <Link href={`/calisma-alanlari/${a.slug}`} className={styles.pill}>
+                      {a.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ) : null}
+        </aside>
+      </div>
     </article>
   )
 }
