@@ -1,7 +1,7 @@
 import { cacheLife, cacheTag } from 'next/cache'
 import { getSettings } from '@/db/queries/settings'
 import { TAGS } from '@/lib/cache-tags'
-import { telHref, whatsappHref } from '@/lib/contact-links'
+import { directionsHref, telHref, whatsappHref } from '@/lib/contact-links'
 
 export type PublicSiteIdentity = {
   officeName: string
@@ -18,6 +18,13 @@ export type PublicSiteIdentity = {
   emailHref: string
   whatsappHref: string | null
   footerText: string | null
+  /**
+   * Yol tarifi bağlantısı. Koordinat ayarlarda girilmişse ona, girilmemişse ADRESE göre
+   * kuruluyor — yani her zaman bir değer var ve /iletisim'deki düğme hiçbir durumda
+   * kırık kalmıyor. Kurulumu lib/contact-links.ts'te; burada yalnız hazır dize taşınıyor
+   * ki çağıran sayfa koordinat biçimlendirmesiyle uğraşmasın.
+   */
+  directionsHref: string
 }
 
 // SQL YOK: sözleşme §3.5 gereği tek ayar sorgusu getSettings()'te kalıyor. Bu modül onun
@@ -57,5 +64,6 @@ export async function getPublicSiteIdentity(): Promise<PublicSiteIdentity> {
     emailHref: `mailto:${s.email}`,
     whatsappHref: whatsapp === null ? null : whatsappHref(whatsapp),
     footerText: s.footerText,
+    directionsHref: directionsHref(s.address, bosVeyaNull(s.mapLat), bosVeyaNull(s.mapLng)),
   }
 }

@@ -42,6 +42,28 @@ export default async function ContactPage() {
         <div className={styles.aside}>
           <PageHeading eyebrow="Bize Ulaşın" title="İletişim" />
 
+          {/* HARİTA BLOĞU (devir tasarımı 6a). Gömülü GERÇEK harita bilinçli olarak
+              kullanılmıyor: üçüncü taraf bir çerçeve, bu sitede hiç olmayan bir izleyici
+              yükler ve next.config.ts'teki Permissions-Policy zaten bütün yollara
+              geolocation=() indiriyor — çerçeve içindeki "konumumu göster" düğmesi
+              sessizce çalışmazdı. Prototipte de gerçek harita değil, dokulu bir yüzey ve
+              tek bir eylem var; buradaki karşılığı aynı: adres okunur, "Yol tarifi al"
+              kullanıcının KENDİ harita uygulamasını açar.
+
+              aria-hidden: doku bilgi taşımıyor, adres zaten altındaki künyede yazılı. */}
+          <div className={styles.map}>
+            <span className={styles.mapTexture} aria-hidden="true" />
+            <a
+              href={identity.directionsHref}
+              className={styles.mapLink}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Yol tarifi al
+              <span className={styles.visuallyHidden}> (yeni sekmede açılır)</span>
+            </a>
+          </div>
+
           <div className={styles.card}>
             <h2 className={styles.blockTitle}>Büro bilgileri</h2>
             {/* <address> tarayıcı varsayılanında italik; künye burada düz metin okunmalı. */}

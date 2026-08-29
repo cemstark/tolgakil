@@ -18,10 +18,70 @@
   min-width: 0;
 }
 
+/* Harita bloğu: gerçek harita değil, konumu temsil eden dokulu bir yüzey ve tek bir
+   eylem. Yükseklik 220px — devir tasarımının ölçüsü; daha kısası dokuyu desen değil
+   çizgi yığını gibi gösteriyordu. */
+.map {
+  position: relative;
+  height: 220px;
+  margin-top: 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 18px;
+}
+
+/* Çapraz tarama dokusu. Görsel dosyası DEĞİL: 2 KB'lık bir arka plan görüntüsü yerine
+   tek bir gradyan, hem istek hem bakım maliyeti sıfır. Renk --line'dan türetiliyor, yani
+   yüzey sözleşmesiyle birlikte değişiyor. */
+.mapTexture {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent 0 10px,
+      color-mix(in srgb, var(--text) 5%, transparent) 10px 11px
+    );
+}
+
+.mapLink {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  /* 44px dokunma hedefi (WCAG 2.5.8). */
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 500;
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    transform var(--dur-hover) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mapLink:hover {
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    transform: translateY(calc(-1 * var(--lift)));
+  }
+}
+
+.mapLink:active {
+  transform: translateY(0) scale(.98);
+  transition-duration: var(--dur-press);
+}
+
 /* Künye kartı: başlıktan sonra ayrı bir yüzey. Önceki düzende bilgiler serbest akıyordu
    ve formun yanında dağınık duruyordu. */
 .card {
-  margin-top: 32px;
+  margin-top: 20px;
   padding: 22px 20px;
   border: 1px solid var(--line);
   border-radius: var(--radius-card);

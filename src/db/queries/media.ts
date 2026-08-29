@@ -79,3 +79,11 @@ export async function getMediaByPath(path: string): Promise<Media | null> {
 export async function deleteMediaRow(id: number): Promise<void> {
   await db.delete(media).where(eq(media.id, id))
 }
+
+/**
+ * Yalnız alt metni günceller. Dosya, boyut ve yükleyen alanlarına dokunulmuyor: bu
+ * kayıtlar yükleme anında oluşuyor ve sonradan değişmeleri için bir sebep yok.
+ */
+export async function updateMediaAltRow(id: number, altText: string): Promise<void> {
+  await db.update(media).set({ altText }).where(eq(media.id, id))
+}

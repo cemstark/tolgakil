@@ -6,7 +6,7 @@ import { revalidatePath, updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { db } from '@/db/client'
 import { media } from '@/db/schema'
-import { deleteMediaRow, getMediaById, getMediaByPath } from '@/db/queries/media'
+import { deleteMediaRow, getMediaById, getMediaByPath, updateMediaAltRow } from '@/db/queries/media'
 import { requireAccess } from '@/lib/auth-guards'
 import { TAGS } from '@/lib/cache-tags'
 import { parseFormId } from '@/lib/form-id'
@@ -130,4 +130,43 @@ export async function deleteMedia(_prev: FormState, formData: FormData): Promise
   // Silinen kaydın kimliği: ardışık silmelerde adres her seferinde değişsin ki bildirim
   // yeniden kurulup odaklansın ve duyurulsun (bkz. notices.ts).
   redirect(`/panel/medya?silindi=${id}${dosyaBulunamadi ? '&dosya=yok' : ''}`)
+}
+
+/**
+ * Kitaplıktaki bir görselin alt metnini günceller.
+ *
+ * **Neden gerekti:** alt metin yalnız YÜKLEME anında giriliyordu; yanlış ya da eksik
+ * yazılmış bir metni düzeltmenin tek yolu görseli silip yeniden yüklemekti — kapak
+ * olarak bağlı olduğu makaleler de o sırada bağlantısını kaybediyordu (FK SET NULL).
+ * Devir tasarımı (5d medya detay paneli) düzeltmeyi doğrudan kitaplıkta istiyor.
+ *
+ * Doğrulama YÜKLEME İLE AYNI şemadan (mediaSchema): alt metin panelde zorunlu ve en az
+ * üç karakter (spec §8). İki ayrı kural yazılsaydı biri gevşetildiğinde diğeri sessizce
+ * ayrışırdı.
+ */
+export async function updateMediaAlt(_prev: FormState, formData: FormData): Promise<FormState> {
+  await requireAccess('media')
+
+  const id = parseFormId(formData.get('id'))
+  if (id === 'invalid' || id === null) return INVALID_ID
+
+  const parsed = mediaSchema.safeParse({ altText: formData.get('altText') })
+  if (!parsed.success) return toFormState(parsed.error)
+
+  const existing = await getMediaById(id)
+  if (existing === null) {
+    return { ok: false, errors: {}, message: 'Görsel bulunamadı; başka bir oturumda silinmiş olabilir.' }
+  }
+
+  await updateMediaAltRow(id, parsed.data.altText)
+
+  // Alt metin makale kapaklarında ve kadro fotoğraflarında da okunuyor; o sayfalar bayat
+  // kalmasın. updateTag, revalidateTag DEĞİL: gerekçesi lib/cache-tags.ts başında.
+  updateTag(TAGS.articles)
+  updateTag(TAGS.lawyers)
+  revalidatePath('/panel/medya')
+
+  // Bildirim adres üzerinden taşınıyor; seçim de korunuyor ki kullanıcı kaydettiği kaydın
+  // detayında kalsın.
+  redirect(`/panel/medya?guncellendi=${id}&sec=${id}`)
 }

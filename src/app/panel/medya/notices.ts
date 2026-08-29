@@ -9,7 +9,12 @@
 
 export type MediaNotice = { message: string; warning: boolean }
 
-export type MediaNoticeQuery = { yuklendi?: string; silindi?: string; dosya?: string }
+export type MediaNoticeQuery = {
+  yuklendi?: string
+  silindi?: string
+  dosya?: string
+  guncellendi?: string
+}
 
 export type MediaNoticeState = {
   /**
@@ -23,6 +28,14 @@ export type MediaNoticeState = {
 // Adres çubuğundan gelen değer kullanıcı tarafından yazılabilir; tanınmayan değer sessizce
 // yok sayılır ve gelen metin ekrana HİÇ basılmaz, uydurma bir mesaj üretilmez.
 export function mediaNoticeState(query: MediaNoticeQuery): MediaNoticeState {
+  // Alt metin güncellemesi: kimlik adreste taşınıyor ki ARDIŞIK iki güncellemede de
+  // canlı bölge yeniden duyursun (yükleme/silme ile aynı gerekçe).
+  if (query.guncellendi !== undefined && /^[1-9]\d*$/.test(query.guncellendi)) {
+    return {
+      formKey: `guncellendi-${query.guncellendi}`,
+      notice: { message: 'Alt metin kaydedildi.', warning: false },
+    }
+  }
   if (query.yuklendi !== undefined && /^[1-9]\d*$/.test(query.yuklendi)) {
     return { formKey: `yuklendi-${query.yuklendi}`, notice: { message: 'Görsel yüklendi.', warning: false } }
   }

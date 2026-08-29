@@ -33,3 +33,29 @@ export function whatsappHref(number: string): string {
   const uluslararasi = rakamlar.startsWith('0') ? `${TR_ULKE_KODU}${rakamlar.slice(1)}` : rakamlar
   return `https://wa.me/${uluslararasi}`
 }
+
+/**
+ * Harita uygulamasında yol tarifi açan adres.
+ *
+ * Koordinat VARSA ona göre kuruluyor: adres dizesi arama motoruna bırakıldığında
+ * "İstiklal Cad." gibi birden çok şehirde bulunan bir sokak yanlış ile eşleşebiliyor,
+ * koordinat ise tek bir noktayı gösteriyor. Koordinat yoksa adres metnine düşülüyor —
+ * ayarlarda enlem/boylam boş bırakılabilir (isteğe bağlı alanlar) ve o durumda düğmenin
+ * hiç çizilmemesi yerine yaklaşık da olsa çalışması yeğleniyor.
+ *
+ * `google.com/maps` uçları resmî ve parametreleri belgeli (`api=1`); uygulama yüklüyse
+ * mobil işletim sistemi bağlantıyı ona devrediyor, değilse tarayıcıda açılıyor. Her iki
+ * dalda da değer encodeURIComponent'ten geçiyor: adres panelden geliyor, yani serbest
+ * metin.
+ */
+export function directionsHref(
+  address: string,
+  mapLat: string | null,
+  mapLng: string | null,
+): string {
+  if (mapLat !== null && mapLng !== null) {
+    const hedef = encodeURIComponent(`${mapLat},${mapLng}`)
+    return `https://www.google.com/maps/dir/?api=1&destination=${hedef}`
+  }
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+}

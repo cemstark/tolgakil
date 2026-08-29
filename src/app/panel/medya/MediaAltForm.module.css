@@ -1,0 +1,78 @@
+.form {
+  display: grid;
+  gap: 8px;
+}
+
+.label {
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.textarea {
+  font: inherit;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-inner);
+  padding: 10px 12px;
+  resize: vertical;
+  /* Devir tasarımının alan ölçüsü; üç satır alt metin için yeterli. */
+  min-height: 76px;
+}
+
+.textarea:focus-visible {
+  border-color: var(--accent);
+}
+
+.textarea[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.error {
+  color: var(--danger);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.submit {
+  justify-self: start;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--accent);
+  /* Altın zemin üzerinde koyu metin; yüzey sözleşmesinden geldiği için krem yüzeyde de
+     doğru karşılığa dönüyor. */
+  color: var(--surface);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  /* 44px dokunma hedefi (WCAG 2.5.8). */
+  min-height: 44px;
+  padding: 0 20px;
+  margin-top: 4px;
+  transition:
+    background-color var(--dur-hover) var(--ease-out),
+    transform var(--dur-hover) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .submit:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+}
+
+.submit:disabled {
+  opacity: .6;
+  cursor: default;
+}

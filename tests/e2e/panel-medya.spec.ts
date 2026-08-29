@@ -365,3 +365,42 @@ test('yüklenemeyen küçük resmin yerine anlamlı bir yedek çizilir', async (
   await expect(secenek).toBeVisible()
   await expect(page.locator('label').filter({ has: secenek })).toContainText('Görsel yok')
 })
+
+// Alt metin düzeltme "tüm planlar" turunda eklendi ve YENİ BİR SUNUCU EYLEMİ gerektirdi
+// (updateMediaAlt). Daha önce metin yalnız YÜKLEME anında giriliyordu; yanlış yazılmış
+// bir metni düzeltmenin tek yolu görseli silip yeniden yüklemekti — kapak olarak bağlı
+// olduğu makaleler de o sırada bağlantısını kaybediyordu (FK SET NULL).
+test('kitaplıktaki görselin alt metni detay panelinden düzeltilir', async ({ page }) => {
+  test.slow()
+  const alt = `Ilk metin ${damga}`
+  const yeni = `Duzeltilmis metin ${damga}`
+
+  await girisYap(page, EDITOR)
+  await page.goto('/panel/medya')
+  await page
+    .getByLabel('Görsel dosyası')
+    .setInputFiles({ name: 'nokta.png', mimeType: 'image/png', buffer: await benzersizGorsel() })
+  await page.getByLabel('Alt metin').fill(alt)
+  await page.getByRole('button', { name: 'Yükle' }).click()
+  await expect(page.getByRole('status')).toHaveText('Görsel yüklendi.')
+
+  // Yüklenen kayıt seçili gelmiyorsa kartından seçiliyor.
+  const detay = page.getByRole('complementary', { name: 'Seçili görselin ayrıntısı' })
+  await expect(detay).toBeVisible()
+  const secim = page.getByRole('link', { name: `Seç: ${alt}` })
+  if (await secim.isVisible()) await secim.click()
+
+  // Boş metin SUNUCUDA reddediliyor; alan zorunlu (mediaSchema, yükleme ile aynı şema).
+  await detay.getByLabel('Alt metni düzenle').fill('')
+  await detay.getByRole('button', { name: 'Alt metni kaydet' }).click()
+  await expect(page.getByText('Alt metin zorunlu — görselin ne gösterdiğini yazın.')).toBeVisible()
+
+  await detay.getByLabel('Alt metni düzenle').fill(yeni)
+  await detay.getByRole('button', { name: 'Alt metni kaydet' }).click()
+  await expect(page.getByRole('status')).toHaveText('Alt metin kaydedildi.')
+
+  // Kitaplıktaki görselin erişilebilir adı gerçekten değişti — alt metin veritabanına
+  // yazıldı, yalnız ekranda değil.
+  await expect(page.getByRole('img', { name: yeni })).toBeVisible()
+  await expect(page.getByRole('img', { name: alt })).toHaveCount(0)
+})
