@@ -1,0 +1,16 @@
+/* Kaydırma sırasında satır parmağı takip ediyor; bırakıldığında yerine dönüyor.
+   `transform` satır içi stille veriliyor (parmağın anlık konumu), buradaki geçiş yalnız
+   BIRAKTIKTAN sonraki dönüşü yumuşatıyor.
+
+   prefers-reduced-motion: konum değişimi kullanıcının parmağına bağlı olduğu için
+   kaldırılamaz — kaldırılsaydı jest hiç çalışmazdı. Kaldırılan şey GERİ DÖNÜŞ
+   animasyonu: azaltılmış harekette satır anında yerine oturuyor. */
+.row {
+  transition: transform var(--dur-panel) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row {
+    transition: none;
+  }
+}

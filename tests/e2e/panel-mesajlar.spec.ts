@@ -111,3 +111,50 @@ test('mesajlar listesinde erişilebilirlik ihlali yok', async ({ page }) => {
   const acikSonuc = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
   expect(acikSonuc.violations).toEqual([])
 })
+
+// Sola kaydırma "tüm planlar" turunda eklendi (devir tasarımı 4a). Düğmeler GİZLENMİYOR:
+// kaydırma yalnızca aynı sunucu eyleminin kısayolu, çünkü kaydırmayla açılan bir eylem
+// klavyeyle ve ekran okuyucuyla kullanılamaz (WCAG 2.5.7 tek işaretçili alternatif
+// istiyor). Bu test kısayolun gerçekten aynı eylemi tetiklediğini ölçüyor.
+test('mesaj satırı sola kaydırılınca okundu işaretlenir', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobil', 'jest yalnız dokunmatik projede anlamlı')
+  const konu = `Kaydırma ${damga}`
+  await mesajEkle(konu, false)
+
+  await girisYap(page, ADMIN)
+  await page.goto('/panel/mesajlar')
+
+  const satir = page.getByRole('row', { name: new RegExp(damga) })
+  await expect(satir.getByText('Okunmadı')).toBeVisible()
+
+  // Gerçek TouchEvent'ler tarayıcı içinde kuruluyor: Playwright'ın dispatchEvent'i
+  // `touches` dizisine düz nesne koyuyor ve React'in sentetik olayı clientX okuyamıyor.
+  // Eşik 64px; 90px'lik hareket onu güvenle aşıyor.
+  await page.evaluate(() => {
+    const satir = document.querySelector('tbody tr')
+    if (satir === null) throw new Error('Satır bulunamadı.')
+    const kutu = satir.getBoundingClientRect()
+    const y = kutu.top + kutu.height / 2
+    const nokta = (x: number): Touch =>
+      new Touch({ identifier: 1, target: satir, clientX: x, clientY: y })
+    const gonder = (tur: string, x: number | null): void => {
+      satir.dispatchEvent(
+        new TouchEvent(tur, {
+          bubbles: true,
+          cancelable: true,
+          touches: x === null ? [] : [nokta(x)],
+          changedTouches: x === null ? [] : [nokta(x)],
+        }),
+      )
+    }
+    const basla = kutu.right - 40
+    gonder('touchstart', basla)
+    gonder('touchmove', basla - 90)
+    gonder('touchend', null)
+  })
+
+  await expect(page.getByRole('status')).toHaveText('Mesaj okundu olarak işaretlendi.')
+  await expect(
+    page.getByRole('row', { name: new RegExp(damga) }).getByText('Okundu'),
+  ).toBeVisible()
+})

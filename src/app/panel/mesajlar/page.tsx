@@ -11,6 +11,7 @@ import { PanelNotice } from '@/components/PanelNotice'
 import { PanelTable, panelTableStyles as table } from '@/components/PanelTable'
 import { deleteMessage } from './actions'
 import { MarkReadButton } from './MarkReadButton'
+import { SwipeableRow } from './SwipeableRow'
 import styles from './page.module.css'
 
 export const metadata: Metadata = {
@@ -66,8 +67,14 @@ export default async function MessagePage({ searchParams }: MessagePageProps) {
           columns={['Tarih', 'Gönderen', 'Konu', 'Durum', 'İşlem']}
         >
           {messages.map((message) => (
-            // aria-current="true": seçili satır ekran okuyucuya da bildiriliyor.
-            <tr key={message.id} aria-current={secili?.id === message.id ? 'true' : undefined}>
+            // Satır bir istemci bileşeni: mobilde sola kaydırma "Okundu işaretle"yi
+            // tetikliyor (devir tasarımı 4a). Düğmeler GİZLENMİYOR — kaydırma yalnızca
+            // kısayol; gerekçesi SwipeableRow'un başında (WCAG 2.5.7).
+            <SwipeableRow
+              key={message.id}
+              isCurrent={secili?.id === message.id}
+              canMarkRead={!message.isRead}
+            >
               {/* Veritabanı oturumu UTC; @/lib/date biçimlendiricileri timeZone'u açıkça
                   veriyor, ham toLocaleString sunucunun dilimine bağlı çıkardı. */}
               <td className={styles.dateCell}>{formatDateTime(message.createdAt)}</td>
@@ -114,7 +121,7 @@ export default async function MessagePage({ searchParams }: MessagePageProps) {
                   />
                 </div>
               </td>
-            </tr>
+            </SwipeableRow>
           ))}
         </PanelTable>
 
