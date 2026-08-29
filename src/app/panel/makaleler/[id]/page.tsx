@@ -1,6 +1,11 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getArticleById, listAuthorOptions, listCategoryOptions } from '@/db/queries/articles'
+import {
+  getArticleById,
+  listAuthorOptions,
+  listCategoryOptions,
+  listPracticeAreaOptions,
+} from '@/db/queries/articles'
 import { listMediaOptions } from '@/db/queries/media'
 import { requireAccess } from '@/lib/auth-guards'
 import { formatDateTime } from '@/lib/date'
@@ -34,10 +39,11 @@ export default async function EditArticlePage({ params, searchParams }: EditArti
   const article = await getArticleById(Number(id))
   if (article === null) notFound()
 
-  const [categories, authors, mediaOptions, query] = await Promise.all([
+  const [categories, authors, mediaOptions, practiceAreaOptions, query] = await Promise.all([
     listCategoryOptions(),
     listAuthorOptions(),
     listMediaOptions(),
+    listPracticeAreaOptions(),
     searchParams,
   ])
 
@@ -56,6 +62,7 @@ export default async function EditArticlePage({ params, searchParams }: EditArti
         categories={categories}
         authors={authors}
         mediaOptions={mediaOptions}
+        practiceAreaOptions={practiceAreaOptions}
         initialMessage={saveMessageFor(query.kaydedildi)}
         // Hatırlatma düzenleme ekranında da duruyor: yasaklı ifade en çok metni SONRADAN
         // genişletirken giriyor.
@@ -68,6 +75,8 @@ export default async function EditArticlePage({ params, searchParams }: EditArti
           content: article.content,
           categoryId: article.categoryId === null ? '' : String(article.categoryId),
           authorId: article.authorId === null ? '' : String(article.authorId),
+          practiceAreaId:
+            article.practiceAreaId === null ? '' : String(article.practiceAreaId),
           coverMediaId: article.coverMediaId === null ? '' : String(article.coverMediaId),
         }}
       />

@@ -96,6 +96,18 @@ export const articles = mysqlTable(
     // Yazarı veya kategorisi olan makale sessizce sahipsiz kalmasın: silme reddedilir.
     authorId: int('author_id').references(() => lawyers.id, { onDelete: 'restrict' }),
     categoryId: int('category_id').references(() => categories.id, { onDelete: 'restrict' }),
+    // Yazının konu aldığı çalışma alanı. KATEGORİDEN AYRI bir eksen: kategori yazının
+    // yayın rafı (arşiv filtresi), bu ise hangi hukuk alanına ait olduğu — alan detay
+    // sayfası "bu alandaki yazılar"ı buradan topluyor.
+    //
+    // Nullable ve SET NULL: alan bağlamak ZORUNLU değil (mevcut yazılar ve genel
+    // bilgilendirme metinleri alansız kalabilmeli) ve bir çalışma alanı silindiğinde yazı
+    // silinmemeli, yalnız bağlantısını kaybetmeli. `restrict` seçilseydi panelden alan
+    // silmek, ona bağlı tek bir yazı yüzünden reddedilirdi — oysa alan listesi büronun
+    // kararı, yazı arşivi ayrı bir şey.
+    practiceAreaId: int('practice_area_id').references(() => practiceAreas.id, {
+      onDelete: 'set null',
+    }),
     status: mysqlEnum('status', ['draft', 'published']).notNull().default('draft'),
     publishedAt: timestamp('published_at'),
     updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
@@ -105,6 +117,9 @@ export const articles = mysqlTable(
   (table) => [
     index('articles_status_published_at_idx').on(table.status, table.publishedAt),
     index('articles_category_id_idx').on(table.categoryId),
+    // Alan detay sayfası her açılışta bu sütundan süzüyor; indekssiz tam tablo taraması
+    // olurdu.
+    index('articles_practice_area_id_idx').on(table.practiceAreaId),
   ],
 )
 

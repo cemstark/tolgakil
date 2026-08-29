@@ -79,3 +79,41 @@ test('makale arşivinde erişilebilirlik ihlali yok', async ({ page }) => {
   const sonuc = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
   expect(sonuc.violations).toEqual([])
 })
+
+// Makale ↔ çalışma alanı bağı "tüm planlar" turunda kuruldu: articles tablosuna
+// practice_area_id sütunu (nullable, ON DELETE SET NULL) eklendi. Devir tasarımının
+// "Bu alandaki yazılar" ve "İlgili çalışma alanı" blokları bu bağa dayanıyor; daha önce
+// veride karşılığı olmadığı için ikisi de uygulanamamıştı.
+test('makale bir çalışma alanına bağlanınca iki sayfada da görünür', async ({ page }) => {
+  const damga = hazir().damga
+  const baslik = `Kira alanı yazısı ${damga}`
+
+  await girisYap(page, ADMIN)
+  await page.goto('/panel/makaleler/yeni')
+  await page.getByLabel('Başlık').fill(baslik)
+  await page.getByLabel('Özet').fill('Çalışma alanına bağlanan yazının özeti.')
+  await page.locator('[contenteditable="true"]').fill('Gövde metni.')
+  await adimiAc(page, 'Yayın')
+  await page.getByLabel('Kategori').selectOption({ label: hazir().kategoriAdi })
+  // Bağ İSTEĞE BAĞLI; burada bilerek seçiliyor.
+  await page.getByLabel('Çalışma alanı').selectOption({ label: 'Kira Hukuku' })
+  await page.getByRole('button', { name: 'Yayımla' }).click()
+  await expect(page.getByRole('status')).toHaveText('Makale yayımlandı.')
+
+  // 1) Alan ayrıntı sayfasının yan kolonunda listeleniyor.
+  await page.goto('/calisma-alanlari/kira-hukuku')
+  const alanYazilari = page.getByRole('navigation', { name: 'Bu alandaki yazılar' })
+  await expect(alanYazilari).toBeVisible()
+  await expect(alanYazilari.getByRole('link', { name: new RegExp(damga) })).toBeVisible()
+
+  // 2) Makale ayrıntısında alana geri bağlantı var.
+  await page.goto('/makaleler')
+  await page.getByRole('link', { name: baslik }).click()
+  await page.waitForURL(/\/makaleler\/.+/)
+  const ilgiliAlan = page.getByRole('navigation', { name: 'İlgili çalışma alanı' })
+  await expect(ilgiliAlan.getByRole('link', { name: 'Kira Hukuku' })).toBeVisible()
+
+  // 3) Bağlantı gerçekten o alana götürüyor.
+  await ilgiliAlan.getByRole('link', { name: 'Kira Hukuku' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Kira Hukuku' })).toBeVisible()
+})

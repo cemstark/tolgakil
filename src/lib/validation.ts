@@ -226,6 +226,10 @@ export const articleSchema = z
     content: z.string().trim().min(1, 'İçerik boş olamaz.'),
     status: z.enum(['draft', 'published']),
     categoryId: optionalId,
+    // Çalışma alanı bağı İSTEĞE BAĞLI, yayımda bile: kategori yazının yayın rafı ve
+    // yayımlamak için zorunlu, bu ise konu bağı. Genel bilgilendirme yazılarının hiçbir
+    // alana ait olmaması meşru bir durum.
+    practiceAreaId: optionalId,
     authorId: optionalId,
   })
   .transform((v) => ({ ...v, slug: resolveSlug(v.slug, v.title) }))

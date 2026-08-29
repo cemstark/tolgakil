@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { listAuthorOptions, listCategoryOptions } from '@/db/queries/articles'
+import { listAuthorOptions, listCategoryOptions, listPracticeAreaOptions } from '@/db/queries/articles'
 import { listMediaOptions } from '@/db/queries/media'
 import { requireAccess } from '@/lib/auth-guards'
 import { AdBanNotice } from '@/components/AdBanNotice'
@@ -13,10 +13,11 @@ export const metadata: Metadata = {
 
 export default async function NewArticlePage() {
   await requireAccess('articles')
-  const [categories, authors, mediaOptions] = await Promise.all([
+  const [categories, authors, mediaOptions, practiceAreaOptions] = await Promise.all([
     listCategoryOptions(),
     listAuthorOptions(),
     listMediaOptions(),
+    listPracticeAreaOptions(),
   ])
 
   return (
@@ -32,6 +33,7 @@ export default async function NewArticlePage() {
         categories={categories}
         authors={authors}
         mediaOptions={mediaOptions}
+        practiceAreaOptions={practiceAreaOptions}
         aside={<AdBanNotice />}
       />
     </>

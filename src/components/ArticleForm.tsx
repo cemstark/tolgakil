@@ -26,17 +26,20 @@ export type ArticleFormValues = {
   /** Seçim yapılmadığında boş dize; sütun NULL bekliyor. */
   categoryId: string
   authorId: string
+  practiceAreaId: string
   coverMediaId: string
 }
 
 const EMPTY_VALUES: ArticleFormValues = {
-  id: null, title: '', slug: '', excerpt: '', content: '', categoryId: '', authorId: '', coverMediaId: '',
+  id: null, title: '', slug: '', excerpt: '', content: '', categoryId: '', authorId: '',
+  practiceAreaId: '', coverMediaId: '',
 }
 
 type ArticleFormProps = {
   values?: ArticleFormValues
   categories: SelectOption[]
   authors: SelectOption[]
+  practiceAreaOptions: SelectOption[]
   /** Kapak görseli seçicisinin kaynağı; kitaplık boşsa seçici açıklama gösterir. */
   mediaOptions: MediaOption[]
   /** Yeni kayıttan sonraki yönlendirmeyle taşınan bildirim. */
@@ -55,6 +58,7 @@ export function ArticleForm({
   values = EMPTY_VALUES,
   categories,
   authors,
+  practiceAreaOptions,
   mediaOptions,
   initialMessage, aside }: ArticleFormProps) {
   // ÜÇ ADIMLI SİHİRBAZ — YALNIZ MOBİLDE (devir tasarımı 4a; ≤1100px). Masaüstünde
@@ -75,6 +79,7 @@ export function ArticleForm({
   const [excerpt, setExcerpt] = useState(values.excerpt)
   const [categoryId, setCategoryId] = useState(values.categoryId)
   const [authorId, setAuthorId] = useState(values.authorId)
+  const [practiceAreaId, setPracticeAreaId] = useState(values.practiceAreaId)
   const [coverMediaId, setCoverMediaId] = useState(values.coverMediaId)
 
   // Her sonuçta değişen anahtar: ardışık iki kaydetme aynı metni üretiyor ve canlı bölge
@@ -96,6 +101,7 @@ export function ArticleForm({
   const contentError = fieldError('content')
   const categoryError = fieldError('categoryId')
   const authorError = fieldError('authorId')
+  const practiceAreaError = fieldError('practiceAreaId')
   const coverError = fieldError('coverMediaId')
 
   // HATALI ADIMA GERİ DÖN (yalnız mobilde bir etkisi var; masaüstünde bütün bölümler
@@ -330,6 +336,46 @@ export function ArticleForm({
             </p>
           ) : null}
         </div>
+      </div>
+
+      {/* ÇALIŞMA ALANI — kategoriden AYRI bir eksen: kategori yazının yayın rafı (arşiv
+          filtresi), bu ise hangi hukuk alanına ait olduğu. Alan detay sayfası "bu
+          alandaki yazılar"ı buradan topluyor.
+
+          Zorunlu DEĞİL, yayımda bile: genel bilgilendirme yazılarının hiçbir alana ait
+          olmaması meşru. Denetimsiz + her sonuçta yeniden kurulan alan; gerekçesi
+          FormResultProvider'da (kategori ve yazar seçicileriyle aynı). */}
+      <div className={styles.field}>
+        <label htmlFor="article-practice-area" className={styles.label}>
+          Çalışma alanı
+        </label>
+        <select
+          key={noticeKey}
+          id="article-practice-area"
+          name="practiceAreaId"
+          defaultValue={practiceAreaId}
+          onChange={(event) => setPracticeAreaId(event.target.value)}
+          className={styles.select}
+          aria-invalid={practiceAreaError ? true : undefined}
+          aria-describedby={
+            practiceAreaError ? 'article-practice-area-error' : 'article-practice-area-hint'
+          }
+        >
+          <option value="">Seçilmedi</option>
+          {practiceAreaOptions.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <p id="article-practice-area-hint" className={styles.hint}>
+          Seçilirse yazı, o alanın sayfasında listelenir.
+        </p>
+        {practiceAreaError ? (
+          <p id="article-practice-area-error" role="alert" className={styles.fieldError}>
+            {practiceAreaError}
+          </p>
+        ) : null}
       </div>
 
         </div>

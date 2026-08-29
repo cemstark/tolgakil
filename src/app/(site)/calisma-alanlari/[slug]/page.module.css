@@ -171,3 +171,44 @@
     top: calc(var(--header-h) + 20px);
   }
 }
+
+/* Bu alandaki yazılar — yan kolondaki liste. Kart değil satır: yan kolonda üç kart
+   üst üste gelince blok sayfadan uzun oluyordu. */
+.articleList {
+  list-style: none;
+  display: grid;
+}
+
+.articleLink {
+  display: grid;
+  gap: 2px;
+  /* 44px dokunma hedefi (WCAG 2.5.8); iki satırlık içerik zaten onu geçiyor ama tek
+     satırlık kısa başlıkta da altına düşmesin. */
+  min-height: 44px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  color: inherit;
+  transition: color var(--dur-hover) var(--ease-out);
+}
+
+.articleList li:first-child .articleLink {
+  border-top: 0;
+}
+
+.articleTitle {
+  font-size: 14.5px;
+  line-height: 1.35;
+}
+
+.articleDate {
+  color: var(--text-muted);
+  font-size: 12px;
+  /* Tarihler alt alta; oransal rakamlarda sütun tırtıklı duruyordu. */
+  font-variant-numeric: tabular-nums;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .articleLink:hover .articleTitle {
+    color: var(--accent);
+  }
+}

@@ -144,6 +144,20 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
             </div>
 
             <aside className={styles.side}>
+              {/* İLGİLİ ÇALIŞMA ALANI — bağ "tüm planlar" turunda kuruldu. Yazı bir alana
+                  bağlanmamışsa blok hiç çizilmiyor; bağ isteğe bağlı. */}
+              {article.practiceAreaName !== null && article.practiceAreaSlug !== null ? (
+                <nav className={styles.sideBlock} aria-label="İlgili çalışma alanı">
+                  <h2 className={styles.sideTitle}>İlgili çalışma alanı</h2>
+                  <Link
+                    href={`/calisma-alanlari/${article.practiceAreaSlug}`}
+                    className={styles.sidePill}
+                  >
+                    {article.practiceAreaName}
+                  </Link>
+                </nav>
+              ) : null}
+
               {article.categoryName !== null && article.categorySlug !== null ? (
                 <nav className={styles.sideBlock} aria-label="Kategori">
                   <h2 className={styles.sideTitle}>Kategori</h2>

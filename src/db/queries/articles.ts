@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, ne } from 'drizzle-orm'
 import { db } from '@/db/client'
-import { articles, categories, lawyers, type Article, type ArticleStatus } from '@/db/schema'
+import { articles, categories, lawyers, practiceAreas, type Article, type ArticleStatus } from '@/db/schema'
 
 export type ArticleListItem = {
   id: number
@@ -59,4 +59,13 @@ export async function listCategoryOptions(): Promise<SelectOption[]> {
 // çizilmek zorunda, aksi hâlde form şemanın beklediği alanı hiç göndermez.
 export async function listAuthorOptions(): Promise<SelectOption[]> {
   return db.select({ id: lawyers.id, label: lawyers.fullName }).from(lawyers).orderBy(asc(lawyers.fullName))
+}
+
+/** Makale formundaki "Çalışma alanı" seçicisi; yayımlanmamış alanlar da listeleniyor
+    çünkü yazı, alan yayına alınmadan önce hazırlanabiliyor. */
+export async function listPracticeAreaOptions(): Promise<SelectOption[]> {
+  return db
+    .select({ id: practiceAreas.id, label: practiceAreas.name })
+    .from(practiceAreas)
+    .orderBy(asc(practiceAreas.sortOrder), asc(practiceAreas.name))
 }

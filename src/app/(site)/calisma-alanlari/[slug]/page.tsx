@@ -11,7 +11,9 @@ import {
   getPublicPracticeAreaBySlug,
   listPublicPracticeAreas,
 } from '@/db/queries/public/practice-areas'
+import { listArticlesByPracticeArea } from '@/db/queries/public/articles'
 import { getPublicSiteIdentity } from '@/db/queries/public/site-identity'
+import { formatDate, isoDate } from '@/lib/date'
 import { renderableHtml } from '@/lib/render-html'
 import { TAGS } from '@/lib/cache-tags'
 import { CONTENT_APPROVAL, SITE } from '@/content/site'
@@ -34,6 +36,10 @@ const YER_TUTUCU_SLUG = '__henuz-calisma-alani-yok__'
 // listelemek yan kolonu sayfadan uzun yapıyordu; dördü, sticky kolonun ekrana sığdığı
 // en büyük sayı.
 const RELATED_COUNT = 4
+
+// Yan kolonda listelenen yazı sayısı. Dört satır, yapışkan kolonun ekrana sığdığı sınır;
+// tamamı için "Makaleler" arşivi var.
+const AREA_ARTICLE_COUNT = 4
 
 // Yalnız yayımlanmış alanlar ön üretilir; taslak adresleri derleme çıktısında görünmez.
 export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
@@ -108,7 +114,9 @@ export default async function PracticeAreaPage({ params }: AreaPageProps) {
   // settings ETİKETİ EKLENDİ: sağ kolondaki görüşme kartı telefon ve WhatsApp bağlantısını
   // ayarlardan okuyor. Etiket yazılmasaydı panelden numara değiştiğinde bu yedi sayfa eski
   // numarayı göstermeye devam ederdi.
-  cacheTag(TAGS.practiceAreas, TAGS.settings)
+  // articles ETİKETİ de var: yan kolon bu alana bağlı yazıları listeliyor, yani panelden
+  // bir yazı yayımlandığında bu sayfa da tazelenmeli.
+  cacheTag(TAGS.practiceAreas, TAGS.settings, TAGS.articles)
   cacheLife('max')
 
   const { slug } = await params
@@ -116,9 +124,10 @@ export default async function PracticeAreaPage({ params }: AreaPageProps) {
   if (area === null) notFound()
 
   // İki sorgu paralel; sıralı await'te gecikme ikisinin toplamı olurdu.
-  const [areas, identity] = await Promise.all([
+  const [areas, identity, alanYazilari] = await Promise.all([
     listPublicPracticeAreas(),
     getPublicSiteIdentity(),
+    listArticlesByPracticeArea(slug, AREA_ARTICLE_COUNT),
   ])
 
   const hasContent = area.content !== null && area.content.trim() !== ''
@@ -191,6 +200,31 @@ export default async function PracticeAreaPage({ params }: AreaPageProps) {
               </a>
             ) : null}
           </div>
+
+          {/* BU ALANDAKİ YAZILAR — makale ile çalışma alanı arasındaki bağ "tüm planlar"
+              turunda kuruldu (articles.practice_area_id). Bağlı yazı yoksa blok hiç
+              çizilmiyor: boş bir "yazılar" başlığı, arşivin boş olduğunu değil sayfanın
+              eksik olduğunu düşündürüyordu. */}
+          {alanYazilari.length > 0 ? (
+            <nav className={styles.related} aria-label="Bu alandaki yazılar">
+              <h2 className={styles.relatedTitle}>Bu alandaki yazılar</h2>
+              <ul className={styles.articleList}>
+                {alanYazilari.map((yazi) => {
+                  const gun = isoDate(yazi.publishedAt)
+                  return (
+                    <li key={yazi.slug}>
+                      <Link href={`/makaleler/${yazi.slug}`} className={styles.articleLink}>
+                        <span className={styles.articleTitle}>{yazi.title}</span>
+                        <time dateTime={gun} className={styles.articleDate}>
+                          {formatDate(gun)}
+                        </time>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </nav>
+          ) : null}
 
           {/* <nav> + aria-label: ekran okuyucu bunu sayfa içeriğinin devamı değil ayrı bir
               gezinme bölgesi olarak duyursun. Tek alan yayındaysa liste boş kalır ve blok

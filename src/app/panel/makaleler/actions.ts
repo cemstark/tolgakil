@@ -44,6 +44,7 @@ export async function saveArticle(_prev: FormState, formData: FormData): Promise
     content: formData.get('content'),
     status: formData.get('status'),
     categoryId: formData.get('categoryId'),
+    practiceAreaId: formData.get('practiceAreaId'),
     authorId: formData.get('authorId'),
   })
   // toFieldErrors DEĞİL: path taşımayan hatalar orada kaybolur ve kullanıcı düğmeye basıp
@@ -119,6 +120,7 @@ export async function saveArticle(_prev: FormState, formData: FormData): Promise
     searchText: plainContent,
     status: parsed.data.status,
     categoryId: parsed.data.categoryId,
+    practiceAreaId: parsed.data.practiceAreaId,
     authorId: parsed.data.authorId,
     // Form kapak alanını her gönderimde taşıyor (seçim yoksa boş dize), bu yüzden
     // güncellemede de açıkça yazılıyor: "Kapak yok" seçmek gerçekten kapağı kaldırmalı.

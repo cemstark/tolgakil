@@ -28,6 +28,9 @@ const gecerliMakale = {
   status: 'draft' as const,
   categoryId: '3',
   authorId: '',
+  // Çalışma alanı bağı isteğe bağlı ama alan formda HER ZAMAN var (boş seçenek dahil),
+  // bu yüzden fixture da onu taşıyor — optionalId boş dizeyi null'a çeviriyor.
+  practiceAreaId: '',
 }
 
 describe('articleContentLengthError', () => {

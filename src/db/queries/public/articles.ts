@@ -1,6 +1,6 @@
 import { and, asc, count, desc, eq, isNotNull, lte, sql } from 'drizzle-orm'
 import { db } from '@/db/client'
-import { articles, categories, lawyers, media } from '@/db/schema'
+import { articles, categories, lawyers, media, practiceAreas } from '@/db/schema'
 
 export type PublicArticleCard = {
   slug: string
@@ -24,6 +24,8 @@ export type PublicArticleDetail = {
   metaDescription: string | null
   categoryName: string | null
   categorySlug: string | null
+  practiceAreaName: string | null
+  practiceAreaSlug: string | null
   authorName: string | null
   authorSlug: string | null
   coverPath: string | null
@@ -176,12 +178,16 @@ export async function getPublishedArticleBySlug(slug: string): Promise<PublicArt
       updatedAt: articles.updatedAt,
       metaTitle: articles.metaTitle,
       metaDescription: articles.metaDescription,
+      practiceAreaName: practiceAreas.name,
+      practiceAreaSlug: practiceAreas.slug,
       authorName: lawyers.fullName,
       authorSlug: lawyers.slug,
     })
     .from(articles)
     .leftJoin(categories, eq(articles.categoryId, categories.id))
     .leftJoin(media, eq(articles.coverMediaId, media.id))
+    // leftJoin: alan bağı isteğe bağlı; bağlanmamış yazı da yayımlanabiliyor.
+    .leftJoin(practiceAreas, eq(articles.practiceAreaId, practiceAreas.id))
     // leftJoin: yazarı atanmamış makale de yayımlanabiliyor (schema'da author_id nullable).
     .leftJoin(lawyers, eq(articles.authorId, lawyers.id))
     .where(and(publishedPredicate, eq(articles.slug, slug)))
@@ -225,5 +231,39 @@ export async function listArticleFeedEntries(): Promise<PublicArticleCard[]> {
     .where(publishedPredicate)
     .orderBy(desc(articles.publishedAt), asc(articles.slug))
 
+  return rows.map(toCard)
+}
+
+/**
+ * Bir çalışma alanına bağlı yayımlanmış yazılar — alan ayrıntı sayfasının "Bu alandaki
+ * yazılar" bloğu.
+ *
+ * Alan SLUG ile alınıyor, id ile değil: çağıran sayfa zaten slug ile çalışıyor ve id'yi
+ * ayrıca okumak ikinci bir sorgu demekti.
+ *
+ * `limit` çağıranın kararı: yan kolonda üç-dört satır gösteriliyor, sayfanın tamamını
+ * listelemek oranın işi değil.
+ */
+export async function listArticlesByPracticeArea(
+  practiceAreaSlug: string,
+  limit: number,
+): Promise<PublicArticleCard[]> {
+  if (!Number.isInteger(limit) || limit < 1) {
+    throw new Error(`listArticlesByPracticeArea: limit pozitif tam sayı olmalı, gelen: ${limit}`)
+  }
+
+  const rows = await db
+    .select(cardColumns)
+    .from(articles)
+    // innerJoin: alanı olmayan yazı bu listeye zaten girmemeli.
+    .innerJoin(practiceAreas, eq(articles.practiceAreaId, practiceAreas.id))
+    .leftJoin(categories, eq(articles.categoryId, categories.id))
+    .leftJoin(media, eq(articles.coverMediaId, media.id))
+    .where(and(publishedPredicate, eq(practiceAreas.slug, practiceAreaSlug)))
+    .orderBy(desc(articles.publishedAt))
+    .limit(limit)
+
+  // toCard: published_at'ın dolu olduğu yüklemle garanti, ama tip düzeyinde nullable —
+  // boş bir değer sayfanın ortasında değil burada, anlaşılır bir hatayla çıksın.
   return rows.map(toCard)
 }
