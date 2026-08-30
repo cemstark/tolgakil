@@ -28,13 +28,14 @@ loadEnvForScript(process.argv[2])
 const { and, eq } = await import('drizzle-orm')
 const { db, closeDb } = await import('../src/db/client.ts')
 const { pages } = await import('../src/db/schema.ts')
-const { SEED_COOKIE_PAGE, SEED_KVKK_PAGE } = await import('../src/db/seed-content.ts')
+const { ESKI_YER_TUTUCU, SEED_COOKIE_PAGE, SEED_KVKK_PAGE } = await import(
+  '../src/db/seed-content.ts'
+)
 
-// seed.ts'te bir zamanlar duran yer tutucunun BİREBİR metni. Burada tekrar yazılıyor çünkü
-// artık orada yok; kaynağı `git log -p src/db/seed.ts` ile görülebilir. Tek karakteri bile
-// değişirse koşul tutmaz ve betik hiçbir şey yapmaz — sessiz kalmaması için aşağıda
-// güncellenen satır sayısı basılıyor.
-const ESKI_YER_TUTUCU = '<p>Bu metin büro tarafından panelden girilecektir.</p>'
+// Yer tutucu metni artık `seed-content.ts`'ten geliyor: aynı sabiti `onar-icerik.mts` de
+// okuyor ve ikisi aynı dağıtımda arka arkaya koşuyor. Gerekçesi o dosyada yazılı.
+// Tek karakteri bile değişirse koşul tutmaz ve betik hiçbir şey yapmaz — sessiz kalmaması
+// için aşağıda güncellenen satır sayısı basılıyor.
 
 const HEDEFLER = [
   { slug: 'kvkk', icerik: SEED_KVKK_PAGE, ad: 'KVKK aydınlatma metni' },

@@ -269,6 +269,18 @@ export const SEED_PRACTICE_AREAS = [
  * belgede de yer almıyorlar ve seed.ts'teki yer tutucu kararı yürürlükte kalıyor
  * (üretilmiş bir metin gerçek belge gibi görünürdü).
  */
+/**
+ * `seed.ts`'te bir zamanlar duran yer tutucunun BİREBİR metni. Kaynağı artık kodda yok:
+ * `git show dcd0c1d^:src/db/seed.ts`.
+ *
+ * Burada, veriyle birlikte duruyor çünkü İKİ betik onu okuyor ve ikisi de aynı dağıtımda
+ * arka arkaya koşuyor: `backfill-legal-pages.mts` (KVKK, çerez) ve `onar-icerik.mts`
+ * (hakkımızda). Metin iki dosyada kopyalanmıştı; biri düzeltilip diğeri unutulsaydı ikinci
+ * betik sessizce hiçbir satır bulmaz, hata da vermezdi — ilgili sayfa üretimde yer tutucuda
+ * kalırdı. Tek karakteri değişirse eşitlik koşulu tutmaz, o yüzden tek kaynaktan okunuyor.
+ */
+export const ESKI_YER_TUTUCU = '<p>Bu metin büro tarafından panelden girilecektir.</p>'
+
 export const SEED_ABOUT_PAGE = [
   '<p>Akil Hukuk Bürosu, Samsun’un İlkadım ilçesinde faaliyet gösteren bir hukuk bürosudur. Büro, bireysel ve kurumsal nitelikteki hukuki ihtiyaçlara yönelik avukatlık ve hukuki danışmanlık faaliyetlerini farklı çalışma alanlarında sürdürmektedir.</p>',
   '<p>Büronun faaliyetlerinde özellikle gayrimenkul hukuku önemli bir çalışma alanı olarak öne çıkmaktadır. Bunun yanında icra ve iflas hukuku, iş hukuku, tazminat hukuku, sigorta hukuku, kira hukuku ve miras hukuku alanlarında da hukuki hizmet sunulmaktadır.</p>',
