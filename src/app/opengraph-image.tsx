@@ -41,6 +41,8 @@ export default function Image() {
           backgroundImage: `radial-gradient(1000px 640px at 82% 8%, ${INK_2}, ${INK})`,
         }}
       >
+        {/* Konum kaşın içinde: kart WhatsApp ve sosyal ağda bağlantının TEK görünen yüzü ve
+            sitenin tamamı Samsun/İlkadım odaklı. SITE sabitinden okunuyor, elle yazılmıyor. */}
         <div
           style={{
             display: 'flex',
@@ -50,7 +52,7 @@ export default function Image() {
             color: GOLD,
           }}
         >
-          Hukuk Bürosu
+          {`Hukuk Bürosu · ${SITE.district} / ${SITE.city}`}
         </div>
 
         <div
@@ -65,15 +67,35 @@ export default function Image() {
           {SITE.name}
         </div>
 
+        {/* BURADA BİR ZAMANLAR YANLIŞ BİLGİ VARDI (29.08.2026'da düzeltildi): kart
+            "Aile, iş ve ticaret hukuku alanlarında dava takibi ve danışmanlık" diyordu.
+            Aile ve ticaret hukuku büronun çalışma alanları arasında DEĞİL — ikisi de ilk
+            kurulumun örnek verisinden kalmıştı — ve büronun asıl alanı olan gayrimenkul
+            hiç anılmıyordu. Kart, bağlantı paylaşıldığında sitenin tek görünen yüzü
+            olduğu için bu, sitenin en görünür yerinde duran yanlış bir hizmet beyanıydı.
+
+            Metin, ana sayfadaki üst bölüm alt başlığıyla (Hero.tsx) BİREBİR aynı tutuldu:
+            iki yerde iki farklı vaat, hangisinin doğru olduğunu belirsizleştirir. Alan
+            adları tek tek sayılmıyor çünkü satır kullanılabilir 1008px'e sığmıyordu;
+            sayı ("yedi alan") ise belgedeki yedi başlıkla uyumlu.
+
+            PUNTO 34 DEĞİL 29: kullanılabilir genişlik 1200 - 2×96 = 1008px. Yayındaki eski
+            kart ölçüldü — 65 karakterlik metin 34px'te 990px sürüyordu, yani satır zaten
+            sınırdaydı. Yeni metin 74 karakter ve 34px'te taşardı. Derlenmiş kartla
+            doğrulandı: 29px'te metin iki satıra kayıyor (satori kırpmıyor, kaydırıyor) ve
+            kart dengede kalıyor; ikinci satır kısa bir kuyruk oluyor, kabul edildi.
+            Bu punto değiştirilecekse kart TEKRAR ÜRETİLİP GÖZLE bakılmalı — `next dev`
+            altında bu rota 500 veriyor (bilinen sorun), doğrulama ancak `npm run build`
+            sonrası `.next/server/app/opengraph-image.body` dosyasına bakılarak yapılabilir. */}
         <div
           style={{
             display: 'flex',
             marginTop: 32,
-            fontSize: 34,
+            fontSize: 29,
             color: '#aab1bc',
           }}
         >
-          Aile, iş ve ticaret hukuku alanlarında dava takibi ve danışmanlık
+          Gayrimenkul başta olmak üzere yedi alanda avukatlık ve hukuki danışmanlık.
         </div>
 
         {/* Altın çizgi: kartın alt kenarına oturan tek imza öğesi. */}
